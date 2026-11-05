@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --legacy-peer-deps",
+  "env": {
+    "NEXT_PUBLIC_AI_API_URL": "https://inkoom-model.shubhamos.com",
+    "NEXT_PUBLIC_USE_MOCK": "false"
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://inkoom-ai.shubhamos.com" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-API-Key" }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/proxy/v1/:path*",
+      "destination": "https://inkoom-model.shubhamos.com/api/v1/:path*"
+    }
+  ]
+}
