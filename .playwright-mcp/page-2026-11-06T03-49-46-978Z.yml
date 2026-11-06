@@ -1,0 +1,128 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content":
+    - /url: "#geist-skip-nav"
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - generic [ref=e7]:
+            - generic [ref=e10]:
+              - button "Select Team" [ref=e11] [cursor=pointer]
+              - button [ref=e14] [cursor=pointer]
+            - button "Find F" [ref=e19]:
+              - generic [ref=e21]:
+                - generic [ref=e25]: Find
+                - generic [ref=e26]: F
+          - navigation [ref=e30]:
+            - generic [ref=e34]:
+              - link "Overview" [ref=e35] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server
+              - link "Deployments" [ref=e39] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/deployments
+              - link "CI" [ref=e45] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/ci
+              - link "Logs" [ref=e51] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/logs
+              - link "Traces" [ref=e60] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/traces
+              - link "Analytics" [ref=e69] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/analytics
+              - link "Speed Insights" [ref=e75] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/speed-insights
+              - link "Observability" [ref=e81] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/observability
+              - link "Firewall" [ref=e90] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/firewall
+              - link "CDN" [ref=e99] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/cdn
+              - separator [ref=e108]
+              - link "Environment Variables" [ref=e109] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings/environment-variables
+              - link "Domains" [ref=e115] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings/domains
+              - link "Connect" [ref=e121] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/connect
+              - link "Integrations" [ref=e130] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings/integrations
+              - link "Storage" [ref=e136] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/stores
+              - link "Flags" [ref=e142] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/flags
+              - link "Agent" [ref=e151] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/agent
+              - link "AI Gateway" [ref=e160] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/ai-gateway
+              - link "Sandboxes" [ref=e169] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/sandboxes
+              - link "Workflows" [ref=e178] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/workflows
+              - link "Images" [ref=e184] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/images
+              - link "Daemons" [ref=e190] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/daemons
+              - separator [ref=e199]
+              - link "Usage" [ref=e200] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/usage
+              - link "Support" [ref=e206] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/support
+              - link "Settings" [ref=e212] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings
+          - generic [ref=e225]:
+            - button [disabled]
+        - button [ref=e231] [cursor=pointer]
+      - generic [ref=e235]:
+        - generic [ref=e236]:
+          - generic [ref=e239]:
+            - link [ref=e240] [cursor=pointer]:
+              - /url: /devilkings-shubhamos-projects/server
+            - button [ref=e242] [cursor=pointer]
+            - link "Back to team view" [ref=e248] [cursor=pointer]:
+              - /url: /devilkings-shubhamos-projects
+          - navigation "Breadcrumb" [ref=e252]:
+            - generic [ref=e253]: Project Overview
+        - generic [ref=e262]:
+          - generic [ref=e266]:
+            - generic [ref=e267]:
+              - generic [ref=e268]:
+                - heading "Production Deployment" [level=3] [ref=e269]
+                - generic [ref=e271]:
+                  - link "Connect Git" [ref=e272] [cursor=pointer]:
+                    - /url: /devilkings-shubhamos-projects/server/settings/git
+                  - button "Project Menu" [ref=e274] [cursor=pointer]
+              - generic [ref=e286]:
+                - heading "No Production Deployment" [level=3] [ref=e287]
+                - paragraph [ref=e289]:
+                  - text: Drag and drop your project anywhere on this page to deploy it, or choose a
+                  - link "Choose a file to deploy" [ref=e290] [cursor=pointer]: file
+                  - text: or a
+                  - link "Choose a folder to deploy" [ref=e291] [cursor=pointer]: folder
+                  - text: .
+              - button "Deployment Settings" [disabled] [ref=e294]
+            - generic [ref=e302]:
+              - generic [ref=e303]: To update your Production Deployment, drop your project anywhere on this page, connect to git, or run vercel --prod via the CLI.
+              - generic [ref=e306]:
+                - link "Deployments" [ref=e307] [cursor=pointer]:
+                  - /url: /devilkings-shubhamos-projects/server/deployments?environment=production
+                - link "Learn more" [ref=e312] [cursor=pointer]:
+                  - /url: /docs/git#production-branch
+          - generic [ref=e318]:
+            - paragraph [ref=e322]
+            - generic [ref=e327]:
+              - generic [ref=e328]:
+                - generic [ref=e329]:
+                  - paragraph [ref=e330]:
+                    - strong [ref=e331]: Observability
+                  - time [ref=e332]: 6h
+                - link "Go to page" [ref=e333] [cursor=pointer]:
+                  - /url: "#"
+                - link [ref=e337] [cursor=pointer]:
+                  - /url: "#"
+              - generic [ref=e339]:
+                - generic [ref=e340]: CDN Requests
+                - generic [ref=e345]: Function Invocations
+                - generic [ref=e350]: Error Rate
+            - generic [ref=e357]:
+              - paragraph [ref=e358]:
+                - strong [ref=e359]: Analytics
+              - time [ref=e360]: 1w
+  - alert [ref=e486]

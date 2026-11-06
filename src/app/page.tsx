@@ -16,14 +16,21 @@ export default function HomePage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
-        <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: '#141414' }}
+    >
+      <div className="flex flex-col items-center gap-5">
+        <span
+          className="text-3xl font-extrabold tracking-tight"
+          style={{ color: '#E50914', textShadow: '0 0 32px rgba(229,9,20,0.5)' }}
+        >
+          INKLOOM
+        </span>
+        <div
+          className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: 'rgba(229,9,20,0.4)', borderTopColor: '#E50914' }}
+        />
       </div>
     </div>
   );

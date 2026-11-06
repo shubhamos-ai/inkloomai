@@ -1,0 +1,47 @@
+- generic [active] [ref=f5e1]:
+  - link "Skip to content":
+    - /url: "#geist-skip-nav"
+  - generic [ref=f5e3]:
+    - banner [ref=f5e4]:
+      - link "Vercel logo":
+        - /url: /home
+        - button [ref=f5e5] [cursor=pointer]:
+          - img "Vercel Logo" [ref=f5e6]
+      - navigation [ref=f5e8]:
+        - navigation [ref=f5e9]:
+          - link [ref=f5e10] [cursor=pointer]:
+            - /url: /signup?next=%2Fdevilkings-shubhamos-projects%2Fserver%2Fsettings%2Fdomains
+            - paragraph [ref=f5e12]: Sign Up
+    - main [ref=f5e13]:
+      - generic [ref=f5e15]:
+        - heading "Log in to Vercel" [level=1] [ref=f5e18]
+        - generic [ref=f5e19]:
+          - generic [ref=f5e20]:
+            - textbox "Email Address" [ref=f5e23]
+            - button "Continue with Email" [ref=f5e26] [cursor=pointer]
+          - generic [ref=f5e29]:
+            - button "Continue with Google" [ref=f5e30] [cursor=pointer]:
+              - generic [ref=f5e34]:
+                - generic [ref=f5e35]: Continue with
+                - text: Google
+            - button "Continue with GitHub" [ref=f5e36] [cursor=pointer]:
+              - generic [ref=f5e40]:
+                - generic [ref=f5e41]: Continue with
+                - text: GitHub
+            - button "Continue with ChatGPT" [ref=f5e42] [cursor=pointer]:
+              - generic [ref=f5e46]:
+                - generic [ref=f5e47]: Continue with
+                - text: ChatGPT
+            - button "Continue with SAML SSO" [ref=f5e49] [cursor=pointer]
+            - button "Continue with Passkey" [ref=f5e54] [cursor=pointer]
+            - button "Show other options" [ref=f5e59] [cursor=pointer]
+        - paragraph [ref=f5e62]:
+          - text: Don't have an account?
+          - link "Sign Up" [ref=f5e63] [cursor=pointer]:
+            - /url: /signup?next=%2Fdevilkings-shubhamos-projects%2Fserver%2Fsettings%2Fdomains
+      - generic [ref=f5e66]:
+        - link "Terms" [ref=f5e67] [cursor=pointer]:
+          - /url: /legal/terms
+        - link "Privacy Policy" [ref=f5e68] [cursor=pointer]:
+          - /url: /legal/privacy-notice
+  - alert [ref=f5e69]

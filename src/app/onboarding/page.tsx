@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { saveUserSession, saveApiCredentials } from '@/lib/session';
+import { saveUserSession, saveApiCredentials, getApiCredentials } from '@/lib/session';
 import StepAuth from '@/components/onboarding/StepAuth';
 import StepName from '@/components/onboarding/StepName';
 import StepCompanySelect from '@/components/onboarding/StepCompanySelect';
@@ -15,79 +15,93 @@ import {
   fetchMe,
   updateAccountName,
   createCompanyForSession,
+  getApiBaseUrl,
   type AuthSession,
   type UserCompanySummary,
 } from '@/lib/api';
 
 type Step = 'auth' | 'name' | 'companies' | 'new-company' | 'building';
 
-/** Netflix-style onboarding:
- *  1. Sign up / Sign in (email + password)
- *  2. Name (first sign-up only)
- *  3. Choose a company (or add a new one)
- *  4. New company: name + rules & regulations
- *  5. Workspace builds → dashboard
+/**
+ * Netflix-style onboarding — 5 steps:
+ *  1. Email + password (sign up / sign in)
+ *  2. Name (new accounts only — skipped on login)
+ *  3. Pick a company workspace (or add a new one)
+ *  4. New company: name, industry, brand rules
+ *  5. Animated workspace-build screen → dashboard
  */
 export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>('auth');
   const [info, setInfo] = useState<{ name?: string; email?: string; userId?: string }>({});
+  // session holds the auth token from login/register for the current page visit
   const [session, setSession] = useState<AuthSession | null>(null);
   const [companies, setCompanies] = useState<UserCompanySummary[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
 
-  // Already signed in with a workspace → straight to the dashboard.
+  // ── Auto-skip: already have a valid session + company → straight to dashboard.
   useEffect(() => {
     let cancelled = false;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('inkloom_ai_api_key') : null;
+    const { token, companyId } = getApiCredentials();
+    // Session tokens issued by /auth/register and /auth/login start with il_sess_
     if (!token || !token.startsWith('il_sess_')) return;
+
     fetchMe().then((me) => {
       if (cancelled) return;
-      if (me && me.companies.length > 0) {
-        saveApiCredentials(token, me.companies[0].id);
+      if (!me) return; // token invalid / backend offline — stay on onboarding
+      if (me.companies.length > 0) {
+        // Already has at least one company workspace — restore and go.
+        const active = me.companies.find((c) => c.id === companyId) ?? me.companies[0];
+        saveApiCredentials(token, active.id);
         saveUserSession({
           fullName: me.user.name,
           email: me.user.email,
           userId: me.user.id,
-          companyName: me.companies[0].company_name,
-          companyId: me.companies[0].id,
+          companyName: active.company_name,
+          companyId: active.id,
+          industry: active.industry ?? undefined,
+          website: active.website ?? undefined,
         });
         router.replace('/dashboard');
       }
+      // Has token but no companies → drop through to the name/company steps
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [router]);
 
-  const applySession = useCallback(
-    (value: { session: AuthSession; name?: string }) => {
-      const { session: valueSession, name } = value;
-      setSession(valueSession);
-      saveApiCredentials(valueSession.session_token, null);
-      saveUserSession({
-        fullName: name ?? valueSession.name,
-        userId: valueSession.user_id,
-      });
-      setInfo({
-        name: name ?? valueSession.name,
-        userId: valueSession.user_id,
-      });
-    },
-    []
-  );
+  // ── Helpers ────────────────────────────────────────────────────────────────
 
+  /** Persist an auth result into React state + localStorage */
+  const applySession = useCallback((value: { session: AuthSession }) => {
+    setSession(value.session);
+    saveApiCredentials(value.session.session_token, null);
+    saveUserSession({
+      fullName: value.session.name,
+      userId: value.session.user_id,
+    });
+    setInfo({ name: value.session.name, userId: value.session.user_id });
+  }, []);
+
+  /** Fetch the user's existing companies from the backend */
   const loadCompanies = useCallback(async () => {
     setLoadingCompanies(true);
     const me = await fetchMe();
     setLoadingCompanies(false);
     if (me) {
       setCompanies(me.companies);
-      setInfo((prev) => ({ ...prev, name: me.user.name, email: me.user.email, userId: me.user.id }));
+      setInfo((prev) => ({
+        ...prev,
+        name: me.user.name,
+        email: me.user.email,
+        userId: me.user.id,
+      }));
     }
   }, []);
 
+  // ── Step handlers ──────────────────────────────────────────────────────────
+
+  /** Step 1: email + password */
   const handleAuth = async ({
     email,
     password,
@@ -97,33 +111,40 @@ export default function OnboardingPage() {
     password: string;
     mode: 'login' | 'signup';
   }): Promise<string | null> => {
-    const result = mode === 'signup' ? await registerAccount(email, password) : await loginAccount(email, password);
+    const result =
+      mode === 'signup'
+        ? await registerAccount(email, password)
+        : await loginAccount(email, password);
     if (!result.ok) return result.message;
 
     applySession({ session: result.session });
     saveUserSession({ fullName: result.session.name || email, email });
 
     if (mode === 'signup') {
-      // Netflix flow: name right after account creation.
       setStep('name');
       return null;
     }
 
-    // Sign in → jump to workspace selection.
+    // Login → go straight to company picker
     setStep('companies');
     loadCompanies();
     return null;
   };
 
+  /** Step 2: display name (signup only) */
   const handleName = async (name: string) => {
     setInfo((prev) => ({ ...prev, name }));
+    saveUserSession({ fullName: name });
     await updateAccountName(name);
     setStep('companies');
     if (session) loadCompanies();
   };
 
+  /** Step 3a: chose an existing company */
   const handleChooseCompany = (company: UserCompanySummary) => {
-    if (session) saveApiCredentials(session.session_token, company.id);
+    // Prefer the in-memory session token; fall back to whatever's stored
+    const token = session?.session_token ?? getApiCredentials().token ?? '';
+    saveApiCredentials(token, company.id);
     saveUserSession({
       fullName: info.name || session?.name || 'Owner',
       companyName: company.company_name,
@@ -134,52 +155,57 @@ export default function OnboardingPage() {
     router.replace('/dashboard');
   };
 
+  /** Step 4: create a new company (with optional brand rules) */
   const handleNewCompany = async (values: {
     companyName: string;
     industry?: string;
     rulesText?: string;
     files: File[];
   }): Promise<string | null> => {
-    if (!session) return 'Session lost — please sign in again.';
+    // Recover session token from either in-memory state or localStorage
+    const token = session?.session_token ?? getApiCredentials().token;
+    if (!token) return 'Session lost — please sign in again.';
+
     setNewCompanyName(values.companyName);
 
-    // Only the name is required by /onboarding; industry/website travel along.
+    // Create the company via /onboarding (works for both session + legacy modes)
     const created = await createCompanyForSession({
       name: info.name ?? 'Owner',
       companyName: values.companyName,
       industry: values.industry,
     });
-    if (!('companyId' in created)) {
-      return created.message;
-    }
-    const companyId = created.companyId;
-    saveApiCredentials(session.session_token, companyId);
+    if (!('companyId' in created)) return created.message;
 
-    // Rules (text + attached files) into the Brand Brain.
+    const { companyId } = created;
+    saveApiCredentials(token, companyId);
+
+    // Ingest brand rules + files into Brand Brain if provided
     if (values.rulesText || values.files.length > 0) {
       const formData = new FormData();
       formData.append('company_name', values.companyName);
       if (values.industry) formData.append('industry', values.industry);
       if (values.rulesText) formData.append('guidelines_text', values.rulesText);
-      if (values.files.length > 0) {
-        values.files.forEach((file) => formData.append('files', file));
-      }
+      values.files.forEach((file) => formData.append('files', file));
+
       const res = await fetch(`${getApiBaseUrl()}/api/v1/brand-brain`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${session.session_token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'X-Company-ID': companyId,
+        },
         body: formData,
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        const message =
+        const msg =
           (typeof body?.detail === 'object' ? body?.detail?.message : body?.detail) ??
           `Brand Brain intake failed (HTTP ${res.status}).`;
-        return message;
+        return msg;
       }
     }
 
     saveUserSession({
-      fullName: info.name || session?.name || 'Owner',
+      fullName: info.name ?? session?.name ?? 'Owner',
       companyName: values.companyName,
       companyId,
       industry: values.industry,
@@ -188,7 +214,7 @@ export default function OnboardingPage() {
     return null;
   };
 
-  /** Rail progress: 1 Auth · 2 Name · 3 Companies · 4 Rules · 5 Ready. */
+  // ── Progress rail ──────────────────────────────────────────────────────────
   const RAIL: Record<Step, number> = {
     auth: 1,
     name: 2,
@@ -196,11 +222,10 @@ export default function OnboardingPage() {
     'new-company': 4,
     building: 5,
   };
-  const currentStepIndex = RAIL[step];
 
   return (
     <div className="relative min-h-screen bg-[#141414] overflow-hidden">
-      {/* Cinematic backdrop: soft red glow vignette, Netflix style */}
+      {/* Cinematic backdrop: soft red glow vignette */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -210,27 +235,25 @@ export default function OnboardingPage() {
             'radial-gradient(40rem 30rem at 85% 110%, rgba(229,9,20,0.10), transparent 60%)',
         }}
       />
-      {/* subtle grid texture */}
+      {/* Subtle grid texture */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
         }}
       />
 
       <div className="relative z-10">
-        {/* Top bar */}
+        {/* Header / brand mark */}
         <header className="flex items-center justify-between px-6 sm:px-12 py-5">
           <button onClick={() => router.replace('/')} className="flex items-center gap-2.5">
             <span
               className="text-2xl font-extrabold tracking-tight"
-              style={{
-                color: '#E50914',
-                textShadow: '0 0 24px rgba(229,9,20,0.45)',
-              }}
+              style={{ color: '#E50914', textShadow: '0 0 24px rgba(229,9,20,0.45)' }}
             >
               INKLOOM
             </span>
@@ -240,10 +263,10 @@ export default function OnboardingPage() {
           </button>
         </header>
 
-        {/* Progress rail (hidden during the cinematic build screen) */}
+        {/* Progress rail — hidden on the building screen */}
         {step !== 'building' && (
           <div className="px-6 sm:px-12">
-            <OnboardingProgress currentStep={currentStepIndex} total={5} />
+            <OnboardingProgress currentStep={RAIL[step]} total={5} />
           </div>
         )}
 
@@ -255,7 +278,9 @@ export default function OnboardingPage() {
           }
         >
           <AnimatePresence mode="wait">
-            {step === 'auth' && <StepAuth key="auth" onSubmit={handleAuth} />}
+            {step === 'auth' && (
+              <StepAuth key="auth" onSubmit={handleAuth} />
+            )}
 
             {step === 'name' && (
               <StepName key="name" onSubmit={handleName} initialName={info.name} />
@@ -277,11 +302,20 @@ export default function OnboardingPage() {
             )}
 
             {step === 'new-company' && (
-              <StepNewCompany key="new-company" onSubmit={handleNewCompany} onBack={() => setStep('companies')} />
+              <StepNewCompany
+                key="new-company"
+                onSubmit={handleNewCompany}
+                onBack={() => setStep('companies')}
+              />
             )}
 
             {step === 'building' && (
-              <motion.div key="building" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <motion.div
+                key="building"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
                 <StepBuilding
                   dark
                   onComplete={() => router.replace('/dashboard')}
@@ -294,20 +328,11 @@ export default function OnboardingPage() {
 
         <footer className="px-6 sm:px-12 pb-8">
           <p className="text-neutral-700 text-xs">
-            Inkloom AI — advertising compliance &amp; brand governance. All analysis results shown
+            Inkloom AI — advertising compliance &amp; brand governance. All analysis results
             are produced by the deployed model; mock output is always clearly labelled.
           </p>
         </footer>
       </div>
     </div>
   );
-}
-
-// Imported late to avoid a circular dep at module top with mock-data.
-function getApiBaseUrl(): string {
-  if (typeof window !== 'undefined') {
-    const custom = localStorage.getItem('inkloom_custom_api_url');
-    if (custom) return custom;
-  }
-  return process.env.NEXT_PUBLIC_AI_API_URL || 'https://inkoom-model.shubhamos.com';
 }

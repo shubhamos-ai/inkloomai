@@ -1,0 +1,112 @@
+- generic [active] [ref=f15e1]:
+  - link "Skip to content":
+    - /url: "#geist-skip-nav"
+  - main [ref=f15e3]:
+    - generic [ref=f15e4]:
+      - generic [ref=f15e5]:
+        - generic [ref=f15e6]:
+          - generic [ref=f15e7]:
+            - generic [ref=f15e10]:
+              - link "devilkings-shubhamos' projects Hobby" [ref=f15e11] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects
+                - generic [ref=f15e14]:
+                  - generic [ref=f15e15]: devilkings-shubhamos' projects
+                  - generic [ref=f15e16]: Hobby
+              - button [ref=f15e18] [cursor=pointer]
+            - button "Find F" [ref=f15e23]:
+              - generic [ref=f15e25]:
+                - generic [ref=f15e29]: Find
+                - generic [ref=f15e30]: F
+          - navigation [ref=f15e34]:
+            - generic [ref=f15e38]:
+              - link "Overview" [ref=f15e39] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server
+              - link "Deployments" [ref=f15e44] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/deployments
+              - link "CI" [ref=f15e50] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/ci
+              - link "Logs" [ref=f15e56] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/logs
+              - link "Traces" [ref=f15e65] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/traces
+              - link "Analytics" [ref=f15e74] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/analytics
+              - link "Speed Insights" [ref=f15e80] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/speed-insights
+              - link "Observability" [ref=f15e86] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/observability
+              - link "Firewall" [ref=f15e95] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/firewall
+              - link "CDN" [ref=f15e104] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/cdn
+              - separator [ref=f15e113]
+              - link "Environment Variables" [ref=f15e114] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings/environment-variables
+              - link "Domains" [ref=f15e120] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings/domains
+              - link "Connect" [ref=f15e126] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/connect
+              - link "Integrations" [ref=f15e135] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings/integrations
+              - link "Storage" [ref=f15e141] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/stores
+              - link "Flags" [ref=f15e147] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/flags
+              - link "Agent" [ref=f15e156] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/agent
+              - link "Vulnerabilities" [ref=f15e166] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/security/vulnerabilities
+              - link "AI Gateway" [ref=f15e172] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/ai-gateway
+              - link "Sandboxes" [ref=f15e181] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/sandboxes
+              - link "Workflows" [ref=f15e190] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/workflows
+              - link "Images" [ref=f15e196] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/images
+              - link "Daemons" [ref=f15e202] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/daemons
+              - separator [ref=f15e211]
+              - link "Usage" [ref=f15e212] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/usage
+              - link "Support" [ref=f15e218] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/support
+              - link "Settings" [ref=f15e224] [cursor=pointer]:
+                - /url: /devilkings-shubhamos-projects/server/settings
+          - button "Avatar for devilkings-shubhamos devilkings-shubhamos" [ref=f15e238] [cursor=pointer]:
+            - img "Avatar for devilkings-shubhamos" [ref=f15e239]:
+              - img "Avatar for devilkings-shubhamos" [ref=f15e240]
+            - generic [ref=f15e241]: devilkings-shubhamos
+        - button [ref=f15e251] [cursor=pointer]
+      - generic [ref=f15e255]:
+        - generic [ref=f15e256]:
+          - generic [ref=f15e259]:
+            - link [ref=f15e260] [cursor=pointer]:
+              - /url: /devilkings-shubhamos-projects/server
+            - button [ref=f15e262] [cursor=pointer]
+            - link "Back to team view" [ref=f15e268] [cursor=pointer]:
+              - /url: /devilkings-shubhamos-projects/~/deployments
+          - navigation "Breadcrumb"
+          - generic [ref=f15e272]:
+            - button "Create New" [ref=f15e274] [cursor=pointer]
+            - button "Vercel Agent is available on Pro" [ref=f15e281] [cursor=pointer]:
+              - generic [ref=f15e294]: Agent
+        - generic [ref=f15e301]:
+          - generic [ref=f15e302]:
+            - heading "Project Deployments" [level=1] [ref=f15e304]
+            - button "Deployments actions" [ref=f15e306] [cursor=pointer]
+          - generic [ref=f15e318]:
+            - button "Add Filter" [ref=f15e320] [cursor=pointer]
+            - button "Author devilkings-shubhamos" [ref=f15e329] [cursor=pointer]:
+              - generic [ref=f15e332]:
+                - generic [ref=f15e333]: Author
+                - generic [ref=f15e334]: devilkings-shubhamos
+            - button "Environment Production" [ref=f15e336] [cursor=pointer]:
+              - generic [ref=f15e339]:
+                - generic [ref=f15e340]: Environment
+                - generic [ref=f15e341]: Production
+            - button "Status Error" [ref=f15e343] [cursor=pointer]:
+              - generic [ref=f15e346]:
+                - generic [ref=f15e347]: Status
+                - generic [ref=f15e348]: Error
+  - alert [ref=f15e593]

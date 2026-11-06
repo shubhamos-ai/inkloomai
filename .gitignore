@@ -1,6 +1,52 @@
+# Environment
 .env
 *.env
-node_modules/
+.env.local
+.env.*.local
+
+# Dependencies
 node_modules/
 .next/
-next-env.d.ts
+.next-cache/
+
+# Build outputs
+dist/
+build/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.Pythonenv
+.python-version
+.venv/
+venv/
+env/
+.eggs/
+dist/
+build/
+
+# Cloudflare Tunnel credentials (stored in ~/.cloudflared/)
+# Never commit these to version control
+*.json
+credentials-file
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
