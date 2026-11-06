@@ -28,6 +28,7 @@ env/
 .eggs/
 dist/
 build/
+server/.venv
 
 # Cloudflare Tunnel credentials (stored in ~/.cloudflared/)
 # Never commit these to version control
