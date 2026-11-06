@@ -57,6 +57,11 @@ export function getAuthHeaders(): Record<string, string> {
     headers['Authorization'] = `Bearer ${apiKey}`;
     headers['X-API-Key'] = apiKey;
   }
+  // Session auth: pick the active company when the account owns several.
+  if (typeof window !== 'undefined') {
+    const companyId = localStorage.getItem('inkloom_company_id');
+    if (companyId) headers['X-Company-ID'] = companyId;
+  }
   return headers;
 }
 
@@ -285,6 +290,114 @@ function saveBrandBrain(brain: BrandBrain): void {
 
 async function mockDelay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ─── 0. Auth (email + password accounts) ─────────────────────────────────────
+
+export interface AuthSession {
+  user_id: string;
+  session_token: string;
+  name: string;
+  has_company: boolean;
+  message?: string;
+}
+
+export interface UserCompanySummary {
+  id: string;
+  company_name: string;
+  industry?: string | null;
+  website?: string | null;
+  created_at: string;
+  analysis_count: number;
+  compliance_score?: number | null;
+}
+
+export interface MeResponse {
+  user: { id: string; email: string; name: string; created_at: string };
+  companies: UserCompanySummary[];
+}
+
+function detailMessage(res: Response, fallback: string): Promise<string> {
+  return res
+    .json()
+    .then((body) => (typeof body?.detail === 'object' ? body?.detail?.message : body?.detail))
+    .catch(() => null)
+    .then((msg) => (typeof msg === 'string' && msg ? msg : fallback));
+}
+
+export async function registerAccount(
+  email: string,
+  password: string
+): Promise<{ ok: true; session: AuthSession } | { ok: false; message: string }> {
+  const res = await fetchApi('/api/v1/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res) return { ok: false, message: 'Backend unreachable — try again shortly.' };
+  if (!res.ok) return { ok: false, message: await detailMessage(res, 'Registration failed.') };
+  return { ok: true, session: await res.json() };
+}
+
+export async function loginAccount(
+  email: string,
+  password: string
+): Promise<{ ok: true; session: AuthSession } | { ok: false; message: string }> {
+  const res = await fetchApi('/api/v1/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res) return { ok: false, message: 'Backend unreachable — try again shortly.' };
+  if (!res.ok) return { ok: false, message: await detailMessage(res, 'Incorrect email or password.') };
+  return { ok: true, session: await res.json() };
+}
+
+export async function fetchMe(): Promise<MeResponse | null> {
+  const res = await fetchApi('/api/v1/auth/me');
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+export async function updateAccountName(name: string): Promise<MeResponse | null> {
+  const res = await fetchApi('/api/v1/auth/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name }),
+  });
+  if (!res?.ok) return null;
+  return res.json();
+}
+
+export async function logoutAccount(): Promise<void> {
+  await fetchApi('/api/v1/auth/logout', { method: 'POST' });
+}
+
+export async function signOutEverywhere(): Promise<void> {
+  try { await logoutAccount(); } catch { /* best-effort */ }
+}
+
+/** Legacy (session-less) onboarding payload kept for compatibility. */
+export async function createCompanyForSession(data: {
+  name: string;
+  companyName: string;
+  industry?: string;
+  website?: string;
+}): Promise<{ companyId: string } | { ok: false; message: string }> {
+  const res = await fetchApi('/api/v1/onboarding', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: data.name,
+      company_name: data.companyName,
+      industry: data.industry || undefined,
+      website: data.website || undefined,
+    }),
+  });
+  if (!res) return { ok: false, message: 'Backend unreachable — try again shortly.' };
+  if (!res.ok) return { ok: false, message: await detailMessage(res, 'Company creation failed.') };
+  const body = await res.json();
+  return { companyId: body.company_id ?? body.companyId };
 }
 
 // ─── Health Check ─────────────────────────────────────────────────────────────

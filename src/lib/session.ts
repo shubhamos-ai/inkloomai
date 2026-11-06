@@ -25,7 +25,15 @@ export function clearOnboardingState(): void {
   localStorage.removeItem(ONBOARDING_KEY);
 }
 
-export function getUserSession(): { fullName: string; companyName: string; industry?: string; website?: string } | null {
+export function getUserSession(): {
+  fullName: string;
+  email?: string;
+  userId?: string;
+  companyName: string;
+  companyId?: string;
+  industry?: string;
+  website?: string;
+} | null {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem(USER_SESSION_KEY);
@@ -35,9 +43,37 @@ export function getUserSession(): { fullName: string; companyName: string; indus
   }
 }
 
-export function saveUserSession(data: { fullName: string; companyName: string; industry?: string; website?: string }): void {
+export function saveUserSession(data: {
+  fullName: string;
+  email?: string;
+  userId?: string;
+  companyName?: string;
+  companyId?: string;
+  industry?: string;
+  website?: string;
+}): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(USER_SESSION_KEY, JSON.stringify(data));
+  const existing = getUserSession() ?? {};
+  localStorage.setItem(USER_SESSION_KEY, JSON.stringify({ ...existing, ...data }));
+}
+
+/** Store the session token + active company id for all later API calls. */
+export function saveApiCredentials(token: string, companyId?: string | null): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('inkloom_ai_api_key', token);
+  if (companyId) {
+    localStorage.setItem('inkloom_company_id', companyId);
+  } else {
+    localStorage.removeItem('inkloom_company_id');
+  }
+}
+
+export function getApiCredentials(): { token: string | null; companyId: string | null } {
+  if (typeof window === 'undefined') return { token: null, companyId: null };
+  return {
+    token: localStorage.getItem('inkloom_ai_api_key'),
+    companyId: localStorage.getItem('inkloom_company_id'),
+  };
 }
 
 export function clearUserSession(): void {
@@ -45,6 +81,10 @@ export function clearUserSession(): void {
   localStorage.removeItem(USER_SESSION_KEY);
   localStorage.removeItem(ONBOARDING_KEY);
   localStorage.removeItem(ANALYSIS_JOB_KEY);
+  localStorage.removeItem('inkloom_ai_api_key');
+  localStorage.removeItem('inkloom_company_id');
+  localStorage.removeItem('inkloom_user_id');
+  localStorage.removeItem('inkloom_pending_result');
 }
 
 export function isOnboardingComplete(): boolean {
