@@ -11,6 +11,8 @@ export type RuleCategory =
 
 export interface BrandRule {
   id: string;
+  /** Backend rule code (e.g. BR001) — preferred key for updates. */
+  code?: string;
   category: RuleCategory;
   title: string;
   description: string;

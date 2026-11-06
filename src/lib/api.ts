@@ -1,12 +1,20 @@
 // Central API service layer for Inkloom AI (Inkoom AI)
 // Integrates with FastAPI + Ollama backend via Cloudflare Tunnel
 // Endpoint: https://inkoom-model.shubhamos.com (or NEXT_PUBLIC_AI_API_URL)
+//
+// This layer normalises the backend's snake_case responses into the
+// frontend's camelCase types. Mock/local fallbacks only ever run when the
+// user explicitly forces mock mode — otherwise failures surface as errors.
+// Real backend data is never replaced with generated content silently.
 
 import type {
   AnalysisResult,
   AnalysisHistoryItem,
   AnalysisJobStatus,
   AnalysisStatus,
+  ComplianceLevel,
+  Violation,
+  ViolationSeverity,
 } from '@/types/analysis';
 import type {
   BrandBrain,
@@ -16,11 +24,10 @@ import type {
 } from '@/types/brand-rules';
 import type { DashboardStats } from '@/types/company';
 import {
-  MOCK_DASHBOARD_STATS,
-  MOCK_HISTORY,
   MOCK_BRAND_RULES,
   generateMockAnalysisResult,
   generateMockHistoryItem,
+  MOCK_HISTORY,
 } from './mock-data';
 import { getUserSession } from './session';
 
@@ -36,16 +43,25 @@ export function getApiBaseUrl(): string {
   return process.env.NEXT_PUBLIC_AI_API_URL || DEFAULT_API_BASE_URL;
 }
 
+export function getApiKey(): string {
+  return (
+    process.env.NEXT_PUBLIC_AI_API_KEY ||
+    (typeof window !== 'undefined' ? localStorage.getItem('inkloom_ai_api_key') || '' : '')
+  );
+}
+
 export function getAuthHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
-  const apiKey =
-    process.env.NEXT_PUBLIC_AI_API_KEY ||
-    (typeof window !== 'undefined' ? localStorage.getItem('inkloom_ai_api_key') || '' : '');
+  const apiKey = getApiKey();
   if (apiKey) {
     headers['Authorization'] = `Bearer ${apiKey}`;
     headers['X-API-Key'] = apiKey;
   }
   return headers;
+}
+
+export function hasApiKey(): boolean {
+  return !!getApiKey();
 }
 
 export function isMockModeForced(): boolean {
@@ -67,9 +83,167 @@ export function toggleMockMode(): boolean {
 export function getApiConfig() {
   return {
     baseUrl: getApiBaseUrl(),
-    hasApiKey: !!(process.env.NEXT_PUBLIC_AI_API_KEY || (typeof window !== 'undefined' && localStorage.getItem('inkloom_ai_api_key'))),
+    hasApiKey: hasApiKey(),
     isMock: isMockModeForced(),
   };
+}
+
+// Authorised URL for assets the browser loads directly (<img> src), which
+// cannot send Authorization headers — the backend accepts ?token= as well.
+function authorizedUrl(serverPath: string): string {
+  const apiKey = getApiKey();
+  const sep = serverPath.includes('?') ? '&' : '?';
+  return `${getApiBaseUrl()}${serverPath}${sep}token=${encodeURIComponent(apiKey)}`;
+}
+
+// ─── Backend → frontend adapters ─────────────────────────────────────────────
+
+function complianceLevelFromOverall(overall: string | null | undefined): ComplianceLevel {
+  switch (overall) {
+    case 'passed':
+      return 'excellent';
+    case 'needs_revision':
+      return 'needs_revision';
+    case 'critical_failure':
+      return 'non_compliant';
+    default:
+      // inconclusive / failed / unknown — be conservative but honest
+      return 'needs_minor_improvements';
+  }
+}
+
+function severityOf(raw: string | undefined): ViolationSeverity {
+  if (raw === 'critical') return 'critical';
+  if (raw === 'major') return 'major';
+  // backend "info" and anything unexpected degrade to minor
+  return 'minor';
+}
+
+/** Map a backend AnalysisReport JSON into the frontend AnalysisResult shape. */
+function adaptReport(raw: Record<string, unknown>): AnalysisResult {
+  const analysisId = String(raw.analysis_id ?? raw.id ?? '');
+  const meta = (raw.analysis_metadata ?? {}) as Record<string, unknown>;
+  const violationsRaw = Array.isArray(raw.violations) ? raw.violations : [];
+
+  const violations: Violation[] = violationsRaw.map((v, index) => {
+    const item = v as Record<string, unknown>;
+    return {
+      id: String(item.rule_id ?? `v_${index}`),
+      title: String(item.title ?? 'Untitled finding'),
+      severity: severityOf(item.severity as string | undefined),
+      explanation: String(item.explanation ?? ''),
+      relevantRule: String(item.category ?? 'general'),
+      ruleId: String(item.rule_id ?? ''),
+      evidence: String(item.evidence ?? ''),
+      suggestedCorrection: String(item.recommendation ?? ''),
+    };
+  });
+
+  const recommendationsRaw = Array.isArray(raw.recommendations) ? raw.recommendations : [];
+  const recommendations = recommendationsRaw.map((rec, index) => {
+    const text = typeof rec === 'string' ? rec : String((rec as Record<string, unknown>).text ?? '');
+    const critical = violations.some((v) => v.severity === 'critical');
+    return {
+      id: `rec_${index + 1}`,
+      what: text,
+      why: '',
+      how: '',
+      priority: (critical ? 'high' : violations.length > 0 ? 'medium' : 'low') as
+        | 'high'
+        | 'medium'
+        | 'low',
+    };
+  });
+
+  const passedChecksRaw = Array.isArray(raw.passed_checks) ? raw.passed_checks : [];
+  const passedChecks = passedChecksRaw
+    .filter((c) => (c as Record<string, unknown>).state === 'passed')
+    .map((c) => {
+      const item = c as Record<string, unknown>;
+      const detail = String(item.detail ?? '').trim();
+      const rule = String(item.rule_id ?? '');
+      return detail ? `${rule}: ${detail}` : rule;
+    })
+    .filter(Boolean);
+
+  const score = typeof raw.compliance_score === 'number' ? raw.compliance_score : 0;
+
+  return {
+    id: analysisId,
+    advertisementName: String(raw.original_filename ?? meta.original_filename ?? 'Advertisement'),
+    imageUrl: raw.image_url
+      ? authorizedUrl(String(raw.image_url))
+      : authorizedUrl(`/api/v1/analysis/${analysisId}/image`),
+    companyName: '', // filled by the caller when known
+    complianceScore: score,
+    complianceLevel: complianceLevelFromOverall(raw.overall_status as string | undefined),
+    status: (raw.status === 'failed' ? 'failed' : 'completed') as AnalysisStatus,
+    analysedAt: (createdAt(raw) || new Date().toISOString()),
+    violations,
+    recommendations,
+    passedChecks,
+    summary: String(raw.summary ?? ''),
+  };
+}
+
+function createdAt(raw: Record<string, unknown>): string | null {
+  const value = raw.created_at ?? raw.completed_at;
+  return typeof value === 'string' && value ? value : null;
+}
+
+/** Map a backend AnalysisListItem JSON into the frontend history shape. */
+function adaptHistoryItem(raw: Record<string, unknown>): AnalysisHistoryItem {
+  const analysisId = String(raw.analysis_id ?? raw.id ?? '');
+  const filename = String(raw.original_filename ?? 'Advertisement');
+  const status = (['queued', 'processing', 'completed', 'failed', 'cancelled'].includes(
+    String(raw.status)
+  )
+    ? String(raw.status)
+    : 'processing') as AnalysisStatus;
+  const score = typeof raw.compliance_score === 'number' ? raw.compliance_score : 0;
+
+  return {
+    id: analysisId,
+    advertisementName: filename.replace(/\.[^/.]+$/, ''),
+    thumbnailUrl: authorizedUrl(`/api/v1/analysis/${analysisId}/image`),
+    analysedAt: createdAt(raw) || new Date().toISOString(),
+    complianceScore: score,
+    complianceLevel: complianceLevelFromOverall(raw.overall_status as string | undefined),
+    status,
+    violationsCount: Number(raw.violations_count ?? 0),
+    criticalCount: Number(raw.critical_count ?? 0),
+    majorCount: Number(raw.major_count ?? 0),
+    minorCount: Number(raw.minor_count ?? 0),
+  };
+}
+
+const STAGE_LABELS: Record<string, string> = {
+  queued: 'Queued for analysis',
+  preprocess: 'Preparing image',
+  ocr: 'Extracting advertisement text',
+  vision: 'Analysing visual composition',
+  compliance: 'Checking company advertising policies',
+  scoring: 'Generating compliance report',
+  completed: 'Complete',
+  failed: 'Failed',
+};
+
+function humanStage(raw: string | undefined): string {
+  if (!raw) return '';
+  const key = raw.toLowerCase().replace(/[^a-z_]/g, '');
+  return STAGE_LABELS[key] ?? raw;
+}
+
+async function fetchApi(path: string, init?: RequestInit): Promise<Response | null> {
+  const { headers: initHeaders, ...rest } = init ?? {};
+  try {
+    return await fetch(`${getApiBaseUrl()}${path}`, {
+      ...rest,
+      headers: { Accept: 'application/json', ...getAuthHeaders(), ...(initHeaders ?? {}) },
+    });
+  } catch {
+    return null;
+  }
 }
 
 // ─── Local Storage Cache / Fallback Store ─────────────────────────────────────
@@ -81,9 +255,9 @@ function getStoredHistory(): AnalysisHistoryItem[] {
   if (typeof window === 'undefined') return [...MOCK_HISTORY];
   try {
     const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [...MOCK_HISTORY];
+    return raw ? JSON.parse(raw) : [];
   } catch {
-    return [...MOCK_HISTORY];
+    return [];
   }
 }
 
@@ -116,22 +290,19 @@ async function mockDelay(ms: number): Promise<void> {
 // ─── Health Check ─────────────────────────────────────────────────────────────
 
 export async function checkApiHealth(): Promise<boolean> {
-  const baseUrl = getApiBaseUrl();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4000);
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
-    const res = await fetch(`${baseUrl}/api/v1/health`, {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/health`, {
       method: 'GET',
-      headers: {
-        Accept: 'application/json',
-        ...getAuthHeaders(),
-      },
+      headers: { Accept: 'application/json' },
       signal: controller.signal,
     });
-    clearTimeout(timeoutId);
     return res.ok;
   } catch {
     return false;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -142,13 +313,12 @@ export async function submitOnboarding(data: {
   companyName: string;
   industry?: string;
   website?: string;
-}): Promise<{ success: boolean; message?: string }> {
+}): Promise<{ success: boolean; message?: string; apiKey?: string }> {
   if (isMockModeForced()) {
     await mockDelay(350);
     return { success: true, message: 'Onboarding saved (mock)' };
   }
 
-  const baseUrl = getApiBaseUrl();
   const payload = {
     name: data.fullName,
     company_name: data.companyName,
@@ -156,26 +326,34 @@ export async function submitOnboarding(data: {
     website: data.website || '',
   };
 
-  try {
-    const res = await fetch(`${baseUrl}/api/v1/onboarding`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify(payload),
-    });
+  const res = await fetchApi('/api/v1/onboarding', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
 
-    if (!res.ok) {
-      console.warn(`[API] Onboarding backend returned HTTP ${res.status}, falling back to local session`);
-      return { success: true };
-    }
-    return await res.json();
-  } catch (err) {
-    console.warn('[API] Onboarding network request failed, persisting locally:', err);
-    return { success: true, message: 'Saved in offline session' };
+  if (!res) {
+    return { success: false, message: 'Backend unreachable — check your connection.' };
   }
+  if (!res.ok) {
+    const detail = (await res.json().catch(() => null))?.detail;
+    const message =
+      typeof detail === 'object' && detail
+        ? detail.message
+        : typeof detail === 'string'
+        ? detail
+        : `Onboarding failed (HTTP ${res.status}).`;
+    return { success: false, message };
+  }
+
+  const body = await res.json().catch(() => ({}));
+  if (body.access_token && typeof window !== 'undefined') {
+    // Persist the one-time company API key — it drives all later calls.
+    localStorage.setItem('inkloom_ai_api_key', String(body.access_token));
+    localStorage.setItem('inkloom_company_id', String(body.company_id ?? ''));
+    localStorage.setItem('inkloom_user_id', String(body.user_id ?? ''));
+  }
+  return { success: true, apiKey: body.access_token };
 }
 
 // ─── 2. Brand Brain Configuration API ─────────────────────────────────────────
@@ -199,37 +377,33 @@ export async function setupBrandBrain(
     return { jobId: `bb_job_${Date.now()}`, status: 'completed' };
   }
 
-  const baseUrl = getApiBaseUrl();
   const formData = new FormData();
   formData.append('company_name', payload.companyName);
   if (payload.industry) formData.append('industry', payload.industry);
   if (payload.website) formData.append('website', payload.website);
   if (payload.rulesText) formData.append('guidelines_text', payload.rulesText);
-
   if (payload.uploadedFiles && payload.uploadedFiles.length > 0) {
     formData.append('files_meta', JSON.stringify(payload.uploadedFiles));
   }
 
-  try {
-    const res = await fetch(`${baseUrl}/api/v1/brand-brain`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-      },
-      body: formData,
-    });
+  const res = await fetchApi('/api/v1/brand-brain', { method: 'POST', body: formData });
 
-    if (res.ok) {
-      const data = await res.json();
-      return {
-        jobId: data.job_id || data.jobId || `job_${Date.now()}`,
-        status: data.status || 'completed',
-      };
-    }
-  } catch (err) {
-    console.warn('[API] Brand Brain setup remote error, saving locally:', err);
+  if (res?.ok) {
+    const data = await res.json();
+    return {
+      jobId: data.job_id || data.jobId || `job_${Date.now()}`,
+      status: data.status || 'completed',
+    };
   }
 
+  if (res) {
+    const detail = (await res.json().catch(() => null))?.detail;
+    const message =
+      (typeof detail === 'object' && detail?.message) || `Brand Brain setup failed (HTTP ${res.status}).`;
+    throw new Error(message);
+  }
+
+  // Network-level failure
   const localBrain: BrandBrain = {
     id: `bb_${Date.now()}`,
     companyId: 'comp_001',
@@ -247,56 +421,34 @@ export async function setupBrandBrain(
 // ─── 3. Dashboard Statistics API ──────────────────────────────────────────────
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  if (isMockModeForced()) {
+    await mockDelay(200);
+  }
+
+  const res = await fetchApi('/api/v1/dashboard');
+  if (res?.ok) {
+    const data = await res.json();
+    return {
+      totalAnalyses: data.total_analyses ?? data.totalAnalyses ?? 0,
+      averageComplianceScore:
+        data.average_compliance_score ?? data.averageComplianceScore ?? 0,
+      needsAttention: data.needs_attention ?? data.needsAttention ?? 0,
+      fullyCompliant: data.fully_compliant ?? data.fullyCompliant ?? 0,
+    };
+  }
+
+  // Local aggregate from honest stored history (no invented numbers).
   const history = getStoredHistory();
   const completed = history.filter((h) => h.status === 'completed');
   const scores = completed.map((h) => h.complianceScore);
-
-  const localCalculated: DashboardStats = {
+  return {
     totalAnalyses: history.length,
     averageComplianceScore: scores.length
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-      : 81,
+      : 0,
     needsAttention: completed.filter((h) => h.complianceScore < 75).length,
     fullyCompliant: completed.filter((h) => h.complianceScore >= 90).length,
   };
-
-  if (isMockModeForced()) {
-    await mockDelay(200);
-    return localCalculated;
-  }
-
-  const baseUrl = getApiBaseUrl();
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
-    const res = await fetch(`${baseUrl}/api/v1/dashboard`, {
-      headers: {
-        Accept: 'application/json',
-        ...getAuthHeaders(),
-      },
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const data = await res.json();
-      return {
-        totalAnalyses: data.total_analyses ?? data.totalAnalyses ?? localCalculated.totalAnalyses,
-        averageComplianceScore:
-          data.average_compliance_score ??
-          data.averageComplianceScore ??
-          localCalculated.averageComplianceScore,
-        needsAttention:
-          data.needs_attention ?? data.needsAttention ?? localCalculated.needsAttention,
-        fullyCompliant:
-          data.fully_compliant ?? data.fullyCompliant ?? localCalculated.fullyCompliant,
-      };
-    }
-  } catch {
-    // Fall back to local calculation
-  }
-
-  return localCalculated;
 }
 
 // ─── 4. Advertisement Analysis API (POST /api/v1/analysis) ─────────────────────
@@ -339,94 +491,118 @@ export async function submitAnalysis(
     };
   }
 
-  const baseUrl = getApiBaseUrl();
   const formData = new FormData();
   formData.append('image', imageFile);
   formData.append('company_name', companyName);
   formData.append('user_name', userName);
 
-  try {
-    const res = await fetch(`${baseUrl}/api/v1/analysis`, {
-      method: 'POST',
-      headers: {
-        ...getAuthHeaders(),
-      },
-      body: formData,
-    });
+  const res = await fetchApi('/api/v1/analysis', { method: 'POST', body: formData });
 
-    if (res.ok) {
-      const data = await res.json();
-      const analysisId = data.analysis_id || data.id || `ana_${Date.now()}`;
-      return {
-        analysis_id: analysisId,
-        jobId: analysisId,
-        status: data.status || 'queued',
-        message: data.message || 'Advertisement queued for analysis',
-      };
-    } else {
-      const errData = await res.json().catch(() => null);
-      throw new Error(errData?.detail || errData?.message || `Backend responded with HTTP ${res.status}`);
-    }
-  } catch (err) {
-    console.warn('[API] Real analysis endpoint unavailable, switching to local analysis simulation:', err);
-
-    const fallbackId = `ana_${Date.now()}`;
-    const imageUrl = URL.createObjectURL(imageFile);
-    const mockResult = generateMockAnalysisResult(
-      imageUrl,
-      imageFile.name.replace(/\.[^/.]+$/, ''),
-      companyName
-    );
-    mockResult.id = fallbackId;
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('inkloom_pending_result', JSON.stringify(mockResult));
-      localStorage.setItem(`inkloom_job_start_${fallbackId}`, Date.now().toString());
-    }
-
+  if (res?.ok) {
+    const data = await res.json();
+    const analysisId = data.analysis_id || data.id || `ana_${Date.now()}`;
     return {
-      analysis_id: fallbackId,
-      jobId: fallbackId,
-      status: 'queued',
-      message: 'Processing with local governance engine (backend offline)',
+      analysis_id: analysisId,
+      jobId: analysisId,
+      status: data.status || 'queued',
+      message: data.message || 'Advertisement queued for analysis',
     };
   }
+
+  if (res) {
+    const body = await res.json().catch(() => null);
+    const detail = body?.detail;
+    const message =
+      typeof detail === 'object' && detail
+        ? detail.message
+        : typeof detail === 'string'
+        ? detail
+        : `Backend responded with HTTP ${res.status}`;
+    // 409 = another analysis already running for this company. Surface it.
+    throw new Error(message);
+  }
+
+  throw new Error('Backend unreachable — the analysis was not queued.');
 }
 
 // ─── 5. Analysis Job Status Polling (GET /api/v1/analysis/{id}/status) ────────
 
 export async function getAnalysisJobStatus(analysisId: string): Promise<AnalysisJobStatus> {
-  if (!isMockModeForced()) {
-    const baseUrl = getApiBaseUrl();
-    try {
-      const res = await fetch(`${baseUrl}/api/v1/analysis/${analysisId}/status`, {
-        headers: {
-          Accept: 'application/json',
-          ...getAuthHeaders(),
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const status: AnalysisStatus = data.status || 'processing';
-
-        if (status === 'completed' && data.result) {
-          saveToHistory(generateMockHistoryItem(data.result));
-        }
-
-        return {
-          jobId: analysisId,
-          status,
-          progress: data.progress ?? (status === 'completed' ? 100 : 50),
-          currentStage: data.stage || data.currentStage || data.message,
-          result: data.result,
-        };
-      }
-    } catch {
-      // Remote polling failed, fallback to mock progression
-    }
+  if (isMockModeForced() || analysisId.startsWith('ana_')) {
+    return simulatedStatus(analysisId);
   }
 
+  const res = await fetchApi(`/api/v1/analysis/${analysisId}/status`);
+  if (res?.ok) {
+    const data = await res.json();
+    const status = (['queued', 'processing', 'completed', 'failed', 'cancelled'].includes(
+      String(data.status)
+    )
+      ? String(data.status)
+      : 'processing') as AnalysisStatus;
+
+    let result: AnalysisResult | undefined;
+    if (status === 'completed' && data.result) {
+      result = adaptReport(data.result);
+      // Cache the real result for the report page.
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`inkloom_result_${analysisId}`, JSON.stringify(result));
+      }
+      const historyItem = historyItemFromResult(result);
+      saveToHistory(historyItem);
+    }
+
+    return {
+      jobId: analysisId,
+      status,
+      progress: typeof data.progress === 'number' ? data.progress : status === 'completed' ? 100 : 0,
+      currentStage: humanStage(data.current_stage ?? data.stage) || (status === 'completed' ? 'Complete' : ''),
+      result,
+      error: data.error || undefined,
+    };
+  }
+
+  if (res && (res.status === 404 || res.status === 401)) {
+    return {
+      jobId: analysisId,
+      status: 'failed',
+      progress: 0,
+      currentStage: 'Failed',
+      error:
+        res.status === 404
+          ? 'Analysis not found on the server.'
+          : 'Authentication failed — please re-run onboarding.',
+    };
+  }
+
+  // Network error — keep polling without inventing results.
+  return {
+    jobId: analysisId,
+    status: 'processing',
+    progress: 0,
+    currentStage: 'Connecting to backend…',
+  };
+}
+
+function historyItemFromResult(result: AnalysisResult): AnalysisHistoryItem {
+  return {
+    id: result.id,
+    advertisementName: result.advertisementName,
+    thumbnailUrl: result.imageUrl,
+    analysedAt: result.analysedAt,
+    complianceScore: result.complianceScore,
+    complianceLevel: result.complianceLevel,
+    status: result.status,
+    violationsCount: result.violations.length,
+    criticalCount: result.violations.filter((v) => v.severity === 'critical').length,
+    majorCount: result.violations.filter((v) => v.severity === 'major').length,
+    minorCount: result.violations.filter((v) => v.severity === 'minor').length,
+  };
+}
+
+/** Local simulated progression — used ONLY in forced-mock mode or for ids
+ * created locally (`ana_…`), and clearly derived from mock data. */
+async function simulatedStatus(analysisId: string): Promise<AnalysisJobStatus> {
   const startTimeKey = `inkloom_job_start_${analysisId}`;
   if (typeof window !== 'undefined' && !localStorage.getItem(startTimeKey)) {
     localStorage.setItem(startTimeKey, Date.now().toString());
@@ -438,12 +614,12 @@ export async function getAnalysisJobStatus(analysisId: string): Promise<Analysis
   const totalDuration = 5500;
 
   const stages = [
-    'Analysing visual composition',
-    'Extracting advertisement text',
-    'Identifying brand elements',
-    'Checking company advertising policies',
-    'Detecting brand violations',
-    'Generating compliance report',
+    'Analysing visual composition (mock)',
+    'Extracting advertisement text (mock)',
+    'Identifying brand elements (mock)',
+    'Checking company advertising policies (mock)',
+    'Detecting brand violations (mock)',
+    'Generating compliance report (mock)',
   ];
 
   if (elapsed < totalDuration) {
@@ -480,102 +656,175 @@ export async function getAnalysisJobStatus(analysisId: string): Promise<Analysis
     jobId: analysisId,
     status: 'completed',
     progress: 100,
-    currentStage: 'Complete',
+    currentStage: 'Complete (mock)',
     result: finalResult,
   };
 }
 
 // ─── 6. Analysis Full Report (GET /api/v1/analysis/{analysis_id}) ──────────────
 
-export async function getAnalysisResult(analysisId: string): Promise<AnalysisResult | null> {
-  if (!isMockModeForced()) {
-    const baseUrl = getApiBaseUrl();
-    try {
-      const res = await fetch(`${baseUrl}/api/v1/analysis/${analysisId}`, {
-        headers: {
-          Accept: 'application/json',
-          ...getAuthHeaders(),
-        },
-      });
-      if (res.ok) {
-        return await res.json();
+export async function getAnalysisResult(
+  analysisId: string,
+  companyName = 'Your Company'
+): Promise<AnalysisResult | null> {
+  if (isMockModeForced() || analysisId.startsWith('ana_')) {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('inkloom_pending_result');
+      if (stored) {
+        const result: AnalysisResult = JSON.parse(stored);
+        if (result.id === analysisId) return result;
       }
-    } catch {
-      // fallback
+      const history = getStoredHistory();
+      const item = history.find((h) => h.id === analysisId);
+      if (item) {
+        const generated = generateMockAnalysisResult(item.thumbnailUrl, item.advertisementName, 'Your Company');
+        generated.id = item.id;
+        generated.complianceScore = item.complianceScore;
+        generated.complianceLevel = item.complianceLevel;
+        return generated;
+      }
     }
+    return generateMockAnalysisResult('', 'Advertisement', 'Your Company');
   }
 
+  // Prefer the cached real result captured during polling.
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('inkloom_pending_result');
-    if (stored) {
-      const result: AnalysisResult = JSON.parse(stored);
-      if (result.id === analysisId) return result;
-    }
-    const history = getStoredHistory();
-    const item = history.find((h) => h.id === analysisId);
-    if (item) {
-      const generated = generateMockAnalysisResult(item.thumbnailUrl, item.advertisementName, 'Your Company');
-      generated.id = item.id;
-      generated.complianceScore = item.complianceScore;
-      generated.complianceLevel = item.complianceLevel;
-      return generated;
+    const cached = localStorage.getItem(`inkloom_result_${analysisId}`);
+    if (cached) {
+      const result: AnalysisResult = JSON.parse(cached);
+      result.companyName = result.companyName || companyName;
+      return result;
     }
   }
 
-  return generateMockAnalysisResult('', 'Advertisement', 'Your Company');
+  const res = await fetchApi(`/api/v1/analysis/${analysisId}`);
+  if (!res) {
+    return null; // network unavailable — no fake substitute
+  }
+  if (res.status === 409) {
+    // Still running — report the live status so callers can poll instead.
+    const body = await res.json().catch(() => null);
+    const detail = body?.detail ?? {};
+    return {
+      id: analysisId,
+      advertisementName: 'Advertisement',
+      imageUrl: authorizedUrl(`/api/v1/analysis/${analysisId}/image`),
+      companyName,
+      complianceScore: 0,
+      complianceLevel: 'needs_revision',
+      status: 'processing',
+      analysedAt: new Date().toISOString(),
+      violations: [],
+      recommendations: [],
+      passedChecks: [],
+      summary: detail.current_stage
+        ? `Analysis still running (stage: ${detail.current_stage}, ${detail.progress ?? 0}%).`
+        : 'Analysis still running.',
+    };
+  }
+  if (!res.ok) return null;
+
+  const raw = await res.json();
+  const adapted = adaptReport(raw);
+  adapted.companyName = companyName;
+  return adapted;
 }
 
 // ─── 7. Analysis History (GET /api/v1/analysis/history) ────────────────────────
 
 export async function getAnalysisHistory(): Promise<AnalysisHistoryItem[]> {
-  if (!isMockModeForced()) {
-    const baseUrl = getApiBaseUrl();
-    try {
-      const res = await fetch(`${baseUrl}/api/v1/analysis/history`, {
-        headers: {
-          Accept: 'application/json',
-          ...getAuthHeaders(),
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          return data;
-        }
-      }
-    } catch {
-      // Remote unavailable
+  if (isMockModeForced()) {
+    await mockDelay(150);
+    return getStoredHistory();
+  }
+
+  const res = await fetchApi('/api/v1/analysis/history?limit=50');
+  if (res?.ok) {
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : data.items;
+    if (Array.isArray(items)) {
+      return items.map((item) => adaptHistoryItem(item as Record<string, unknown>));
     }
   }
 
-  await mockDelay(150);
+  // Remote unavailable — local cache only (never inject mock server data).
   return getStoredHistory();
 }
 
 // ─── 8. Brand Brain & Rules (GET / PUT /api/v1/brand-brain/rules) ──────────────
 
+const VALID_CATEGORIES: RuleCategory[] = [
+  'logo',
+  'typography',
+  'colour_palette',
+  'messaging',
+  'advertising_claims',
+  'restricted_content',
+  'legal_compliance',
+  'general',
+];
+
+function normaliseCategory(raw: unknown): RuleCategory {
+  const value = String(raw ?? 'general').toLowerCase().replace(/[\s-]+/g, '_');
+  return (VALID_CATEGORIES.includes(value as RuleCategory) ? value : 'general') as RuleCategory;
+}
+
+/** Map a backend BrandRuleOut JSON into the frontend BrandRule shape. */
+function adaptBrandRule(raw: Record<string, unknown>): BrandRule {
+  const requirement = String(raw.requirement ?? '');
+  return {
+    id: String(raw.id ?? raw.code ?? ''),
+    code: String(raw.code ?? ''),
+    category: normaliseCategory(raw.category),
+    title: requirement.length > 80 ? `${requirement.slice(0, 77)}…` : requirement,
+    description: requirement,
+    isActive: Boolean(raw.enabled),
+    createdAt: String(raw.created_at ?? ''),
+    updatedAt: String(raw.updated_at ?? ''),
+  };
+}
+
 export async function getBrandBrain(): Promise<BrandBrain | null> {
-  if (!isMockModeForced()) {
-    const baseUrl = getApiBaseUrl();
-    try {
-      const res = await fetch(`${baseUrl}/api/v1/brand-brain`, {
-        headers: {
-          Accept: 'application/json',
-          ...getAuthHeaders(),
-        },
-      });
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {
-      // fallback
-    }
+  if (isMockModeForced()) {
+    await mockDelay(150);
+    return getStoredBrandBrain() ?? localDefaultBrain();
   }
 
-  await mockDelay(150);
+  const [brainRes, rulesRes] = await Promise.all([
+    fetchApi('/api/v1/brand-brain'),
+    fetchApi('/api/v1/brand-brain/rules'),
+  ]);
+
+  if (brainRes?.ok) {
+    const data = await brainRes.json();
+    const rules: BrandRule[] =
+      rulesRes?.ok && Array.isArray((await rulesRes.clone().json().catch(() => null))?.rules)
+        ? ((await rulesRes.json()) as { rules: Record<string, unknown>[] }).rules.map(adaptBrandRule)
+        : [];
+
+    const brain: BrandBrain = {
+      id: String(data.company_id ?? 'bb_server'),
+      companyId: String(data.company_id ?? ''),
+      version: String(data.version ?? '1.0.0'),
+      totalRules: Number(data.rule_count ?? rules.length),
+      rulesText: String(data.original_rules_text ?? ''),
+      rules,
+      lastUpdatedAt: String(data.updated_at ?? ''),
+      status:
+        String(data.extraction_status ?? '') === 'processing'
+          ? 'processing'
+          : 'active',
+    };
+    saveBrandBrain(brain);
+    return brain;
+  }
+
   const stored = getStoredBrandBrain();
   if (stored) return stored;
+  return null;
+}
 
+function localDefaultBrain(): BrandBrain {
   const defaultBrain: BrandBrain = {
     id: 'bb_001',
     companyId: 'comp_001',
@@ -606,25 +855,34 @@ export async function updateBrandBrain(
     status: 'active',
   };
 
-  saveBrandBrain(updated);
-
-  if (!isMockModeForced()) {
-    const baseUrl = getApiBaseUrl();
-    try {
-      await fetch(`${baseUrl}/api/v1/brand-brain/rules`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders(),
-        },
-        body: JSON.stringify({ rules, rules_text: rulesText }),
-      });
-    } catch {
-      // Logged and saved locally
-    }
+  if (isMockModeForced()) {
+    await mockDelay(300);
+    saveBrandBrain(updated);
+    return updated;
   }
 
-  await mockDelay(300);
+  const res = await fetchApi('/api/v1/brand-brain/rules', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      rules: rules.map((rule) => ({
+        id: rule.code || rule.id,
+        category: rule.category,
+        requirement: rule.description,
+        enabled: rule.isActive,
+      })),
+      rules_text: rulesText,
+    }),
+  });
+
+  if (!res?.ok) {
+    const message = res
+      ? `Rule update failed (HTTP ${res.status}).`
+      : 'Backend unreachable while updating rules.';
+    throw new Error(message);
+  }
+
+  saveBrandBrain(updated);
   return updated;
 }
 
