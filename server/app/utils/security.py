@@ -1,4 +1,4 @@
-"""Security utilities: company API keys, hashing, file token safety."""
+"""Security utilities: company API keys, user passwords, session tokens."""
 from __future__ import annotations
 
 import hashlib
@@ -10,6 +10,9 @@ import unicodedata
 # 32 url-safe bytes keeps brute force out of reach.
 KEY_PREFIX = "ik_dev_"
 
+# User passwords: PBKDF2-HMAC-SHA256 with high iteration count (OWASP-aligned).
+PBKDF2_ITERATIONS = 390_000
+
 
 def generate_api_key() -> str:
     return KEY_PREFIX + secrets.token_urlsafe(32)
@@ -17,8 +20,49 @@ def generate_api_key() -> str:
 
 def hash_api_key(key: str) -> str:
     """SHA-256 hex digest. Keys are high entropy random values, so a fast hash
-    is acceptable until we move to user-account sessions in production."""
+    is acceptable. User passwords (below) use PBKDF2 instead."""
     return hashlib.sha256(key.encode("utf-8")).hexdigest()
+
+
+def generate_session_token() -> str:
+    """Opaque session token for browser sessions (204 bits of entropy)."""
+    return secrets.token_urlsafe(32)
+
+
+_SESSION_PREFIX = "il_sess_"
+
+
+def session_token_prefix() -> str:
+    return _SESSION_PREFIX
+
+
+def new_session_token() -> str:
+    return _SESSION_PREFIX + secrets.token_urlsafe(32)
+
+
+def hash_password(password: str) -> str:
+    """Format: pbkdf2_sha256$<iterations>$<salt_hex>$<hash_hex>."""
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256", password.encode("utf-8"), salt, PBKDF2_ITERATIONS
+    )
+    return f"pbkdf2_sha256${PBKDF2_ITERATIONS}${salt.hex()}${digest.hex()}"
+
+
+def verify_password(password: str, stored: str) -> bool:
+    try:
+        algorithm, iterations, salt_hex, hash_hex = stored.split("$")
+        if algorithm != "pbkdf2_sha256":
+            return False
+        digest = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            bytes.fromhex(salt_hex),
+            int(iterations),
+        )
+        return secrets.compare_digest(digest.hex(), hash_hex)
+    except (ValueError, AttributeError):
+        return False
 
 
 def key_prefix_of(key: str, chars: int = 10) -> str:

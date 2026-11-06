@@ -21,8 +21,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import settings
-from app.database import get_db
-from app.models import Analysis, BrandBrain, BrandRule, Company
+from app.database import get_db, utcnow
+from app.models import Analysis, BrandBrain, BrandRule, Company, User
 from app.utils.security import hash_api_key
 
 BEARER_PREFIX = "bearer "
@@ -31,14 +31,15 @@ BEARER_PREFIX = "bearer "
 class AuthContext:
     """The resolved caller context handed to every protected endpoint."""
 
-    __slots__ = ("company", "company_id", "mode", "payload", "raw_token")
+    __slots__ = ("company", "company_id", "mode", "payload", "raw_token", "user")
 
-    def __init__(self, company: Company | None, mode: str, payload: dict | None, raw_token: str | None = None):
+    def __init__(self, company: Company | None, mode: str, payload: dict | None, raw_token: str | None = None, user=None):
         self.company = company
         self.company_id: uuid.UUID | None = company.id if company else None
-        self.mode = mode            # "api_key" | "dev"
+        self.mode = mode            # "api_key" | "dev" | "session"
         self.payload = payload or {}
         self.raw_token = raw_token
+        self.user = user            # User model instance (session mode only)
 
 
 def bearer_token(request: Request) -> str | None:
@@ -99,7 +100,42 @@ def resolve_context(
     return _resolve_context_for_token(request, db, token)
 
 
+def _company_from_session(db: Session, request: Request, user) -> Company | None:
+    """Pick the session user's active company: X-Company-ID (validated for
+    ownership) or their first-created company. Raises 401 on foreign company."""
+    company_id = (request.headers.get("x-company-id") or "").strip()
+    owned = db.scalars(
+        select(Company).where(Company.owner_user_id == user.id).order_by(Company.created_at)
+    ).all()
+    if company_id:
+        try:
+            cid = uuid.UUID(company_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=401,
+                detail={"error": "invalid_company_id", "message": "X-Company-ID is not a valid company id."},
+            )
+        company = next((c for c in owned if c.id == cid), None)
+        if company is None:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "error": "company_forbidden",
+                    "message": "That company does not belong to this account.",
+                },
+            )
+        return company
+    return owned[0] if owned else None
+
+
 def _resolve_context_for_token(request: Request, db: Session, token: str) -> AuthContext:
+    user = _user_from_session_token(db, token)
+    if user is not None:
+        company = _company_from_session(db, request, user)
+        return AuthContext(
+            company=company, mode="session", payload={"session": True}, raw_token=token, user=user
+        )
+
     company = _company_from_api_key(db, token)
     if company:
         return AuthContext(company=company, mode="api_key", payload={}, raw_token=token)
@@ -112,6 +148,30 @@ def _resolve_context_for_token(request: Request, db: Session, token: str) -> Aut
         status_code=401,
         detail={"error": "invalid_token", "message": "The provided token is not valid."},
     )
+
+
+def _user_from_session_token(db: Session, token: str):
+    from datetime import timedelta
+
+    from app.models import AuthSession
+
+    if not token.startswith("il_sess_"):
+        return None
+    session = db.scalar(select(AuthSession).where(AuthSession.token_hash == hash_api_key(token)))
+    if session is None:
+        return None
+    expiry = session.expires_at
+    if expiry.tzinfo is not None:
+        expiry = (expiry - timedelta(hours=0)).replace(tzinfo=None)
+    if expiry < utcnow():
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "session_expired",
+                "message": "Your session expired. Please sign in again.",
+            },
+        )
+    return session.user
 
 
 def resolve_company_flexibly(
@@ -135,6 +195,14 @@ def resolve_company_flexibly(
 
 
 def current_company(ctx: AuthContext = Depends(resolve_context)) -> Company:
+    if ctx.company is None:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "company_required",
+                "message": "Create or choose a company first (POST /api/v1/onboarding).",
+            },
+        )
     return ctx.company
 
 

@@ -102,6 +102,15 @@ def headers_key(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+def headers(token: str, extra: str | None = None) -> dict:
+    """Bearer token with an optional raw extra header string 'Key: value'."""
+    out = {"Authorization": f"Bearer {token}"}
+    if extra:
+        key, _, value = extra.partition(":")
+        out[key.strip()] = value.strip()
+    return out
+
+
 def run_queue_until(client, token: str, analysis_id: str, max_iterations: int = 30) -> str:
     """Drive the FIFO worker iterations until OUR analysis completes.
 

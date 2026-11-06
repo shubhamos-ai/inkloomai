@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi import Request as FastAPIRequest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,34 +17,41 @@ router = APIRouter(tags=["onboarding"])
 
 
 @router.post("/onboarding", response_model=OnboardingResponse)
-def onboard(payload: OnboardingRequest, db: Session = Depends(get_db)):
-    """Create a user + company. Returns ids and a one-time company access token.
+async def onboard(
+    payload: OnboardingRequest,
+    request: FastAPIRequest,
+    db: Session = Depends(get_db),
+):
+    """Create a company (and, in legacy mode, the user too).
 
-    In DEV AUTH mode the token is the company's own API key (never share it).
-    Production will move this to verified sessions/tokens with the same
-    response shape so the frontend migration is a one-line change.
+    Two modes:
+    - Session Bearer token (Netflix-style wizard): the logged-in user adds
+      *another* company; the company is linked to their account.
+    - No session (legacy dev mode): creates a user from `name`/`email` and the
+      company; hands out the one-time company API key.
     """
-    # Prevent duplicate naive accounts sharing the same email.
-    if payload.email:
-        existing_user = db.scalar(select(User).where(User.email == payload.email))
-        if existing_user:
-            existing_company = db.scalar(
-                select(Company).where(Company.owner_user_id == existing_user.id)
-            )
-            if existing_company:
-                raise HTTPException(
-                    status_code=409,
-                    detail={
-                        "error": "already_onboarded",
-                        "message": "A company is already registered with this email.",
-                    },
-                )
+    # Blocklist duplicate naive accounts sharing the same email (legacy mode
+    # only — session users may own multiple companies).
+    from app.api.deps import _user_from_session_token
 
-    user = User(name=payload.name, email=payload.email)
-    db.add(user)
-    db.flush()
+    session_user = _user_from_session_token(db, bearer_token(request) or "")
+    if session_user is not None:
+        user = session_user
+    else:
+        user = None
+        if payload.email:
+            user = db.scalar(select(User).where(User.email == payload.email))
 
     api_key = generate_api_key()
+
+    if user is None:
+        user = User(
+            name=payload.name,
+            email=payload.email,
+        )
+        db.add(user)
+        db.flush()
+
     company = Company(
         company_name=payload.company_name,
         industry=payload.industry,
@@ -53,11 +61,14 @@ def onboard(payload: OnboardingRequest, db: Session = Depends(get_db)):
         api_key_prefix=key_prefix_of(api_key),
     )
     db.add(company)
+
+    # Touch the stored name when the wizard renamed the account along the way.
+    if session_user is not None and payload.name and payload.name != user.name:
+        user.name = payload.name
+
     db.commit()
 
-    auth_mode = "dev"
-    if settings.DISABLE_DEV_AUTH:
-        auth_mode = "api_key"
+    auth_mode = "session" if session_user is not None else ("dev" if not settings.DISABLE_DEV_AUTH else "api_key")
 
     return OnboardingResponse(
         user_id=user.id,
@@ -65,7 +76,7 @@ def onboard(payload: OnboardingRequest, db: Session = Depends(get_db)):
         access_token=api_key,
         token_type="bearer",
         auth_mode=auth_mode,
-        message="Store the access token now — it is shown only once.",
+        message="Company created. Store the access token now — it is shown only once.",
     )
 
 

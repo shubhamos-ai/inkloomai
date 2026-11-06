@@ -51,9 +51,10 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------- routers
-from app.api.v1 import analysis, brand_brain, dashboard, health, onboarding  # noqa: E402
+from app.api.v1 import analysis, auth, brand_brain, dashboard, health, onboarding  # noqa: E402
 
 app.include_router(health.router, prefix=settings.API_PREFIX)
+app.include_router(auth.router, prefix=settings.API_PREFIX)
 app.include_router(onboarding.router, prefix=settings.API_PREFIX)
 app.include_router(brand_brain.router, prefix=settings.API_PREFIX)
 app.include_router(analysis.router, prefix=settings.API_PREFIX)
