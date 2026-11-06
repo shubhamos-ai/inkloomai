@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Aether Robotics
+PRIMARY INDUSTRY: Industrial Robotics, Humanoid Automation & Cobots
+DOCUMENT REF: AR-GOV-OPS-881
+SECURITY CLASSIFICATION: PROPRIETARY & TRADE SECRET
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [AR-01]: Cryptographic Firmware Attestation & Signed Boot
+Category: Data Security & Access
+Policy Statement:
+  Every robot joint controller, motor drive, and vision processing unit must verify binary signatures using ECDSA P-384 hardware-backed keys before boot execution. Unsigned or debug firmware is prohibited on production floor units and will cause permanent lockout requiring factory reset authorization.
+
+RULE 2 [AR-02]: Kinematic Force Limits & Cobot Safety Thresholds (ISO 10218)
+Category: Operational Conduct & SOP
+Policy Statement:
+  Collaborative humanoid robots operating within human work cells must have software and hardware torque limits permanently capped per ISO 10218-1/2 and ISO/TS 15066 specifications. Dynamic velocity capping must reduce limb speed to under 250 mm/s whenever optical lidar detects human proximity within 1.2 meters.
+
+RULE 3 [AR-03]: Sensor Stream Privacy & Edge Face/Voice De-Identification
+Category: Privacy & Data Governance
+Policy Statement:
+  Onboard RGB-D cameras and microphone arrays deployed in public or client facilities must execute edge-level anonymization pipelines before any telemetry transmission. Faces, badges, and background spoken language must be scrubbed in SRAM; raw camera feeds must never be cached to persistent storage.
+
+RULE 4 [AR-04]: Actuator Patent & Mechanical Blueprint Confidentiality
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  Proprietary harmonic gear designs, cycloidal drives, and synthetic tendon mechanisms are classified as Class-1 Trade Secrets. Physical access to rapid prototyping CNCs and metal 3D printers is restricted to designated tooling engineers. 3D CAD files must not be uploaded to any cloud tool that lacks an on-prem enterprise air-gap license.
+
+RULE 5 [AR-05]: Uncontrolled Motion & E-Stop Post-Mortem Incident Protocol
+Category: Escalation & Incident Response
+Policy Statement:
+  Any uncontrolled joint oscillation, contact sensor failure, or emergency stop (E-stop) trigger during test cycles mandates immediate test cell suspension. A formal blameless safety post-mortem and telemetry dump must be delivered to the Chief Safety Engineer within 24 hours prior to reactivation.
+
+RULE 6 [AR-06]: OTA Fleet Update Staging & Canary Rollouts
+Category: Compliance & Release Engineering
+Policy Statement:
+  Over-The-Air (OTA) updates to global robotic fleets must follow a phased canary progression: internal sandbox (7 days) -> 1% canary units (72 hours) -> regional deployment. Automated telemetry monitors tracking joint temperature, loop latency, and power consumption will immediately halt deployment if error rates exceed 0.05%.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

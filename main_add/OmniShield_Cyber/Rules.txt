@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: OmniShield Cyber
+PRIMARY INDUSTRY: Cyber Defense, Managed Detection & Incident Response
+DOCUMENT REF: OSC-SOC-RULE-2026
+SECURITY CLASSIFICATION: TOP SECRET // CLIENT SECURITY DIRECTIVE
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [OSC-01]: Zero-Trust Architecture & Ephemeral Bastion Access
+Category: Data Security & Access
+Policy Statement:
+  Access to client Security Operations Center (SOC) enclaves, SIEM pipelines, and EDR consoles requires dynamic zero-trust identity verification. Access tokens expire after 45 minutes; engineers must re-authenticate with physical FIDO2 tokens. Persistent elevated root/admin accounts are prohibited across all infrastructure.
+
+RULE 2 [OSC-02]: Multi-Tenant EDR Telemetry Cryptographic Partitioning
+Category: Data Security & Access
+Policy Statement:
+  Endpoint detection and response (EDR) event logs, memory dumps, and packet captures from enterprise clients must be cryptographically isolated using tenant-unique master keys. Cross-tenant queries are blocked by kernel-level security filters; data at rest is re-encrypted every 90 days.
+
+RULE 3 [OSC-03]: Coordinated Vulnerability Disclosure & Zero-Day Embargo
+Category: Compliance & Ethics
+Policy Statement:
+  Zero-day vulnerabilities discovered during offensive security assessments or red-team engagements must be sequestered in an air-gapped safe. Under no circumstances may exploits be weaponized or discussed outside the Coordinated Disclosure Committee. Affected software vendors must receive private disclosure with a 90-day remediation window.
+
+RULE 4 [OSC-04]: Malware Analysis Sandboxing & Detonation Containment
+Category: Operational Conduct & SOP
+Policy Statement:
+  Live malware samples, ransomware artifacts, and advanced persistent threat (APT) payloads must only be detonated in non-routable, hypervisor-isolated forensic enclaves. Hardware detonation stations must have physical ethernet disconnect switches and must be fully reimaged from golden ISO images after each analysis session.
+
+RULE 5 [OSC-05]: Critical Severity Incident (P1) Escalation Service Level Agreement
+Category: Escalation & Incident Response
+Policy Statement:
+  Confirmation of an active domain controller breach, exfiltration in progress, or enterprise ransomware execution across client infrastructure triggers a P1 emergency state. The Incident Response Lead must bridge directly with the client CISO and initiate emergency containment playbooks within 15 minutes of detection.
+
+RULE 6 [OSC-06]: Operational Security (OPSEC) & Dark-Web Sourcing Guidelines
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  Threat intelligence analysts conducting dark-web reconnaissance or threat actor tracking must utilize multi-hop virtual routing, isolated virtual machines, and vetted personas. Analysts must never use corporate assets, reveal client infrastructure indicators, or engage in illicit peer-to-peer crypto transactions without General Counsel authorization.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

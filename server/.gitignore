@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Local state (never commit)
+storage/uploads/
+storage/brand_guidelines/
+storage/reports/
+data/
+.venv/
+.env
+
+# Alembic runtime
+alembic/versions/__pycache__/

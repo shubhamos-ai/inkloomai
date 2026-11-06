@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Strata Energy Corp
+PRIMARY INDUSTRY: Clean Energy Infrastructure, Smart Grids & Advanced Fusion
+DOCUMENT REF: SEC-GRID-SOP-2026-X
+SECURITY CLASSIFICATION: CRITICAL INFRASTRUCTURE // NERC-CIP CONTROLLED
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [SEC-01]: NERC-CIP Critical Infrastructure SCADA Air-Gap Mandate
+Category: Data Security & Access
+Policy Statement:
+  Supervisory Control and Data Acquisition (SCADA) networks, grid substations, and fusion plasma containment controllers must be physically air-gapped from corporate enterprise IT networks. Dual-diode data unidirectional gateways are mandatory for transmitting read-only telemetry outward. Direct ingress internet connections are strictly prohibited.
+
+RULE 2 [SEC-02]: High-Voltage Substation Lockout / Tagout (LOTO) Protocols
+Category: Operational Conduct & SOP
+Policy Statement:
+  Maintenance on electrical switchgear, step-up transformers, or superconducting magnetic coils (>10 kV) strictly requires OSHA-compliant Lockout/Tagout (LOTO) padlocks and voltage verification with calibrated probes. Work teams must operate in pairs with an assigned, CPR-certified safety observer present at all times.
+
+RULE 3 [SEC-03]: Experimental Fusion Reactor Magnetic Confinement Safeguards
+Category: Operational Conduct & SOP
+Policy Statement:
+  Prior to pulsed plasma ignition in the tokamak fusion test reactor, all personnel must clear the diagnostic pit and secure the 3-meter radiation shield doors. Magnetic field coils must not exceed 14.5 Tesla peak field strength without simultaneous cryo-quench detection systems active and armed.
+
+RULE 4 [SEC-04]: Renewable Generation Telemetry & Carbon Accounting Integrity
+Category: Compliance & Environmental
+Policy Statement:
+  Solar microgrid generation logs, battery energy storage system (BESS) state-of-charge data, and clean energy credit (REC) issuances must be recorded on an immutable cryptographic ledger. Tampering with emissions instrumentation or generation telemetry constitutes regulatory fraud and leads to immediate dismissal.
+
+RULE 5 [SEC-05]: Grid Frequency Anomaly & Black-Start Emergency Escalation
+Category: Escalation & Incident Response
+Policy Statement:
+  Any regional grid frequency drop below 59.85 Hz (or above 60.15 Hz) lasting longer than 400 milliseconds mandates immediate automated dispatch of fast-response battery reserves. The Grid Dispatch Controller must establish an emergency bridge with regional transmission operators (RTO/ISO) within 60 seconds.
+
+RULE 6 [SEC-06]: Physical Perimeter Security & Drone Surveillance Overflights
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  Fusion R&D compounds and solar thermal arrays are designated critical infrastructure zones. Unauthorized civilian drones entering geofenced airspace will be intercepted via RF counter-UAS systems. High-resolution imagery of reactor layout or substation schematics must not be shared without clearance from Corporate Security.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

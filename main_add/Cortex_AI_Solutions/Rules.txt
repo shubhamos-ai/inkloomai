@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Cortex AI Solutions
+PRIMARY INDUSTRY: Generative AI, Large Foundation Models & Cognitive Systems
+DOCUMENT REF: CAI-ETHICS-SEC-303
+SECURITY CLASSIFICATION: CONFIDENTIAL // AI GOVERNANCE FRAMEWORK
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [CAI-01]: Training Data Provenance & Synthetic PII De-Identification
+Category: Data Security & Access
+Policy Statement:
+  Datasets ingested for foundation model pre-training must have verifiable provenance, licensing rights, and copyright clearance. Prior to tokenization, all raw text and multimodal feeds must pass through automated decontamination pipelines that scrub personally identifiable information (PII), proprietary source code, and copyrighted literature.
+
+RULE 2 [CAI-02]: Model Weights Security & Multi-Custodian Secret Sharing
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  Raw floating-point model checkpoints, FP16/BF16 model weights, and architectural hyperparameters must be encrypted with 256-bit keys split among three designated key custodians using Shamir's Secret Sharing. Accessing or exporting base model weights requires a 2-of-3 key reconstruction ceremony conducted in an audited terminal.
+
+RULE 3 [CAI-03]: Pre-Release Red-Teaming, Alignment & Safety Benchmark Standards
+Category: Compliance & Safety
+Policy Statement:
+  No foundation model or agentic workflow may be promoted to public API availability without completing comprehensive red-teaming across adversarial prompt injection, CBRN (chemical, biological, radiological, nuclear) safeguards, and cyber-offensive capabilities. Safety threshold scores must exceed 99.7% refusal on hazardous intents.
+
+RULE 4 [CAI-04]: Inference API Abuse Prevention & Semantic Guardrails
+Category: Operational Conduct & SOP
+Policy Statement:
+  Production inference gateways must deploy low-latency semantic guardrail classifiers running in parallel with model generation. Prompts attempting jailbreaks, role-reversal attacks, or data exfiltration must be dropped immediately with a 429 rate-limit penalty applied to the client API key.
+
+RULE 5 [CAI-05]: Model Hallucination & Critical Policy Drift Escalation
+Category: Escalation & Incident Response
+Policy Statement:
+  If an automated evaluation run detects a drop of >2.0% in safety benchmarks or an influx of severe user-reported hallucinations in safety-critical domains (medical/legal), the on-call Alignment Engineer must trigger an automated fallback rollback to the previous model checkpoint within 10 minutes.
+
+RULE 6 [CAI-06]: Employee Use of Third-Party AI Services & Code Upload Ban
+Category: Anti-Leak & Data Governance
+Policy Statement:
+  Pasting proprietary algorithmic source code, unreleased benchmark figures, customer conversational data, or strategic roadmaps into external, consumer AI tools (e.g., unauthorized public chatbots) is strictly prohibited. All internal development must utilize Cortex internal on-prem inference endpoints.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

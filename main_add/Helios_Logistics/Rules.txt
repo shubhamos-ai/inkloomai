@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Helios Logistics
+PRIMARY INDUSTRY: Global Multimodal Supply Chain & Autonomous Freight
+DOCUMENT REF: HL-CORP-SEC-502
+SECURITY CLASSIFICATION: INTERNAL USE // C-TPAT CERTIFIED
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [HL-01]: Customs Compliance & Global Sanctions Screening (OFAC/C-TPAT)
+Category: Compliance & Regulations
+Policy Statement:
+  Every international bill of lading and manifest must be verified against the U.S. Office of Foreign Assets Control (OFAC) Specially Designated Nationals list and international export restriction lists. Shipments with incomplete consignee validation or tariff discrepancies must be placed on automated customs quarantine.
+
+RULE 2 [HL-02]: Telematics & Autonomous Fleet Cyber-Physical Perimeter
+Category: Data Security & Access
+Policy Statement:
+  Fleet telematics units, CAN-bus microcontrollers, and electronic logging devices (ELDs) installed on freight vehicles must be isolated behind cryptographically authenticated gateways. Diagnostic ports (OBD-II/J1939) must have tamper-evident physical seals verified during pre-trip driver inspections.
+
+RULE 3 [HL-03]: High-Value Cargo Manifest & Anti-Hijacking SOP
+Category: Operational Conduct & SOP
+Policy Statement:
+  Cargo shipments valued above $250,000 USD require dual-driver accompaniment, dynamic randomized routing, and live satellite geo-fencing. Any unauthorized deviation greater than 1.5 nautical miles or 2 highway miles from designated transit corridors triggers an automated engine power restriction and silent alarm.
+
+RULE 4 [HL-04]: Warehouse Automated Guided Vehicle (AGV) Safety Zones
+Category: Operational Conduct & SOP
+Policy Statement:
+  Automated sorting facilities and distribution hubs must enforce pedestrian-free automated guided vehicle (AGV) corridors delineated by optical light curtains and physical bollards. Maintenance technicians entering high-density automated racking zones must depress the local Zone E-Stop lockout before boundary crossing.
+
+RULE 5 [HL-05]: Cargo Loss, Spoilage & Theft Escalation Protocol
+Category: Escalation & Incident Response
+Policy Statement:
+  In the event of physical cargo compromise, seal tampering, or refrigerated container temperature failure, the Global Command Center must be notified within 20 minutes. The on-duty Logistics Security Commander will coordinate with local maritime or highway law enforcement and dispatch an accredited field claims investigator.
+
+RULE 6 [HL-06]: Vendor Data Interoperability & EDI Security Standards
+Category: Anti-Leak & Data Governance
+Policy Statement:
+  Third-party shipping partners communicating via Electronic Data Interchange (EDI 204, 214, 990) or REST APIs must authenticate via mutual TLS 1.3 with rotating API tokens. Exposing customer address lists, shipping volumes, or contractual demurrage rates to unauthorized third parties is strictly prohibited.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

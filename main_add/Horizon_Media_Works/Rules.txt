@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Horizon Media Works
+PRIMARY INDUSTRY: Digital Streaming, VFX, Virtual Production & IP Protection
+DOCUMENT REF: HMW-STUDIO-IP-702
+SECURITY CLASSIFICATION: CONFIDENTIAL // STUDIO TALENT & CONTENT DIRECTIVE
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [HMW-01]: Pre-Release Footage Digital Rights Management & Forensic Watermarking
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  All daily rushes, color grading cuts, and work-in-progress VFX shots must be rendered with dynamic, invisible forensic watermarks embedding the recipient's employee ID, timestamp, and IP address. Local screen recordings, downloads to unmanaged storage, and external screen casting are disabled by endpoint policy.
+
+RULE 2 [HMW-02]: Virtual Production & Motion Capture Soundstage Security
+Category: Operational Conduct & SOP
+Policy Statement:
+  LED volume soundstages, motion capture rigs, and green rooms require biometric check-in. Personal mobile phones, wearable cameras, and non-studio recording gear must be deposited in RFID-shielded lockers prior to entering active set floors. Unauthorized photography on studio property results in immediate expulsion.
+
+RULE 3 [HMW-03]: Actor Likeness, Deepfake & Voice Synthesis Licensing Framework
+Category: Compliance & Legal
+Policy Statement:
+  Generating digital doubles, synthetic voiceovers, or AI-assisted likeness adjustments requires explicit, contractual digital rights agreements with talent representation. Raw 3D photogrammetry scans and voice training files must be deleted from cloud render buffers within 30 days of principal photography wrap.
+
+RULE 4 [HMW-04]: Cloud Render Farm Ephemeral Storage & Asset Scrubbing
+Category: Data Security & Access
+Policy Statement:
+  Compute nodes on high-performance cloud render clusters operate in read-only access to asset repositories. Intermediate frame render buffers and cache files must be purged automatically using secure zero-overwrite scripts upon render task completion or container termination.
+
+RULE 5 [HMW-05]: Plot Leak, Script Spoilers & PR Crisis Escalation Protocol
+Category: Escalation & Incident Response
+Policy Statement:
+  In the event of an unauthorized script leak, leaked teaser trailer, or social media NDA violation, the Studio Security Director and Head of Global Communications must be alerted immediately. The automated anti-piracy bot will initiate immediate DMCA takedown requests across all hosting platforms.
+
+RULE 6 [HMW-06]: Press Junket & External Media Interaction Policy
+Category: Operational Conduct & SOP
+Policy Statement:
+  Cast, crew, and production staff are forbidden from confirming, denying, or hinting at unannounced franchise developments, casting rumors, or plot lines during interviews or on private social media accounts. All media inquiries must be forwarded to the Studio Public Relations office.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

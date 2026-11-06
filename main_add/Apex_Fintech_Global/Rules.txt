@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Apex Fintech Global
+PRIMARY INDUSTRY: Algorithmic Trading, Digital Banking & Tier-1 Infrastructure
+DOCUMENT REF: AFG-COMP-FIN-091
+SECURITY CLASSIFICATION: CONFIDENTIAL // STRICT REGULATORY OVERSIGHT
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [AFG-01]: PCI-DSS 4.0 & SOC 2 Type II Cardholder Data Isolation
+Category: Data Security & Access
+Policy Statement:
+  Primary Account Numbers (PANs), biometric transaction tokens, and bank routing numbers must undergo format-preserving AES-256 GCM encryption at ingest. Encryption keys are held in FIPS 140-3 Level 4 Hardware Security Modules (HSMs) with dual-custodian quorum access. Production databases must never contain unmasked financial identifiers.
+
+RULE 2 [AFG-02]: Algorithmic Model Risk Governance & Kill-Switch Thresholds
+Category: Operational Conduct & SOP
+Policy Statement:
+  Proprietary high-frequency trading algorithms must operate within strictly enforced risk envelopes. Daily drawdown limits are capped at $500,000 USD per execution strategy; crossing this threshold triggers an automated software kill-switch that liquidates open derivative positions and revokes market access within 100 milliseconds.
+
+RULE 3 [AFG-03]: Information Barriers & Material Non-Public Information (MNPI)
+Category: Compliance & Legal
+Policy Statement:
+  A strict ethical 'Chinese Wall' must separate M&A advisory, market making, and proprietary quant desks. Employees in possession of Material Non-Public Information (MNPI) are added to restricted trading lists, and all personal trading accounts must be pre-cleared 48 hours in advance by the Compliance Department with a mandatory 30-day holding period.
+
+RULE 4 [AFG-04]: Four-Eyes Change Management for Financial Ledger Systems
+Category: Operational Conduct & SOP
+Policy Statement:
+  Zero direct database write access is granted to production ledger databases. Any schema migration, ledger correction, or routing table adjustment requires cryptographic approval from two senior engineers and a designated Compliance Officer. All deployment steps must be audited on an immutable WORM (Write Once Read Many) log stream.
+
+RULE 5 [AFG-05]: Anti-Money Laundering (AML) & Suspicious Activity Escalation
+Category: Escalation & Regulatory Reporting
+Policy Statement:
+  Transaction monitoring systems flagging anomalous velocity, structuring, or sanctioned country IP addresses must be investigated by the Financial Intelligence Unit within 4 hours. Suspicious Activity Reports (SARs) must be filed with regulatory authorities within statutory timelines without tipping off the affected accounts.
+
+RULE 6 [AFG-06]: Internal Communications & External Channel Prohibition
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  Business communications with institutional clients or counterparties must occur exclusively over archived, compliant enterprise channels (Bloomberg Chat, recorded VoIP lines). The use of WhatsApp, Signal, Telegram, or personal SMS for commercial or trading discussions is prohibited by SEC/FINRA regulations and subject to zero-tolerance dismissal.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================

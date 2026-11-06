@@ -1,0 +1,63 @@
+================================================================================
+INKLOOM AI BRAND BRAIN - OPERATIONAL GOVERNANCE & COMPLIANCE RULES
+ORGANIZATION: Vanguard BioTech
+PRIMARY INDUSTRY: Biotechnology, Gene Editing & Clinical Therapeutics
+DOCUMENT REF: VBT-BIO-SOP-2026-REV3
+SECURITY CLASSIFICATION: STRICTLY CONFIDENTIAL // GxP COMPLIANT
+================================================================================
+
+EXECUTIVE MANDATE & COMPLIANCE OVERVIEW:
+This operational directive defines the mandatory policies, code of conduct,
+asset protection protocols, and escalation hierarchies governing all personnel,
+systems, contractors, and advertising materials associated with this entity.
+All advertising, branding, and promotional assets submitted to Inkloom AI
+must comply strictly with the provisions below.
+
+--------------------------------------------------------------------------------
+SECTION 1: CORE GOVERNANCE & OPERATIONAL POLICIES
+--------------------------------------------------------------------------------
+
+RULE 1 [VBT-01]: Genomic Pipeline Security & HIPAA / GDPR Anonymization
+Category: Data Security & Access
+Policy Statement:
+  All CRISPR sequencing data, donor genotypes, and clinical patient records must be processed through zero-knowledge encrypted enclaves. Donor identifiers must be decoupled from genomic sequence datasets using cryptographically seeded pseudo-identifiers. Re-identification attempts are punishable by immediate prosecution.
+
+RULE 2 [VBT-02]: Biosafety Level 3 (BSL-3) Cleanroom & Containment SOP
+Category: Operational Conduct & SOP
+Policy Statement:
+  Entry to BSL-3 laboratory suites requires dual-badge card-key verification, mandatory positive-pressure PAPR hoods, and continuous negative airflow monitoring. No biological samples or reagents may cross containment thresholds without triple-seal containment packaging and QR-coded hazardous material tracking verification.
+
+RULE 3 [VBT-03]: Prohibited Synthetic Pathogen Screening Standards
+Category: Compliance & Biosecurity
+Policy Statement:
+  All synthetic oligonucleotides and gene synthesis orders must be evaluated against the international screening framework for restricted pathogens, toxins, and gain-of-function sequences. The Automated Biosecurity Screening Engine must flag any homologies greater than 20 base pairs to select biological agents, automatically halting synthesis.
+
+RULE 4 [VBT-04]: Cold-Chain Integrity & Sample Chain-of-Custody
+Category: Anti-Leak & Asset Protection
+Policy Statement:
+  Ultra-low temperature freezers (-80°C and liquid nitrogen cryo-dewars) must have redundant telemetry reporting temperature and lid status to the central monitoring hub every 30 seconds. A temperature excursion exceeding +5°C above threshold for more than 4 minutes triggers automated SMS/pager alerts to the duty bio-preservation lead.
+
+RULE 5 [VBT-05]: Clinical Assay Data Embargo & Pre-Publication Lock
+Category: Anti-Leak & Intellectual Property
+Policy Statement:
+  Phase I/II clinical trial endpoints, efficacy statistics, and assay outputs are strictly embargoed from external disclosure until formal patent filings and regulatory agency (FDA/EMA) submissions are confirmed by General Counsel. Discussing preliminary results in public forums or unencrypted email is grounds for summary dismissal.
+
+RULE 6 [VBT-06]: Bioethics & Whistleblower Escalation Hotline
+Category: Escalation & Incident Response
+Policy Statement:
+  Personnel observing ethical lapses, falsification of PCR assay results, or improper laboratory waste disposal must report incidents via the independent Bioethics Whistleblower Portal. Retaliation against whistleblowers is strictly prohibited under corporate bylaws and federal protections.
+
+--------------------------------------------------------------------------------
+SECTION 2: ENFORCEMENT & COMPLIANCE VERIFICATION
+--------------------------------------------------------------------------------
+1. Automated Verification: All outbound campaign assets, ad visuals, messaging copy,
+   and visual collateral must pass through the Inkloom AI Compliance Scanner.
+2. Non-Compliance Penalties: Material policy infractions will cause immediate asset
+   quarantine, automated notification to the Governance Committee, and mandatory
+   remedial review prior to publication.
+3. Audit Trail: Every scan, violation flag, and rule edit is cryptographically recorded
+   and retained for annual regulatory audits.
+
+================================================================================
+END OF POLICY DOCUMENT - INKLOOM AI BRAND GOVERNANCE SYSTEM
+================================================================================
