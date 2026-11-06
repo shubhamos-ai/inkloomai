@@ -2,7 +2,7 @@
 Inkloom AI — application configuration.
 
 All secrets and environment-specific values come from environment variables.
-Copy `server/.env.example` to `server/.env` and adjust for your machine.
+Copy `server/.env.example` to `server/.env` and never commit .env files.
 """
 from __future__ import annotations
 
@@ -49,29 +49,39 @@ class Settings:
     # ------------------------------------------------------------------
     # Security / auth
     # ------------------------------------------------------------------
-    # Production CORS origin (frontend on Vercel).
     CORS_ORIGINS: list[str] = _env_list(
         "CORS_ORIGINS", "https://inkoom-ai.shubhamos.com"
     )
-    # Additional dev origins (e.g. http://localhost:3000) — set via env if needed.
     CORS_EXTRA_ORIGINS: list[str] = _env_list("CORS_EXTRA_ORIGINS", "")
+    # Render.com injects RENDER_EXTERNAL_URL for the backend service itself.
+    # We also accept the frontend's Render URL from RENDER_FRONTEND_URL.
+    RENDER_EXTERNAL_URL: str = os.getenv("RENDER_EXTERNAL_URL", "")
+    RENDER_FRONTEND_URL: str = os.getenv("RENDER_FRONTEND_URL", "")
 
     API_PREFIX: str = "/api/v1"
 
-    # Shared dev token so the frontend can integrate before real auth exists.
-    # MUST be replaced by verified sessions/tokens (JWT/OAuth) in production.
     DEV_AUTH_TOKEN: str = os.getenv("DEV_AUTH_TOKEN", "")
     DISABLE_DEV_AUTH: bool = os.getenv("DISABLE_DEV_AUTH", "false").lower() == "true"
 
-    # Rate limiting (requests per minute per client IP for API endpoints).
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
 
     # ------------------------------------------------------------------
-    # Ollama (local only — never exposed to the internet)
+    # AI Vision Provider Selection
+    # ------------------------------------------------------------------
+    # Options: "nvidia_nim" (production), "ollama" (local dev), "mock" (testing)
+    VISION_PROVIDER: str = os.getenv("VISION_PROVIDER", "nvidia_nim")
+
+    # ------------------------------------------------------------------
+    # NVIDIA NIM (production - deployable on Render.com)
+    # Get your API key from: https://build.nvidia.com/meta/llama-3.2-11b-vision-instruct
+    # Example: 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
+    # ------------------------------------------------------------------
+    NVIDIA_API_KEY: str = os.getenv("NVIDIA_API_KEY", "")
+
+    # ------------------------------------------------------------------
+    # Ollama (local development only - NOT for production)
     # ------------------------------------------------------------------
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-    # Vision SLM name as it appears in `ollama list`. Left empty until the
-    # model finishes downloading / the user tells us the final tag.
     OLLAMA_VISION_MODEL: str = os.getenv("OLLAMA_VISION_MODEL", "")
     OLLAMA_TIMEOUT_SECONDS: float = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "300"))
 
@@ -79,25 +89,52 @@ class Settings:
     # Analysis pipeline
     # ------------------------------------------------------------------
     # "mock"  -> infrastructure test pipeline (clearly labelled mock output)
-    # "ai"    -> real Ollama vision pipeline (requires OLLAMA_VISION_MODEL)
-    PIPELINE_MODE: str = os.getenv("PIPELINE_MODE", "mock")
+    # "ai"    -> real inference via configured VISION_PROVIDER
+    PIPELINE_MODE: str = os.getenv("PIPELINE_MODE", "ai")
 
     # ------------------------------------------------------------------
     # Worker / job queue
     # ------------------------------------------------------------------
     WORKER_POLL_INTERVAL_SECONDS: float = float(os.getenv("WORKER_POLL_INTERVAL_SECONDS", "1.0"))
-    # A "processing" job with no heartbeat for longer than this is considered
-    # abandoned (e.g. server crash) and gets recovered.
     STALE_JOB_AFTER_SECONDS: float = float(os.getenv("STALE_JOB_AFTER_SECONDS", "300"))
     MAX_JOB_ATTEMPTS: int = int(os.getenv("MAX_JOB_ATTEMPTS", "3"))
 
     @property
     def all_origins(self) -> list[str]:
-        return self.CORS_ORIGINS + self.CORS_EXTRA_ORIGINS
+        origins = list(self.CORS_ORIGINS) + list(self.CORS_EXTRA_ORIGINS)
+        # Auto-include Render's frontend URL when set
+        if self.RENDER_FRONTEND_URL and self.RENDER_FRONTEND_URL not in origins:
+            origins.append(self.RENDER_FRONTEND_URL)
+        # Always allow localhost in dev
+        if self.DEBUG:
+            for local in ("http://localhost:3000", "http://127.0.0.1:3000"):
+                if local not in origins:
+                    origins.append(local)
+        return origins
 
     @property
     def max_upload_bytes(self) -> int:
         return self.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+
+    @property
+    def use_nvidia_nim(self) -> bool:
+        """Check if NVIDIA NIM should be used."""
+        return self.VISION_PROVIDER == "nvidia_nim" and bool(self.NVIDIA_API_KEY)
+
+    @property
+    def use_ollama(self) -> bool:
+        """Check if Ollama should be used (local dev only)."""
+        return self.VISION_PROVIDER == "ollama" and bool(self.OLLAMA_VISION_MODEL)
+
+    @property
+    def use_mock(self) -> bool:
+        """Check if mock pipeline should be used."""
+        if self.PIPELINE_MODE == "mock":
+            return True
+        # Fall back to mock if no provider is configured
+        if not self.use_nvidia_nim and not self.use_ollama:
+            return True
+        return False
 
 
 @lru_cache

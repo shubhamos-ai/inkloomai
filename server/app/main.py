@@ -1,8 +1,10 @@
 """Inkloom AI FastAPI application.
 
-Local dev:   http://127.0.0.1:8000   (bound to localhost only)
-Tunnel:      https://inkoom-model.shubhamos.com  (Cloudflare Tunnel provides
-             connectivity only — auth lives in this app: api/deps.py)
+Local dev:   http://127.0.0.1:8000
+Production:  Render.com (set PORT env var, bind to 0.0.0.0)
+AI Vision:   NVIDIA NIM — Llama 3.2 11B Vision Instruct (cloud API, no GPU needed)
+
+Auth lives in this app (api/deps.py). NVIDIA_API_KEY must be set as an env var.
 """
 from __future__ import annotations
 

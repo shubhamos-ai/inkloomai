@@ -5,7 +5,12 @@ Analysis + AnalysisJob queue row, and returns immediately. Inference never
 happens inside the HTTP request.
 
 Pipeline (worker side) drives the job through stages, updating progress in the
-database after every stage, and produces the Phase-6 report.
+database after every stage, and produces the final report.
+
+Supports multiple vision providers:
+- NVIDIA NIM (Llama 3.2 11B Vision) - production
+- Ollama (local dev)
+- Mock (testing)
 """
 from __future__ import annotations
 
@@ -88,6 +93,13 @@ def submit_analysis(
         brain = brand_brain_service.get_or_create_brain(db, company)
         brain_id = brain.id
 
+    # Determine engine based on provider
+    engine_name = "mock"
+    if settings.use_nvidia_nim:
+        engine_name = "llama-3.2-11b-vision-instruct"
+    elif settings.use_ollama:
+        engine_name = settings.OLLAMA_VISION_MODEL or "ollama"
+
     analysis = Analysis(
         id=analysis_id,
         company_id=company.id,
@@ -95,8 +107,8 @@ def submit_analysis(
         image_path=image_rel,
         original_filename=filename,
         status="queued",
-        engine="mock" if settings.PIPELINE_MODE == "mock" else (settings.OLLAMA_VISION_MODEL or "mock"),
-        is_mock=settings.PIPELINE_MODE == "mock",
+        engine=engine_name,
+        is_mock=settings.use_mock,
     )
     db.add(analysis)
 
@@ -122,7 +134,6 @@ def _set_stage(db: Session, job_id: uuid.UUID, *, progress: int, stage: str) -> 
     """Persist progress + heartbeat. Called between pipeline stages so that a
     crash resumes from a well-known point."""
     from sqlalchemy import update
-
     from app.models import AnalysisJob
 
     db.execute(
@@ -134,12 +145,8 @@ def _set_stage(db: Session, job_id: uuid.UUID, *, progress: int, stage: str) -> 
 
 
 def _use_mock_pipeline() -> bool:
-    """Mock until BOTH the pipeline mode and the Ollama model are live."""
-    if settings.PIPELINE_MODE == "mock":
-        return True
-    from app.services import ollama_service
-
-    return not ollama_service.check_status()["available"]
+    """Determine if mock pipeline should be used."""
+    return settings.use_mock
 
 
 def run_pipeline(job_id: uuid.UUID) -> None:
@@ -176,7 +183,7 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         except vision_engine.NotConfiguredError:
             vision = vision_engine.mock_observations()
 
-        # Stage 2 — exact text extraction.
+        # Stage 2 — exact text extraction (OCR or fallback).
         _set_stage(db, job.id, progress=50, stage="Extracting text from the image")
         try:
             ocr = ocr_engine.extract_text(
@@ -218,7 +225,7 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         score, overall, summary = scoring_engine.score_report(report)
 
         meta = dict(report.get("analysis_metadata") or {})
-        meta.setdefault("engine", "mock" if use_mock else (settings.OLLAMA_VISION_MODEL or "ai"))
+        meta.setdefault("engine", vision.get("engine", "mock"))
         meta.setdefault("is_mock", use_mock)
         meta["duration_ms"] = int((time.perf_counter() - started) * 1000)
         meta["brand_rules_count"] = len(rules)
@@ -264,31 +271,40 @@ def run_pipeline(job_id: uuid.UUID) -> None:
 
 
 def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, ocr_text: str) -> dict:
-    """Real inference path — used when Ollama + vision model are configured."""
+    """Real inference path — uses NVIDIA NIM or Ollama based on configuration."""
     from app.services import ollama_service
+
+    # Use the appropriate service based on configuration
+    if settings.use_nvidia_nim:
+        from app.services import nim_vision_service as vision_service
+    else:
+        vision_service = ollama_service
 
     try:
         system, user = compliance_engine.build_prompt(rules, vision, ocr_text)
-        raw_text = ollama_service.generate(
+        raw_text = vision_service.generate(
             prompt=user,
             system=system,
             images=[vision.get("image_b64")] if vision.get("image_b64") else None,
         )
-        raw = ollama_service.parse_json_loose(raw_text)
+        raw = vision_service.parse_json_loose(raw_text)
 
         # Some runs of the SLM answer with empty findings lists; retry once.
         # If still empty, validate_ai_output marks every rule inconclusive honestly.
         findings_empty = isinstance(raw, dict) and not (raw.get("violations") or raw.get("checks"))
         if findings_empty and rules:
-            raw_text = ollama_service.generate(prompt=user, system=system)
-            raw = ollama_service.parse_json_loose(raw_text)
+            raw_text = vision_service.generate(prompt=user, system=system)
+            raw = vision_service.parse_json_loose(raw_text)
+
+        # Determine engine name for metadata
+        engine_name = "llama-3.2-11b-vision-instruct" if settings.use_nvidia_nim else settings.OLLAMA_VISION_MODEL
 
         return compliance_engine.validate_ai_output(
             raw=raw,
             analysis_id=analysis_id,
             rules=rules,
             metadata_extra={
-                "model": settings.OLLAMA_VISION_MODEL,
+                "model": engine_name,
                 "vision_observations": vision.get("observations", []),
                 "ocr_text": ocr_text,
             },

@@ -11,7 +11,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, currentPath }: DashboardLayoutProps) {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#141414]">
       {/* Desktop Sidebar */}
       <Sidebar currentPath={currentPath} />
 
@@ -21,11 +21,8 @@ export default function DashboardLayout({ children, currentPath }: DashboardLayo
       {/* Main Content */}
       <main
         className={[
-          // Desktop: offset for sidebar
           'lg:ml-60',
-          // Mobile: offset for top nav bar
           'pt-14 lg:pt-0',
-          // Padding
           'min-h-screen',
         ].join(' ')}
       >

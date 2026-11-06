@@ -1,6 +1,7 @@
-// Central API service layer for Inkloom AI (Inkoom AI)
-// Integrates with FastAPI + Ollama backend via Cloudflare Tunnel
-// Endpoint: https://inkoom-model.shubhamos.com (or NEXT_PUBLIC_AI_API_URL)
+// Central API service layer for Inkloom AI
+// Backend: FastAPI on Render.com + NVIDIA NIM (Llama 3.2 11B Vision)
+// In production, NEXT_PUBLIC_AI_API_URL is set to the Render backend URL.
+// In development, defaults to http://localhost:8000.
 //
 // This layer normalises the backend's snake_case responses into the
 // frontend's camelCase types. Mock/local fallbacks only ever run when the
@@ -33,7 +34,11 @@ import { getUserSession } from './session';
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
-export const DEFAULT_API_BASE_URL = 'https://inkoom-model.shubhamos.com';
+// In dev: http://localhost:8000
+// In production (Render): set NEXT_PUBLIC_AI_API_URL to your Render backend URL
+// e.g. https://inkloom-backend.onrender.com
+export const DEFAULT_API_BASE_URL =
+  process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {

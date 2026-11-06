@@ -1,9 +1,13 @@
 """Vision engine interface.
 
-Real mode: sends the advertisement image to the local Ollama Vision SLM
-(model tag configured later, e.g. `gemma3:4b`) and returns structured visual
-observations. In mock mode it returns a deterministic placeholder so the whole
-pipeline can be exercised end-to-end before the model is available.
+Supports multiple vision providers:
+- NVIDIA NIM (production - deployable on Render.com)
+- Ollama (local development only)
+- Mock (testing)
+
+Real mode: sends the advertisement image to the configured vision provider
+and returns structured visual observations. In mock mode it returns a
+deterministic placeholder so the whole pipeline can be exercised end-to-end.
 """
 from __future__ import annotations
 
@@ -17,12 +21,19 @@ from app.engine.base import NotConfiguredError
 
 
 def is_configured() -> bool:
-    return bool(settings.OLLAMA_VISION_MODEL)
+    """Check if any vision provider is configured."""
+    return settings.use_nvidia_nim or settings.use_ollama or settings.use_mock
 
 
 def not_configured_reason() -> str | None:
-    if not settings.OLLAMA_VISION_MODEL:
-        return "OLLAMA_VISION_MODEL is not set — Vision SLM not connected yet."
+    """Return reason why vision is not configured."""
+    if settings.use_mock:
+        return None  # Mock is always "configured"
+    if not settings.use_nvidia_nim and not settings.use_ollama:
+        return (
+            "No vision provider configured. Set NVIDIA_API_KEY for production "
+            "(Llama 3.2 11B Vision) or OLLAMA_VISION_MODEL for local development."
+        )
     return None
 
 
@@ -38,12 +49,23 @@ def mock_observations() -> dict:
     }
 
 
-def analyze_image(image_path: str | Path, *, mock: bool = True) -> dict:
+def _get_vision_provider_info() -> tuple[str, bool]:
+    """Return (provider_name, is_mock)."""
+    if settings.use_mock:
+        return ("mock", True)
+    if settings.use_nvidia_nim:
+        return ("nvidia_nim", False)
+    if settings.use_ollama:
+        return ("ollama", False)
+    return ("mock", True)
+
+
+def analyze_image(image_path: str | Path, *, mock: bool = None) -> dict:
     """Observe the advertisement image.
 
     Args:
         image_path: absolute path to the stored upload.
-        mock: when True, return the labelled placeholder instead of inferring.
+        mock: override for mock mode (None = use settings)
 
     Returns a dict:
         {
@@ -54,14 +76,19 @@ def analyze_image(image_path: str | Path, *, mock: bool = True) -> dict:
     Raises:
         NotConfiguredError: when real inference is requested but unavailable.
     """
-    if mock:
+    # Determine if we should use mock
+    if mock is None:
+        provider, is_mock = _get_vision_provider_info()
+    else:
+        is_mock = mock
+        provider = "mock"
+
+    if is_mock:
         return mock_observations()
 
     reason = not_configured_reason()
     if reason:
         raise NotConfiguredError(reason)
-
-    from app.services import ollama_service
 
     path = Path(image_path)
     if not path.is_file():
@@ -79,10 +106,22 @@ def analyze_image(image_path: str | Path, *, mock: bool = True) -> dict:
         '"confidence": 0.0-1.0}]}'
     )
 
-    raw = ollama_service.generate(prompt=prompt, image_b64=b64, images=[b64])
-    parsed = ollama_service.parse_json_loose(raw)
+    # Use NVIDIA NIM if configured, otherwise Ollama
+    if settings.use_nvidia_nim:
+        from app.services import nim_vision_service
+
+        raw = nim_vision_service.generate(prompt=prompt, image_b64=b64, images=[b64])
+        parsed = nim_vision_service.parse_json_loose(raw)
+        engine_name = "llama-3.2-11b-vision-instruct"
+    else:
+        from app.services import ollama_service
+
+        raw = ollama_service.generate(prompt=prompt, image_b64=b64, images=[b64])
+        parsed = ollama_service.parse_json_loose(raw)
+        engine_name = settings.OLLAMA_VISION_MODEL
+
     return {
-        "engine": settings.OLLAMA_VISION_MODEL,
+        "engine": engine_name,
         "is_mock": False,
         "observations": parsed.get("observations", []) if isinstance(parsed, dict) else [],
         "note": "",

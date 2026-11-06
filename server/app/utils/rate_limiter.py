@@ -1,9 +1,10 @@
 """Rate limiting middleware.
 
-A fixed-window counter per client IP, behind Cloudflare we trust
-CF-Connecting-IP when present. State is in-process memory — sufficient for the
-single-process development deployment; swap in Redis when running multiple
-workers in production.
+A fixed-window counter per client IP. Behind Render.com or Cloudflare we
+trust X-Forwarded-For when present (Render sets this). CF-Connecting-IP is
+also accepted for Cloudflare compatibility. State is in-process memory —
+sufficient for a single-process deployment; swap in Redis when running
+multiple workers in production.
 """
 from __future__ import annotations
 
@@ -48,7 +49,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     @staticmethod
     def client_ip(request: Request) -> str:
-        # Behind Cloudflare Tunnel, CF-Connecting-IP is the real client.
+        # Render.com (and Cloudflare) set X-Forwarded-For; CF also sets CF-Connecting-IP.
         cf_ip = request.headers.get("cf-connecting-ip")
         if cf_ip:
             return cf_ip
