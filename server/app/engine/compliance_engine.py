@@ -280,7 +280,7 @@ def validate_ai_output(
             inconclusive_checks=inconclusive,
             recommendations=[str(x) for x in raw.get("recommendations", []) if x][:20],
             analysis_metadata={
-                "engine": rules[0].get("engine_name", "ai"),
+                "engine": rules[0].get("engine_name", "ai") if rules else "ai",
                 "is_mock": False,  # real inference output, normalised deterministically
                 **metadata_extra,
             },
