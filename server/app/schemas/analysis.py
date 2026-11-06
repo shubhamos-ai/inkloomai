@@ -19,7 +19,11 @@ class AnalysisStatusResponse(BaseModel):
     status: str
     progress: int
     current_stage: str
+    # Alias used by some integrations — same value as current_stage.
+    stage: Optional[str] = None
     error: Optional[str] = None
+    # Present only when status == completed: the full validated report.
+    result: Optional[dict] = None
 
 
 class AnalysisListItem(BaseModel):
@@ -35,6 +39,11 @@ class AnalysisListItem(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime] = None
     has_report: bool = False
+    image_url: str = ""
+    violations_count: int = 0
+    critical_count: int = 0
+    major_count: int = 0
+    minor_count: int = 0
 
 
 class PaginatedHistory(BaseModel):

@@ -16,14 +16,16 @@ from fastapi import (
     APIRouter,
     Depends,
     File,
+    Form,
     HTTPException,
+    Request,
     UploadFile,
 )
 from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import current_company, get_isolated_analysis
+from app.api.deps import current_company, get_isolated_analysis, resolve_company_flexibly
 from app.database import get_db
 from app.models import Analysis, AnalysisJob, Company
 from app.schemas.analysis import (
@@ -45,15 +47,23 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 def submit(
     db: Session = Depends(get_db),
     company: Company = Depends(current_company),
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(default=None, alias="file"),
+    image: UploadFile | None = File(default=None, alias="image"),
 ):
-    """POST /analysis — multipart/form-data, field name `file`.
+    """POST /analysis — multipart/form-data, image field named `file` OR `image`.
 
     Returns 202 the moment the analysis record + job are persisted; the request
     does NOT wait for AI inference. 409 when the company already has an active
     analysis, 422 when the file is invalid (type, contents, size, dimensions).
+    Extra form fields (company_name, user_name, ...) are accepted and ignored.
     """
-    return analysis_service.submit_analysis(db, company, upload=file)
+    upload = image or file
+    if upload is None:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "image_required", "message": "Send the advertisement as multipart field 'image'."},
+        )
+    return analysis_service.submit_analysis(db, company, upload=upload)
 
 
 # ---------------------------------------------------------------------------
@@ -85,24 +95,42 @@ def history(
         .limit(limit)
     ).all()
 
-    items = [
-        AnalysisListItem.model_validate(
-            {
-                "analysis_id": row.id,
-                "status": row.status,
-                "compliance_score": row.compliance_score,
-                "overall_status": row.overall_status,
-                "engine": row.engine,
-                "is_mock": row.is_mock,
-                "original_filename": row.original_filename,
-                "created_at": row.created_at,
-                "completed_at": row.completed_at,
-                "has_report": row.report is not None,
-            },
-            from_attributes=False,
+    items = []
+    for row in rows:
+        counts = {"violations_count": 0, "critical_count": 0, "major_count": 0, "minor_count": 0}
+        report = row.report or {}
+        violations = report.get("violations") if isinstance(report, dict) else []
+        if isinstance(violations, list):
+            counts["violations_count"] = len(violations)
+            for v in violations:
+                if isinstance(v, dict):
+                    sev = v.get("severity")
+                    if sev == "critical":
+                        counts["critical_count"] += 1
+                    elif sev == "major":
+                        counts["major_count"] += 1
+                    elif sev in ("minor", "info"):
+                        counts["minor_count"] += 1
+
+        items.append(
+            AnalysisListItem.model_validate(
+                {
+                    "analysis_id": row.id,
+                    "status": row.status,
+                    "compliance_score": row.compliance_score,
+                    "overall_status": row.overall_status,
+                    "engine": row.engine,
+                    "is_mock": row.is_mock,
+                    "original_filename": row.original_filename,
+                    "created_at": row.created_at,
+                    "completed_at": row.completed_at,
+                    "has_report": row.report is not None,
+                    "image_url": f"/api/v1/analysis/{row.id}/image",
+                    **counts,
+                },
+                from_attributes=False,
+            )
         )
-        for row in rows
-    ]
 
     return PaginatedHistory(
         items=items, total=total, page=page, limit=limit, pages=max(1, -(-total // limit))
@@ -119,16 +147,24 @@ def status(
     db: Session = Depends(get_db),
     company: Company = Depends(current_company),
 ):
-    """GET /analysis/{analysis_id}/status — poll this while the job runs."""
+    """GET /analysis/{analysis_id}/status — poll this while the job runs.
+
+    When finished, the response also embeds the validated report under `result`
+    so integrations can consume it straight from the poll result.
+    """
     analysis = get_isolated_analysis(analysis_id, company, db)
     job = db.scalar(select(AnalysisJob).where(AnalysisJob.analysis_id == analysis.id))
-    return AnalysisStatusResponse(
-        analysis_id=analysis.id,
-        status=job.status if job else analysis.status,
-        progress=job.progress if job else 0,
-        current_stage=job.current_stage if job else "",
-        error=job.error if job else None,
-    )
+    response = {
+        "analysis_id": analysis.id,
+        "status": job.status if job else analysis.status,
+        "progress": job.progress if job else 0,
+        "current_stage": job.current_stage if job else "",
+        "stage": job.current_stage if job else "",
+        "error": job.error if job else None,
+    }
+    if analysis.status == "completed" and analysis.report is not None:
+        response["result"] = analysis.report
+    return AnalysisStatusResponse(**response)
 
 
 @router.get("/{analysis_id}")
@@ -184,14 +220,18 @@ def cancel(
 @router.get("/{analysis_id}/image")
 def image(
     analysis_id: uuid.UUID,
+    request: Request,
+    token: str | None = None,
     db: Session = Depends(get_db),
-    company: Company = Depends(current_company),
 ):
-    """GET /analysis/{analysis_id}/image — serve the stored upload (authorised)."""
-    analysis = get_isolated_analysis(analysis_id, company, db)
+    """GET /analysis/{analysis_id}/image — the stored upload (authorised).
+
+    Auth via `Authorization: Bearer` header OR `?token=` query parameter
+    (needed because browsers cannot attach headers to <img> requests).
+    """
+    ctx = resolve_company_flexibly(request, token_query=token, db=db)
+    analysis = get_isolated_analysis(analysis_id, ctx.company, db)
     path = storage_service.abs_path_for(analysis.image_path)
     if not path.is_file():
         raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Image missing."})
-    # FileResponse derives its filename from the path we control, media type
-    # from the extension which the validator pinned to png/jpg/webp.
     return FileResponse(path, media_type=f"image/{path.suffix[1:]}")

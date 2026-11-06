@@ -38,7 +38,7 @@ app.add_middleware(
     allow_origins=settings.all_origins,
     allow_credentials=False,  # Bearer tokens, not cookies — keep CORS strict
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Company-ID"],
+    allow_headers=["Authorization", "Content-Type", "X-Company-ID", "X-API-Key"],
     expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After"],
 )
 # Gzip compresses report/history JSON payloads nicely.
@@ -51,12 +51,13 @@ app.add_middleware(
 )
 
 # ---------------------------------------------------------------- routers
-from app.api.v1 import analysis, brand_brain, health, onboarding  # noqa: E402
+from app.api.v1 import analysis, brand_brain, dashboard, health, onboarding  # noqa: E402
 
 app.include_router(health.router, prefix=settings.API_PREFIX)
 app.include_router(onboarding.router, prefix=settings.API_PREFIX)
 app.include_router(brand_brain.router, prefix=settings.API_PREFIX)
 app.include_router(analysis.router, prefix=settings.API_PREFIX)
+app.include_router(dashboard.router, prefix=settings.API_PREFIX)
 
 
 # ---------------------------------------------------------------- error format

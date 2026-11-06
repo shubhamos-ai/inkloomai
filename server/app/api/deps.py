@@ -96,7 +96,10 @@ def resolve_context(
                 "message": "Send 'Authorization: Bearer <token>'. Get one via POST /api/v1/onboarding.",
             },
         )
+    return _resolve_context_for_token(request, db, token)
 
+
+def _resolve_context_for_token(request: Request, db: Session, token: str) -> AuthContext:
     company = _company_from_api_key(db, token)
     if company:
         return AuthContext(company=company, mode="api_key", payload={}, raw_token=token)
@@ -109,6 +112,26 @@ def resolve_context(
         status_code=401,
         detail={"error": "invalid_token", "message": "The provided token is not valid."},
     )
+
+
+def resolve_company_flexibly(
+    request: Request,
+    token_query: str | None = None,
+    db: Session = None,
+) -> AuthContext:
+    """Auth for asset endpoints the browser fetches directly (e.g. <img> tags).
+
+    Accepts the token either in the Authorization header or in a `token` query
+    parameter — the query path is needed because browsers cannot send custom
+    headers on plain image requests. Keep query-token usage app-internal.
+    """
+    token = bearer_token(request) or token_query
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail={"error": "missing_auth", "message": "Missing authentication token."},
+        )
+    return _resolve_context_for_token(request, db, token)
 
 
 def current_company(ctx: AuthContext = Depends(resolve_context)) -> Company:
