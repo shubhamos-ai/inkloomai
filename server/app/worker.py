@@ -18,7 +18,7 @@ from app.config import ensure_storage_dirs, settings
 
 def main() -> None:
     ensure_storage_dirs()
-    from sqlalchemy import text
+    from app.database import text
 
     from app.database import SessionLocal, engine
     from app.services import job_service

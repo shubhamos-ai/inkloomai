@@ -29,21 +29,21 @@ const variantConfig: Record<
 > = {
   default: {
     confirmBtn:
-      'bg-blue-600 hover:bg-blue-700 focus-visible:ring-blue-500 text-white',
-    iconWrapper: 'bg-blue-50',
+      'bg-[#E50914] hover:bg-[#b80710] focus-visible:ring-[#E50914] text-white',
+    iconWrapper: 'bg-[#E50914]/20 border border-[#E50914]/40',
     icon: null,
   },
   warning: {
     confirmBtn:
-      'bg-amber-500 hover:bg-amber-600 focus-visible:ring-amber-400 text-white',
-    iconWrapper: 'bg-amber-50',
-    icon: <AlertTriangle size={20} className="text-amber-500" />,
+      'bg-amber-600 hover:bg-amber-700 focus-visible:ring-amber-500 text-white',
+    iconWrapper: 'bg-amber-950/60 border border-amber-800 text-amber-400',
+    icon: <AlertTriangle size={20} className="text-amber-400" />,
   },
   danger: {
     confirmBtn:
-      'bg-red-600 hover:bg-red-700 focus-visible:ring-red-500 text-white',
-    iconWrapper: 'bg-red-50',
-    icon: <AlertTriangle size={20} className="text-red-500" />,
+      'bg-[#E50914] hover:bg-[#b80710] focus-visible:ring-[#E50914] text-white',
+    iconWrapper: 'bg-red-950/60 border border-red-800 text-red-400',
+    icon: <AlertTriangle size={20} className="text-red-400" />,
   },
 };
 
@@ -115,7 +115,7 @@ export default function ConfirmDialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-[2px]"
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
             onClick={() => !loading && onCancel()}
             aria-hidden="true"
           />
@@ -132,17 +132,17 @@ export default function ConfirmDialog({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: 8 }}
               transition={{ type: 'spring', stiffness: 340, damping: 28 }}
-              className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
+              className="relative w-full max-w-md bg-[#181818] rounded-2xl shadow-2xl border border-[#262626] overflow-hidden text-white"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Close Button */}
               <button
                 onClick={onCancel}
                 disabled={loading}
-                className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+                className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50 text-zinc-400 hover:text-white"
                 aria-label="Close dialog"
               >
-                <X size={15} className="text-slate-400" />
+                <X size={15} />
               </button>
 
               <div className="px-6 pt-6 pb-6">
@@ -158,7 +158,7 @@ export default function ConfirmDialog({
                 {/* Title */}
                 <h2
                   id="dialog-title"
-                  className="text-base font-semibold text-slate-900 leading-snug mb-2 pr-6"
+                  className="text-base font-semibold text-white leading-snug mb-2 pr-6"
                 >
                   {title}
                 </h2>
@@ -166,18 +166,18 @@ export default function ConfirmDialog({
                 {/* Message */}
                 <p
                   id="dialog-message"
-                  className="text-sm text-slate-500 leading-relaxed"
+                  className="text-sm text-zinc-400 leading-relaxed"
                 >
                   {message}
                 </p>
 
                 {/* Divider */}
-                <div className="mt-6 pt-5 border-t border-slate-100 flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
+                <div className="mt-6 pt-5 border-t border-[#262626] flex flex-col-reverse sm:flex-row gap-2.5 sm:justify-end">
                   {/* Cancel */}
                   <button
                     onClick={onCancel}
                     disabled={loading}
-                    className="flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                    className="flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-medium text-zinc-300 bg-zinc-800 hover:bg-zinc-700 transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500"
                   >
                     {cancelLabel}
                   </button>

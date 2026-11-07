@@ -1,62 +1,82 @@
-"""Database engine, session management and constants."""
+"""Database engine, session management, and compatibility layer for local MongoDB."""
 from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
-
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+from typing import Any
 
 from app.config import settings
+from app.db.mongodb import MongoDBSession, db_ready as _mongo_db_ready, get_mongo_db, utcnow
+from app.models.base import Base, MongoDocument, func, select, update
+
+Session = MongoDBSession
 
 
-class Base(DeclarativeBase):
-    """Declarative base for all ORM models."""
+def text(stmt: str) -> str:
+    return stmt
 
 
-def _make_engine():
-    url = settings.DATABASE_URL
-    is_sqlite = url.startswith("sqlite")
-    engine = create_engine(
-        url,
-        # Allow sessions across FastAPI's threadpool threads.
-        connect_args={"check_same_thread": False} if is_sqlite else {},
-        pool_pre_ping=True,
-    )
-    if is_sqlite:
-        @event.listens_for(engine, "connect")
-        def _set_sqlite_pragma(dbapi_connection, _connection_record):
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.execute("PRAGMA journal_mode=WAL")
-            cursor.close()
-    return engine
+# Export Base for ORM model declarations
+__all__ = [
+    "Base",
+    "Session",
+    "SessionLocal",
+    "get_db",
+    "db_ready",
+    "utcnow",
+    "select",
+    "update",
+    "func",
+    "text",
+    "engine",
+]
 
 
-engine = _make_engine()
+class _MongoEngineStub:
+    """Mock engine allowing legacy SQLAlchemy engine hooks to succeed gracefully."""
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False, class_=Session)
+    def begin(self):
+        class _Ctx:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            def execute(self, *args, **kwargs):
+                return None
+
+        return _Ctx()
+
+    def connect(self):
+        class _Conn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                pass
+
+            def execute(self, *args, **kwargs):
+                return None
+
+        return _Conn()
 
 
-def utcnow() -> datetime:
-    """Naive-UTC timestamp helper (stored consistently in SQLite)."""
-    return datetime.now(UTC).replace(tzinfo=None)
+engine = _MongoEngineStub()
+
+
+def SessionLocal() -> MongoDBSession:
+    """Factory creating a MongoDBSession."""
+    return MongoDBSession()
 
 
 def db_ready() -> bool:
-    """Cheap connectivity check used by the health endpoint."""
-    try:
-        from sqlalchemy import text
-
-        with SessionLocal() as session:
-            session.execute(text("SELECT 1"))
-        return True
-    except Exception:  # noqa: BLE001 — health must never raise
-        return False
+    """Connectivity check used by the health endpoint."""
+    return _mongo_db_ready()
 
 
 def get_db():
-    """FastAPI dependency yielding a DB session."""
+    """FastAPI dependency yielding a MongoDB-backed session."""
     db = SessionLocal()
     try:
         yield db
@@ -65,12 +85,6 @@ def get_db():
 
 
 def postgres_url_from_sqlite(sqlite_url: str) -> str:
-    """
-    Helper for the SQLite -> PostgreSQL migration path.
-
-    Sets a sane production PostgreSQL URL format that Alembic/SQLAlchemy accept,
-    so switching is a matter of changing DATABASE_URL and running migrations.
-    """
     if not sqlite_url.startswith("sqlite"):
-        raise ValueError("Expected a SQLAlchemy SQLite URL")
-    return re.sub(r"^sqlite:///(.*)$", r"postgresql://USER:PASSWORD@HOST:5432/DBNAME", sqlite_url)
+        raise ValueError("Expected a SQLite URL")
+    return re.sub(r"^sqlite:///(.*)$", r"mongodb://127.0.0.1:27017/inkloom", sqlite_url)

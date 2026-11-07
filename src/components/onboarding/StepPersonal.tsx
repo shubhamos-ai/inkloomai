@@ -28,7 +28,7 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -24 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
-      className="max-w-lg mx-auto px-6"
+      className="max-w-lg mx-auto px-6 select-none"
     >
       {/* Icon Badge */}
       <motion.div
@@ -37,8 +37,8 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
         transition={{ delay: 0.1, duration: 0.4, ease: 'backOut' }}
         className="flex justify-center mb-8"
       >
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-          <User className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
+        <div className="w-16 h-16 rounded-2xl bg-[#181818] border border-white/10 flex items-center justify-center shadow-2xl">
+          <User className="w-8 h-8 text-[#E50914]" strokeWidth={1.75} />
         </div>
       </motion.div>
 
@@ -49,11 +49,11 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
         transition={{ delay: 0.15, duration: 0.4 }}
         className="text-center mb-10"
       >
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">
+        <h1 className="text-3xl font-black text-white tracking-tight mb-3">
           Let&apos;s get to know you.
         </h1>
-        <p className="text-slate-500 text-base leading-relaxed">
-          Your personalised advertising workspace starts here.
+        <p className="text-neutral-400 text-sm leading-relaxed">
+          Your enterprise advertising compliance intelligence workspace starts here.
         </p>
       </motion.div>
 
@@ -68,7 +68,7 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
         <div>
           <label
             htmlFor="fullName"
-            className="block text-sm font-medium text-slate-700 mb-2"
+            className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-2"
           >
             Full name
           </label>
@@ -83,7 +83,7 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
             placeholder="e.g. Alex Johnson"
             className={`input-field w-full ${
               showError
-                ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
                 : ''
             }`}
           />
@@ -91,7 +91,7 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-2 text-sm text-red-500"
+              className="mt-2 text-xs text-red-400"
             >
               Please enter at least 2 characters.
             </motion.p>
@@ -99,10 +99,10 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
         </div>
 
         {/* Hint */}
-        <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-xl border border-blue-100">
-          <Sparkles className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
-          <p className="text-xs text-blue-700 leading-relaxed">
-            Your name helps us personalise your AI workspace and generate branded copy that feels uniquely yours.
+        <div className="flex items-start gap-2.5 p-3.5 bg-[#181818] rounded-lg border border-white/10">
+          <Sparkles className="w-4 h-4 text-[#E50914] mt-0.5 shrink-0" />
+          <p className="text-xs text-neutral-300 leading-relaxed">
+            Your name customises audit reports, governance sign-offs, and compliance logs across your organisation.
           </p>
         </div>
 
@@ -110,9 +110,9 @@ export default function StepPersonal({ onNext, initialName = '' }: StepPersonalP
         <button
           type="submit"
           disabled={!isValid && touched}
-          className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-base"
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 text-sm font-bold uppercase tracking-wider"
         >
-          Continue
+          Continue to Company Setup
           <ChevronRight className="w-5 h-5" />
         </button>
       </motion.form>

@@ -1,0 +1,97 @@
+{
+  "analysis_id": "d9543167-a65e-4f8f-a0b7-22f3a4a25250",
+  "status": "completed",
+  "compliance_score": null,
+  "overall_status": "inconclusive",
+  "summary": "MOCK ANALYSIS \u2014 this is placeholder output for infrastructure testing. No AI inference has been performed yet; every rule was left inconclusive.",
+  "violations": [],
+  "passed_checks": [],
+  "inconclusive_checks": [
+    {
+      "rule_id": "BR001",
+      "category": "logo",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "3ab710fd-ee4c-43c5-b671-695543236019"
+    },
+    {
+      "rule_id": "BR002",
+      "category": "colors",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "1af6e4ac-33e4-47be-8c27-259f547e6841"
+    },
+    {
+      "rule_id": "BR003",
+      "category": "copy",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "eec8709d-a16a-4551-b269-479417f88d85"
+    },
+    {
+      "rule_id": "BR004",
+      "category": "logo",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "481be93c-9f71-40af-9412-3d2108d5f358"
+    },
+    {
+      "rule_id": "BR005",
+      "category": "colors",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "50098e98-b11a-4035-8ae2-0352bd620bd7"
+    },
+    {
+      "rule_id": "BR006",
+      "category": "copy",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "321c9a0c-2cb5-4de6-9be7-72bfc7ae5891"
+    },
+    {
+      "rule_id": "BR007",
+      "category": "logo",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "cf8d10d3-a020-451b-9df9-a2cb2015fcf6"
+    },
+    {
+      "rule_id": "BR008",
+      "category": "colors",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "85429b5a-2b18-4ef2-bc38-e10e5a77b83e"
+    },
+    {
+      "rule_id": "BR009",
+      "category": "copy",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "6d260147-4c2f-4f7c-b174-1d313d366559"
+    }
+  ],
+  "recommendations": [
+    "Mock pipeline run only \u2014 connect the Vision SLM to get real compliance results."
+  ],
+  "analysis_metadata": {
+    "engine": "mock",
+    "is_mock": true,
+    "model": null,
+    "vision_observations": [],
+    "ocr_text": "",
+    "ocr_source": "mock",
+    "duration_ms": 7,
+    "brand_rules_count": 9,
+    "notes": "Placeholder visual context \u2014 no image inference has been performed. Placeholder OCR \u2014 no text extraction performed yet."
+  }
+}

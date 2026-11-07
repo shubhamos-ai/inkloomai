@@ -13,7 +13,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.encoders import jsonable_encoder
-from sqlalchemy.orm import Session
+from app.database import Session
 
 from app.api.deps import current_company
 from app.config import settings
@@ -325,7 +325,7 @@ def update_rules(
                 detail={"error": "not_found", "message": "Rule not found for this company."},
             )
         db.commit()
-        return jsonable_encoder(BrandRuleOut.model_validate(rule, from_attributes=True))
+        return jsonable_encoder(BrandRuleOut.model_validate(changed, from_attributes=True))
 
     # ---- batch shape --------------------------------------------------
     updated, skipped = [], []
@@ -363,7 +363,7 @@ def _find_rule(db: Session, company: Company, key: str):
     """Resolve a rule by uuid, code, or 'rule_id' string for a company."""
     import uuid as _uuid
 
-    from sqlalchemy import select
+    from app.database import select
 
     from app.models import BrandRule
 

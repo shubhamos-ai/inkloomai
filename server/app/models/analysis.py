@@ -1,48 +1,43 @@
-"""Analysis model — one advertisement compliance review."""
+"""Analysis model for MongoDB — one advertisement compliance review."""
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
-from typing import Optional
-
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.base import TimestampMixin, uuid_pk
+from typing import Any
+from app.db.mongodb import get_mongo_db
+from app.models.base import FieldRef, MongoDocument
 
 
-class Analysis(Base, TimestampMixin):
+class Analysis(MongoDocument):
     __tablename__ = "analyses"
+    __collection__ = "analyses"
 
-    id: Mapped[uuid.UUID] = uuid_pk()
-    company_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    brain_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        Uuid, ForeignKey("brand_brains.id", ondelete="SET NULL"), nullable=True
-    )
+    id = FieldRef("_id")
+    company_id = FieldRef("company_id")
+    brain_id = FieldRef("brain_id")
+    image_path = FieldRef("image_path")
+    original_filename = FieldRef("original_filename")
+    status = FieldRef("status")
+    compliance_score = FieldRef("compliance_score")
+    overall_status = FieldRef("overall_status")
+    final_decision = FieldRef("final_decision")
+    summary = FieldRef("summary")
+    report = FieldRef("report")
+    engine = FieldRef("engine")
+    is_mock = FieldRef("is_mock")
+    completed_at = FieldRef("completed_at")
+    created_at = FieldRef("created_at")
+    updated_at = FieldRef("updated_at")
 
-    # Storage path relative to STORAGE_DIR (never absolute, never user input).
-    image_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    # Original client filename kept for display only, sanitized.
-    original_filename: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "status" not in self:
+            self["status"] = "queued"
+        if "is_mock" not in self:
+            self["is_mock"] = False
+        if "engine" not in self:
+            self["engine"] = "nvidia/nemotron-3.5-super-vl-120b-a12b"
 
-    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False, index=True)
-
-    compliance_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    overall_status: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
-    summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    # Full structured report (validated by Pydantic before persisting).
-    report: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-
-    # "mock" or the vision model name, e.g. "gemma3:4b".
-    engine: Mapped[str] = mapped_column(String(60), nullable=False, default="mock")
-    is_mock: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    job = relationship(
-        "AnalysisJob", back_populates="analysis", uselist=False, cascade="all, delete-orphan"
-    )
+    @property
+    def job(self) -> Any | None:
+        from app.models.analysis_job import AnalysisJob
+        doc = get_mongo_db().analysis_jobs.find_one({"analysis_id": str(self.id)})
+        return AnalysisJob(doc) if doc else None

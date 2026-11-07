@@ -301,3 +301,75 @@ def validate_ai_output(
             ocr_text="",
             vision_observations=vision_engine.mock_observations()["observations"],
         )
+
+
+
+def report_from_nvidia_vision(
+    *,
+    analysis_id: str,
+    rules: list[dict[str, Any]],
+    vision: dict,
+    ocr_text: str = "",
+) -> dict:
+    """Format NVIDIA NIM Vision multimodal analysis into canonical report schema."""
+    rule_evals = vision.get("rule_evaluations", []) or []
+    checks = []
+    violations = []
+
+    for ev in rule_evals:
+        rule_code = str(ev.get("rule_id", "")).strip()
+        status = str(ev.get("status", "UNCERTAIN")).strip().upper()
+        explanation = str(ev.get("explanation", ""))
+        evidence = str(ev.get("evidence", ""))
+        raw_sev = str(ev.get("severity", "MAJOR")).lower()
+        if raw_sev not in ("critical", "major", "minor", "info"):
+            raw_sev = "major"
+
+        if status == "PASS":
+            checks.append({
+                "rule_id": rule_code,
+                "state": "passed",
+                "detail": explanation or "Satisfied.",
+                "confidence": 0.95,
+            })
+        elif status == "FAIL":
+            checks.append({
+                "rule_id": rule_code,
+                "state": "failed",
+                "detail": explanation or "Violated.",
+                "confidence": 0.95,
+            })
+            violations.append({
+                "rule_id": rule_code,
+                "severity": raw_sev,
+                "title": f"Violation: {ev.get('rule_text', rule_code)[:80]}",
+                "explanation": explanation,
+                "evidence": evidence,
+                "recommendation": f"Align advertisement to satisfy {rule_code}.",
+                "confidence": 0.95,
+            })
+        else:
+            checks.append({
+                "rule_id": rule_code,
+                "state": "inconclusive",
+                "detail": explanation or "Cannot verify with certainty from image.",
+                "confidence": 0.5,
+            })
+
+    raw = {
+        "summary": vision.get("summary", "Analysis completed."),
+        "violations": violations,
+        "checks": checks,
+        "recommendations": vision.get("recommendations", []),
+    }
+    metadata_extra = {
+        "engine": vision.get("engine", "nvidia/nemotron-3.5-super-vl-120b-a12b"),
+        "ocr_text": ocr_text or vision.get("extracted_text", ""),
+        "ocr_source": "nvidia_vision",
+    }
+    return validate_ai_output(
+        raw=raw,
+        analysis_id=analysis_id,
+        rules=rules,
+        metadata_extra=metadata_extra,
+    )

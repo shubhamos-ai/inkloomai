@@ -50,7 +50,7 @@ const ORDERED_CATEGORIES: RuleCategory[] = [
 // ─── Loading skeleton ──────────────────────────────────────────────────────────
 
 function Skeleton({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-lg bg-slate-100 ${className}`} />;
+  return <div className={`animate-pulse rounded-lg bg-neutral-800 ${className}`} />;
 }
 
 function LoadingState() {
@@ -63,9 +63,9 @@ function LoadingState() {
         </div>
         <Skeleton className="h-9 w-28" />
       </div>
-      <Skeleton className="h-24 w-full rounded-2xl" />
+      <Skeleton className="h-24 w-full rounded-xl" />
       {[1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-20 w-full rounded-2xl" />
+        <Skeleton key={i} className="h-20 w-full rounded-xl" />
       ))}
     </div>
   );
@@ -75,21 +75,21 @@ function LoadingState() {
 
 function StatusBadge({ status }: { status: BrandBrain['status'] }) {
   const map = {
-    active: 'bg-emerald-100 text-emerald-700',
-    processing: 'bg-amber-100 text-amber-700',
-    draft: 'bg-slate-100 text-slate-500',
+    active: 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/60',
+    processing: 'bg-amber-950/80 text-amber-400 border border-amber-800/60',
+    draft: 'bg-neutral-800 text-neutral-400 border border-white/10',
   } as const;
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${map[status]}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${map[status]}`}
     >
       <span
         className={`w-1.5 h-1.5 rounded-full ${
           status === 'active'
-            ? 'bg-emerald-500'
+            ? 'bg-emerald-400'
             : status === 'processing'
-            ? 'bg-amber-500 animate-pulse'
-            : 'bg-slate-400'
+            ? 'bg-amber-400 animate-pulse'
+            : 'bg-neutral-400'
         }`}
       />
       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -123,20 +123,20 @@ function RulesTextPanel({ text, onChange, onDirty }: RulesTextPanelProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div className="bg-[#181818] rounded-xl border border-white/10 overflow-hidden shadow-xl select-none">
       {/* Header */}
       <button
         onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#202020] transition-colors"
       >
         <div className="flex items-center gap-2.5">
-          <Layers size={15} className="text-slate-500" />
-          <span className="text-sm font-semibold text-slate-900">Raw Brand Guidelines</span>
+          <Layers size={15} className="text-[#E50914]" />
+          <span className="text-sm font-bold text-white uppercase tracking-wider">Corporate Policy Document (Rules.txt)</span>
         </div>
         {expanded ? (
-          <ChevronDown size={15} className="text-slate-400" />
+          <ChevronDown size={15} className="text-neutral-400" />
         ) : (
-          <ChevronRight size={15} className="text-slate-400" />
+          <ChevronRight size={15} className="text-neutral-400" />
         )}
       </button>
 
@@ -149,32 +149,32 @@ function RulesTextPanel({ text, onChange, onDirty }: RulesTextPanelProps) {
             transition={{ duration: 0.22, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="border-t border-slate-100 px-5 pb-5 pt-4">
+            <div className="border-t border-white/10 px-5 pb-5 pt-4">
               {/* Controls */}
               <div className="flex items-center gap-2 mb-3">
                 <button
                   onClick={() => setEditing((p) => !p)}
-                  className="flex items-center gap-1.5 h-7 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+                  className="flex items-center gap-1.5 h-7 px-3 rounded-md border border-white/10 bg-[#252525] text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#303030] transition-colors"
                 >
                   {editing ? (
                     <>
                       <EyeOff size={11} />
-                      View
+                      View Mode
                     </>
                   ) : (
                     <>
                       <Eye size={11} />
-                      Edit
+                      Edit Rules
                     </>
                   )}
                 </button>
                 <button
                   onClick={handleCopy}
                   disabled={!text}
-                  className="flex items-center gap-1.5 h-7 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-1.5 h-7 px-3 rounded-md border border-white/10 bg-[#252525] text-xs font-semibold text-neutral-300 hover:text-white hover:bg-[#303030] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <Copy size={11} />
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? 'Copied!' : 'Copy Document'}
                 </button>
               </div>
 
@@ -183,15 +183,15 @@ function RulesTextPanel({ text, onChange, onDirty }: RulesTextPanelProps) {
                   value={text}
                   onChange={(e) => handleEdit(e.target.value)}
                   rows={12}
-                  placeholder="Paste your brand guidelines here…"
-                  className="w-full px-3.5 py-3 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+                  placeholder="Paste organizational policies and advertising rules here…"
+                  className="w-full px-3.5 py-3 rounded-md border border-white/15 bg-[#1F1F1F] text-xs text-neutral-200 leading-relaxed font-mono resize-y focus:outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-shadow"
                 />
               ) : (
                 <div className="relative">
-                  <pre className="w-full h-48 overflow-auto px-3.5 py-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 font-mono leading-relaxed whitespace-pre-wrap break-words">
+                  <pre className="w-full h-48 overflow-auto px-3.5 py-3 rounded-md bg-[#121212] border border-white/5 text-xs text-neutral-300 font-mono leading-relaxed whitespace-pre-wrap break-words">
                     {text || (
-                      <span className="text-slate-400 italic">
-                        No raw guidelines stored. Switch to Edit mode to add them.
+                      <span className="text-neutral-500 italic">
+                        No raw guidelines stored. Click Edit Rules to specify policies.
                       </span>
                     )}
                   </pre>
@@ -221,24 +221,24 @@ function CategorySection({ category, rules, onEdit, onDelete, onToggle }: Catego
   const activeCount = rules.filter((r) => r.isActive).length;
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div className="bg-[#181818] rounded-xl border border-white/10 overflow-hidden shadow-xl select-none">
       {/* Header */}
       <button
         onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#202020] transition-colors"
       >
         <div className="flex items-center gap-2.5">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-sm font-bold text-white uppercase tracking-wider">
             {RULE_CATEGORY_LABELS[category]}
           </span>
-          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-xs font-medium text-slate-500">
-            {activeCount}/{rules.length}
+          <span className="px-2.5 py-0.5 rounded-full bg-neutral-800 border border-white/10 text-xs font-bold text-neutral-300">
+            {activeCount}/{rules.length} active
           </span>
         </div>
         {expanded ? (
-          <ChevronDown size={15} className="text-slate-400" />
+          <ChevronDown size={15} className="text-neutral-400" />
         ) : (
-          <ChevronRight size={15} className="text-slate-400" />
+          <ChevronRight size={15} className="text-neutral-400" />
         )}
       </button>
 
@@ -251,7 +251,7 @@ function CategorySection({ category, rules, onEdit, onDelete, onToggle }: Catego
             transition={{ duration: 0.22, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="border-t border-slate-100 px-4 pb-4 pt-3 space-y-2.5">
+            <div className="border-t border-white/5 px-4 pb-4 pt-3 space-y-2.5 bg-[#141414]">
               <AnimatePresence mode="popLayout">
                 {rules.map((rule) => (
                   <RuleCard
@@ -301,8 +301,6 @@ export default function BrandBrainContent() {
       .finally(() => !cancelled && setIsLoading(false));
     return () => { cancelled = true; };
   }, []);
-
-  // ── Handlers ──
 
   const markDirty = useCallback(() => setIsDirty(true), []);
 
@@ -361,15 +359,13 @@ export default function BrandBrainContent() {
       setBrain(updated);
       setRules(updated.rules);
       setIsDirty(false);
-      toast.success('Brand Brain saved successfully.');
+      toast.success('Brand Brain synchronized with NVIDIA Vision engine.');
     } catch {
       toast.error('Failed to save. Please try again.');
     } finally {
       setIsSaving(false);
     }
   }
-
-  // ── Group rules by category ──
 
   const rulesByCategory = ORDERED_CATEGORIES.reduce<Record<RuleCategory, BrandRule[]>>(
     (acc, cat) => {
@@ -385,29 +381,29 @@ export default function BrandBrainContent() {
 
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-6 select-none">
         {/* ── Page header ── */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b border-white/10 pb-6">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Brain size={19} className="text-blue-600" />
+            <div className="w-10 h-10 rounded bg-[#E50914] flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg shadow-red-950/60">
+              <Brain size={22} className="text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl font-bold text-slate-900">Brand Brain</h1>
+                <h1 className="text-3xl font-black text-white tracking-tight uppercase">Brand Brain</h1>
                 {brain && <StatusBadge status={brain.status} />}
               </div>
               <div className="flex items-center gap-3 mt-1 flex-wrap">
                 {brain && (
                   <>
-                    <span className="text-xs text-slate-500">
-                      Updated {formatRelativeDate(brain.lastUpdatedAt)}
+                    <span className="text-xs text-neutral-400">
+                      Synchronized {formatRelativeDate(brain.lastUpdatedAt)}
                     </span>
-                    <span className="text-slate-200 select-none">·</span>
-                    <span className="text-xs text-slate-500">v{brain.version}</span>
-                    <span className="text-slate-200 select-none">·</span>
-                    <span className="text-xs text-slate-500">
-                      {totalActive}/{rules.length} active rules
+                    <span className="text-neutral-600 select-none">·</span>
+                    <span className="text-xs text-neutral-400">Version {brain.version}</span>
+                    <span className="text-neutral-600 select-none">·</span>
+                    <span className="text-xs font-semibold text-[#E50914]">
+                      {totalActive}/{rules.length} Active Constraints
                     </span>
                   </>
                 )}
@@ -423,55 +419,55 @@ export default function BrandBrainContent() {
                 animate={{ opacity: 1, scale: 1 }}
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex items-center gap-2 h-9 px-4 rounded-xl bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm shadow-blue-200"
+                className="flex items-center gap-2 h-9 px-4 rounded-md bg-[#E50914] text-xs font-bold text-white hover:bg-[#b80710] disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-lg shadow-red-950/50 uppercase"
               >
                 {isSaving ? (
                   <>
                     <span className="w-3.5 h-3.5 rounded-full border-2 border-white/40 border-t-white animate-spin" />
-                    Saving…
+                    Synchronizing…
                   </>
                 ) : (
                   <>
                     <Save size={13} />
-                    Save Changes
+                    Sync with AI
                   </>
                 )}
               </motion.button>
             )}
             <button
               onClick={handleAddOpen}
-              className="flex items-center gap-2 h-9 px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors shadow-sm"
+              className="flex items-center gap-2 h-9 px-4 rounded-md border border-white/10 bg-[#252525] text-xs font-bold text-white hover:bg-[#303030] hover:border-white/20 transition-colors uppercase"
             >
               <Plus size={14} />
-              Add Rule
+              Add Policy Rule
             </button>
           </div>
         </div>
 
         {/* ── Company info card ── */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <div className="bg-[#181818] rounded-xl border border-white/10 shadow-xl p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                <Building2 size={15} className="text-slate-500" />
+              <div className="w-10 h-10 rounded-lg bg-neutral-900 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <Building2 size={18} className="text-[#E50914]" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">
-                  {session?.companyName || 'Your Company'}
+                <p className="text-base font-bold text-white">
+                  {session?.companyName || 'Enterprise Workspace'}
                 </p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {session?.industry && (
-                    <span className="text-xs text-slate-500">{session.industry}</span>
+                    <span className="text-xs text-neutral-400 font-medium">{session.industry}</span>
                   )}
                   {session?.industry && session?.website && (
-                    <span className="text-slate-200 select-none">·</span>
+                    <span className="text-neutral-600 select-none">·</span>
                   )}
                   {session?.website && (
                     <a
                       href={session.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-blue-600 hover:underline"
+                      className="text-xs text-[#E50914] hover:underline"
                     >
                       {session.website}
                     </a>
@@ -481,10 +477,10 @@ export default function BrandBrainContent() {
             </div>
             <a
               href="/settings"
-              className="flex items-center gap-1.5 h-7 px-3 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors flex-shrink-0"
+              className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-white/10 bg-[#252525] text-xs font-bold text-neutral-300 hover:text-white hover:bg-[#303030] transition-colors flex-shrink-0"
             >
-              <Edit2 size={11} />
-              Edit
+              <Edit2 size={12} />
+              Edit Settings
             </a>
           </div>
         </div>
@@ -498,24 +494,24 @@ export default function BrandBrainContent() {
 
         {/* ── Rules by category ── */}
         <div>
-          <h2 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-            <Layers size={14} className="text-slate-400" />
-            Rules by Category
+          <h2 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <Layers size={14} className="text-[#E50914]" />
+            Configured Policy Disciplines
           </h2>
 
           {rules.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-dashed border-slate-200 py-14 text-center">
-              <Brain size={28} className="mx-auto text-slate-300 mb-3" />
-              <p className="text-sm font-medium text-slate-500">No rules yet</p>
-              <p className="text-xs text-slate-400 mt-1 mb-4">
-                Add your first brand compliance rule to get started.
+            <div className="bg-[#181818] rounded-xl border border-dashed border-white/15 py-14 text-center">
+              <Brain size={32} className="mx-auto text-neutral-600 mb-3" />
+              <p className="text-sm font-bold text-white uppercase tracking-wider">No brand rules configured</p>
+              <p className="text-xs text-neutral-400 mt-1 mb-4">
+                Add compliance rules to activate automated advertisement scanning.
               </p>
               <button
                 onClick={handleAddOpen}
-                className="inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center gap-2 h-9 px-5 rounded-md bg-[#E50914] text-xs font-bold text-white hover:bg-[#b80710] shadow-lg shadow-red-950/50 uppercase"
               >
                 <Plus size={14} />
-                Add Rule
+                Add First Rule
               </button>
             </div>
           ) : (
@@ -541,16 +537,16 @@ export default function BrandBrainContent() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
-              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 bg-slate-900 rounded-full shadow-xl text-sm text-white font-medium"
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-5 py-3 bg-[#181818] border border-[#E50914] rounded-full shadow-2xl text-xs text-white font-bold uppercase tracking-wider"
             >
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              Unsaved changes
+              <span className="w-2 h-2 rounded-full bg-[#E50914] animate-pulse" />
+              Unsaved Brand Changes
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="ml-1 text-blue-300 hover:text-blue-200 transition-colors disabled:opacity-50"
+                className="ml-2 text-[#E50914] hover:underline disabled:opacity-50"
               >
-                Save now
+                Sync Now
               </button>
             </motion.div>
           )}

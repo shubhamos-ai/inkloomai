@@ -1,0 +1,49 @@
+{
+  "analysis_id": "e42752a1-9d5f-48ac-a65a-814c511e637e",
+  "status": "completed",
+  "compliance_score": null,
+  "overall_status": "inconclusive",
+  "summary": "MOCK ANALYSIS \u2014 this is placeholder output for infrastructure testing. No AI inference has been performed yet; every rule was left inconclusive.",
+  "violations": [],
+  "passed_checks": [],
+  "inconclusive_checks": [
+    {
+      "rule_id": "BR001",
+      "category": "logo",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "d2af11fe-6046-4edf-84b2-6e84f74b9a47"
+    },
+    {
+      "rule_id": "BR002",
+      "category": "colors",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "c28e4cb5-c562-49b7-928e-cd27d04394bb"
+    },
+    {
+      "rule_id": "BR003",
+      "category": "copy",
+      "state": "inconclusive",
+      "detail": "Not evaluated \u2014 mock pipeline run.",
+      "confidence": 0.0,
+      "rule_uuid": "5a467294-e3c2-463b-ad7b-5e9ce3e36a7b"
+    }
+  ],
+  "recommendations": [
+    "Mock pipeline run only \u2014 connect the Vision SLM to get real compliance results."
+  ],
+  "analysis_metadata": {
+    "engine": "mock",
+    "is_mock": true,
+    "model": null,
+    "vision_observations": [],
+    "ocr_text": "",
+    "ocr_source": "mock",
+    "duration_ms": 4,
+    "brand_rules_count": 3,
+    "notes": "Placeholder visual context \u2014 no image inference has been performed. Placeholder OCR \u2014 no text extraction performed yet."
+  }
+}

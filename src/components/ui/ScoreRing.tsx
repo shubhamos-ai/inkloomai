@@ -18,15 +18,15 @@ type ScoreColour = {
 
 function getScoreColour(score: number): ScoreColour {
   if (score >= 90) {
-    return { stroke: '#16a34a', text: 'text-green-600', label: 'Excellent' };
+    return { stroke: '#10b981', text: 'text-emerald-400', label: 'APPROVED' };
   }
   if (score >= 75) {
-    return { stroke: '#2563eb', text: 'text-blue-600', label: 'Good' };
+    return { stroke: '#3b82f6', text: 'text-blue-400', label: 'SATISFACTORY' };
   }
   if (score >= 50) {
-    return { stroke: '#f97316', text: 'text-orange-500', label: 'Fair' };
+    return { stroke: '#f59e0b', text: 'text-amber-400', label: 'NEEDS REVIEW' };
   }
-  return { stroke: '#dc2626', text: 'text-red-600', label: 'Poor' };
+  return { stroke: '#E50914', text: 'text-[#E50914]', label: 'REJECTED' };
 }
 
 export default function ScoreRing({
@@ -49,12 +49,12 @@ export default function ScoreRing({
   const cy = size / 2;
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-1.5 select-none">
       <svg
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        aria-label={`Score: ${clampedScore} out of 100`}
+        aria-label={`Compliance Score: ${clampedScore} out of 100`}
         role="img"
       >
         {/* Background track */}
@@ -63,7 +63,7 @@ export default function ScoreRing({
           cy={cy}
           r={radius}
           fill="none"
-          stroke="#e2e8f0"
+          stroke="#262626"
           strokeWidth={strokeWidth}
         />
 
@@ -93,8 +93,8 @@ export default function ScoreRing({
           style={{
             fontSize: size * 0.22,
             fontFamily: 'inherit',
-            fontWeight: 700,
-            fill: colour.stroke,
+            fontWeight: 800,
+            fill: '#ffffff',
           }}
         >
           {clampedScore}
@@ -102,7 +102,9 @@ export default function ScoreRing({
       </svg>
 
       {showLabel && (
-        <span className={`text-xs font-semibold tracking-wide ${colour.text}`}>
+        <span
+          className={`text-xs font-bold uppercase tracking-wider ${colour.text}`}
+        >
           {colour.label}
         </span>
       )}

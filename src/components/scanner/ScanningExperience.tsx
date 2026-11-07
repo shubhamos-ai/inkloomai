@@ -37,18 +37,17 @@ interface Stage {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const STAGES: Stage[] = [
-  { id: 0, label: 'Analysing visual composition', Icon: ScanLine },
-  { id: 1, label: 'Extracting advertisement text', Icon: Type },
-  { id: 2, label: 'Identifying brand elements', Icon: Layers },
-  { id: 3, label: 'Checking company advertising policies', Icon: Shield },
-  { id: 4, label: 'Detecting brand violations', Icon: AlertTriangle },
-  { id: 5, label: 'Generating compliance report', Icon: FileText },
+  { id: 0, label: 'Scanning visual composition with NVIDIA NIM', Icon: ScanLine },
+  { id: 1, label: 'Extracting advertisement copy & disclaimers', Icon: Type },
+  { id: 2, label: 'Verifying logo safety margins & visual identity', Icon: Layers },
+  { id: 3, label: 'Evaluating promotional discounts & mandatory notices', Icon: Shield },
+  { id: 4, label: 'Detecting policy breaches & discrepancies', Icon: AlertTriangle },
+  { id: 5, label: 'Synthesizing governance compliance report', Icon: FileText },
 ];
 
 const POLL_INTERVAL_MS = 1500;
 const MIN_DISPLAY_MS = 3000;
 
-/** How many stages should appear completed for a given backend status */
 const STATUS_STAGE_MAP: Record<string, number> = {
   queued: 0,
   processing: 2,
@@ -74,7 +73,7 @@ function StageIcon({
         animate={{ scale: 1, opacity: 1 }}
         transition={{ type: 'spring', stiffness: 300, damping: 20 }}
       >
-        <CheckCircle className="w-5 h-5 text-emerald-500" />
+        <CheckCircle className="w-5 h-5 text-emerald-400" />
       </motion.div>
     );
   }
@@ -87,15 +86,14 @@ function StageIcon({
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.2 }}
       >
-        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+        <Loader2 className="w-5 h-5 text-[#E50914] animate-spin" />
       </motion.div>
     );
   }
 
-  // pending
   return (
     <div className="w-5 h-5 flex items-center justify-center">
-      <Icon className="w-4 h-4 text-slate-300" />
+      <Icon className="w-4 h-4 text-neutral-600" />
     </div>
   );
 }
@@ -111,18 +109,16 @@ function StageRow({
 }) {
   const isActive = stageState === 'active';
   const isCompleted = stageState === 'completed';
-  const isPending = stageState === 'pending';
 
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.07, duration: 0.4, ease: 'easeOut' }}
-      className={`flex items-center gap-3 py-2.5 px-3 rounded-xl transition-colors duration-300 ${
-        isActive ? 'bg-blue-50 border border-blue-100' : ''
+      className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors duration-300 ${
+        isActive ? 'bg-red-950/40 border border-red-900/50 shadow-lg' : ''
       }`}
     >
-      {/* Stage icon */}
       <div className="flex-shrink-0 w-5 h-5">
         <AnimatePresence mode="wait">
           <StageIcon
@@ -133,23 +129,21 @@ function StageRow({
         </AnimatePresence>
       </div>
 
-      {/* Label */}
       <span
-        className={`text-sm font-medium transition-colors duration-300 ${
+        className={`text-xs font-semibold tracking-wide transition-colors duration-300 ${
           isCompleted
-            ? 'text-emerald-600'
+            ? 'text-emerald-400'
             : isActive
-            ? 'text-blue-700'
-            : 'text-slate-400'
+            ? 'text-white'
+            : 'text-neutral-500'
         }`}
       >
         {stage.label}
       </span>
 
-      {/* Completed line-through effect */}
       {isCompleted && (
         <motion.div
-          className="flex-1 h-px bg-emerald-200 ml-auto max-w-[32px]"
+          className="flex-1 h-px bg-emerald-800 ml-auto max-w-[32px]"
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           style={{ originX: 0 }}
@@ -162,12 +156,12 @@ function StageRow({
 
 function ProgressBar({ progress }: { progress: number }) {
   return (
-    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+    <div className="w-full h-2 bg-neutral-900 rounded-full overflow-hidden border border-white/10">
       <motion.div
         className="h-full rounded-full"
         style={{
-          background: 'linear-gradient(to right, #2563EB, #60A5FA)',
-          boxShadow: '0 0 8px rgba(37,99,235,0.4)',
+          background: 'linear-gradient(to right, #E50914, #ff3b47)',
+          boxShadow: '0 0 10px rgba(229,9,20,0.5)',
         }}
         initial={{ width: '0%' }}
         animate={{ width: `${progress}%` }}
@@ -185,21 +179,20 @@ function ErrorState({ onFailed }: { onFailed: () => void }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="w-14 h-14 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+      <div className="w-14 h-14 rounded-full bg-red-950/80 border border-red-800 flex items-center justify-center shadow-xl">
         <XCircle className="w-7 h-7 text-red-500" />
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-slate-800">
-          Analysis Failed
+        <h3 className="text-lg font-bold text-white uppercase tracking-wider">
+          Inspection Interrupted
         </h3>
-        <p className="mt-1 text-sm text-slate-500 max-w-xs mx-auto">
-          We encountered an error while analysing your advertisement. Please try
-          again.
+        <p className="mt-1 text-xs text-neutral-400 max-w-xs mx-auto">
+          We encountered an issue communicating with the AI pipeline. Please retry the analysis.
         </p>
       </div>
       <button
         onClick={onFailed}
-        className="mt-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors duration-200 shadow-sm"
+        className="mt-2 px-6 py-2.5 bg-[#E50914] hover:bg-[#b80710] text-white text-xs font-bold uppercase rounded-md transition-all duration-200 shadow-lg shadow-red-950/50"
       >
         Try Again
       </button>
@@ -207,16 +200,14 @@ function ErrorState({ onFailed }: { onFailed: () => void }) {
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function getStatusLabel(status: AnalysisStatus): string {
   switch (status) {
     case 'queued':
-      return 'Queued — waiting to process…';
+      return 'Queued — waiting for NVIDIA GPU inference…';
     case 'processing':
-      return 'Processing…';
+      return 'NVIDIA NIM Multimodal model inspecting banner…';
     case 'completed':
-      return 'Finalising report…';
+      return 'Finalising compliance report…';
     case 'failed':
       return 'Analysis failed';
     case 'cancelled':
@@ -234,8 +225,6 @@ function computeStageStates(completedCount: number): StageState[] {
   });
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function ScanningExperience({
   jobId,
   imagePreviewUrl,
@@ -247,10 +236,9 @@ export default function ScanningExperience({
   const [isError, setIsError] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
 
-  // Track when the component mounted for minimum display time enforcement
   const mountTimeRef = useRef(Date.now());
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const resolvedRef = useRef(false); // prevent double-fire of onComplete/onFailed
+  const resolvedRef = useRef(false);
 
   const stopPolling = useCallback(() => {
     if (intervalRef.current !== null) {
@@ -265,7 +253,6 @@ export default function ScanningExperience({
       resolvedRef.current = true;
       stopPolling();
 
-      // Ensure stages complete visually first
       setCompletedStages(STAGES.length);
       setIsScanning(false);
 
@@ -291,11 +278,8 @@ export default function ScanningExperience({
   }, [onFailed, stopPolling]);
 
   useEffect(() => {
-    // Progressively advance stages on a visual timer, independent of polling
-    // This ensures smooth stage progression even if the backend is slow
     const stageAdvanceInterval = setInterval(() => {
       setCompletedStages((prev) => {
-        // Don't advance beyond "processing" stages (first 3) until backend confirms
         if (prev < 3) return prev + 1;
         return prev;
       });
@@ -328,11 +312,10 @@ export default function ScanningExperience({
           handleFailed();
         }
       } catch {
-        // Network blip — keep polling silently
+        // Network blip
       }
     };
 
-    // Poll immediately, then on interval
     void poll();
     intervalRef.current = setInterval(poll, POLL_INTERVAL_MS);
 
@@ -347,7 +330,7 @@ export default function ScanningExperience({
   const activeStage = STAGES[Math.min(completedStages, STAGES.length - 1)];
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto select-none">
       <motion.div
         className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8"
         initial={{ opacity: 0, y: 16 }}
@@ -356,22 +339,21 @@ export default function ScanningExperience({
       >
         {/* ── LEFT: Image panel ── */}
         <div className="flex flex-col gap-4">
-          <div className="relative aspect-[4/3] w-full">
+          <div className="relative aspect-[4/3] w-full rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-black">
             <ScanningImage
               imageUrl={imagePreviewUrl}
               isScanning={isScanning}
             />
           </div>
 
-          {/* Subtle footer note */}
-          <p className="text-xs text-slate-400 text-center">
-            Your advertisement is being processed securely.
+          <p className="text-xs text-neutral-500 text-center">
+            Encrypted evaluation · Direct NVIDIA NIM Multimodal Pipeline
           </p>
         </div>
 
         {/* ── RIGHT: Progress panel ── */}
         <div className="flex flex-col justify-center">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+          <div className="bg-[#181818] rounded-xl border border-white/10 shadow-2xl p-6 lg:p-8">
             <AnimatePresence mode="wait">
               {isError ? (
                 <ErrorState key="error" onFailed={onFailed} />
@@ -386,29 +368,28 @@ export default function ScanningExperience({
                   {/* Header */}
                   <div>
                     <motion.h2
-                      className="text-xl font-bold text-slate-900 leading-snug"
+                      className="text-xl font-black text-white uppercase tracking-wider leading-snug"
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1, duration: 0.4 }}
                     >
-                      Analysing your advertisement
+                      Inspecting Advertisement
                     </motion.h2>
                     <motion.p
-                      className="mt-1.5 text-sm text-slate-500 leading-relaxed"
+                      className="mt-1.5 text-xs text-neutral-400 leading-relaxed"
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.18, duration: 0.4 }}
                     >
-                      Your Brand Brain is reviewing every element of your
-                      advertisement.
+                      Deep visual compliance scanning across Brand Brain guidelines.
                     </motion.p>
                   </div>
 
                   {/* Divider */}
-                  <div className="h-px bg-slate-100" />
+                  <div className="h-px bg-white/10" />
 
                   {/* Stage list */}
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-1">
                     {STAGES.map((stage, i) => (
                       <StageRow
                         key={stage.id}
@@ -420,13 +401,13 @@ export default function ScanningExperience({
                   </div>
 
                   {/* Progress bar section */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 pt-2">
                     <ProgressBar progress={progress} />
 
                     <div className="flex items-center justify-between">
                       <motion.p
                         key={activeStage?.label}
-                        className="text-xs font-medium text-blue-600 truncate max-w-[200px]"
+                        className="text-xs font-semibold text-[#E50914] truncate max-w-[220px]"
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
@@ -436,7 +417,7 @@ export default function ScanningExperience({
 
                       <motion.span
                         key={progress}
-                        className="text-xs font-semibold text-slate-500 ml-2 tabular-nums flex-shrink-0"
+                        className="text-xs font-bold text-neutral-400 ml-2 tabular-nums flex-shrink-0"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.2 }}
@@ -447,11 +428,11 @@ export default function ScanningExperience({
                   </div>
 
                   {/* Status label */}
-                  <div className="flex items-center gap-2 pt-1">
-                    <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin flex-shrink-0" />
+                  <div className="flex items-center gap-2 pt-1 border-t border-white/5">
+                    <Loader2 className="w-3.5 h-3.5 text-[#E50914] animate-spin flex-shrink-0" />
                     <motion.span
                       key={status}
-                      className="text-xs text-slate-500 font-medium"
+                      className="text-xs text-neutral-400 font-medium"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}

@@ -1,48 +1,43 @@
-"""AnalysisJob model — database-backed background queue row.
-
-Survives restarts. The worker claims `queued` jobs one at a time (only one
-heavy vision inference runs at a time) and refreshes `heartbeat_at` so jobs
-orphaned by a crash can be recovered.
-"""
+"""AnalysisJob model for MongoDB — background queue document."""
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
-from typing import Optional
-
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.base import TimestampMixin, uuid_pk
+from typing import Any
+from app.db.mongodb import get_mongo_db, utcnow
+from app.models.base import FieldRef, MongoDocument
 
 
-class AnalysisJob(Base, TimestampMixin):
+class AnalysisJob(MongoDocument):
     __tablename__ = "analysis_jobs"
+    __collection__ = "analysis_jobs"
 
-    id: Mapped[uuid.UUID] = uuid_pk()
-    analysis_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid,
-        ForeignKey("analyses.id", ondelete="CASCADE"),
-        unique=True,
-        index=True,
-        nullable=False,
-    )
-    company_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
-    )
+    id = FieldRef("_id")
+    analysis_id = FieldRef("analysis_id")
+    company_id = FieldRef("company_id")
+    status = FieldRef("status")
+    progress = FieldRef("progress")
+    current_stage = FieldRef("current_stage")
+    attempts = FieldRef("attempts")
+    error = FieldRef("error")
+    queued_at = FieldRef("queued_at")
+    started_at = FieldRef("started_at")
+    completed_at = FieldRef("completed_at")
+    heartbeat_at = FieldRef("heartbeat_at")
+    created_at = FieldRef("created_at")
+    updated_at = FieldRef("updated_at")
 
-    status: Mapped[str] = mapped_column(String(20), default="queued", nullable=False, index=True)
-    progress: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    current_stage: Mapped[str] = mapped_column(String(200), default="", nullable=False)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "status" not in self:
+            self["status"] = "queued"
+        if "progress" not in self:
+            self["progress"] = 0
+        if "attempts" not in self:
+            self["attempts"] = 0
+        if "queued_at" not in self:
+            self["queued_at"] = utcnow()
 
-    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    queued_at: Mapped[datetime] = mapped_column(DateTime, default=None, nullable=True)
-    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    # Refreshed while processing; used for crash recovery.
-    heartbeat_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    analysis = relationship("Analysis", back_populates="job")
+    @property
+    def analysis(self) -> Any | None:
+        from app.models.analysis import Analysis
+        doc = get_mongo_db().analyses.find_one({"_id": str(self.analysis_id)})
+        return Analysis(doc) if doc else None

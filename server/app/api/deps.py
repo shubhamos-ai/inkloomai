@@ -17,8 +17,8 @@ from dataclasses import dataclass
 
 import uuid
 from fastapi import Depends, HTTPException, Request
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from app.database import select
+from app.database import Session
 
 from app.config import settings
 from app.database import get_db, utcnow
@@ -115,7 +115,7 @@ def _company_from_session(db: Session, request: Request, user) -> Company | None
                 status_code=401,
                 detail={"error": "invalid_company_id", "message": "X-Company-ID is not a valid company id."},
             )
-        company = next((c for c in owned if c.id == cid), None)
+        company = next((c for c in owned if str(c.id) == str(cid)), None)
         if company is None:
             raise HTTPException(
                 status_code=401,
@@ -212,7 +212,7 @@ def current_company(ctx: AuthContext = Depends(resolve_context)) -> Company:
 
 def get_isolated_brain(brain_id: uuid.UUID, company: Company, db: Session) -> BrandBrain:
     brain = db.get(BrandBrain, brain_id)
-    if brain is None or brain.company_id != company.id:
+    if brain is None or str(brain.company_id) != str(company.id):
         raise HTTPException(
             status_code=404,
             detail={"error": "not_found", "message": "Resource not found."},
@@ -222,7 +222,7 @@ def get_isolated_brain(brain_id: uuid.UUID, company: Company, db: Session) -> Br
 
 def get_isolated_rule(rule_id: uuid.UUID, company: Company, db: Session) -> BrandRule:
     rule = db.get(BrandRule, rule_id)
-    if rule is None or rule.company_id != company.id:
+    if rule is None or str(rule.company_id) != str(company.id):
         raise HTTPException(
             status_code=404,
             detail={"error": "not_found", "message": "Resource not found."},
@@ -232,7 +232,7 @@ def get_isolated_rule(rule_id: uuid.UUID, company: Company, db: Session) -> Bran
 
 def get_isolated_analysis(analysis_id: uuid.UUID, company: Company, db: Session) -> Analysis:
     analysis = db.get(Analysis, analysis_id)
-    if analysis is None or analysis.company_id != company.id:
+    if analysis is None or str(analysis.company_id) != str(company.id):
         raise HTTPException(
             status_code=404,
             detail={"error": "not_found", "message": "Resource not found."},

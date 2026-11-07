@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   User,
+  ShieldCheck,
 } from 'lucide-react';
 import { getUserSession, clearUserSession } from '@/lib/session';
 
@@ -58,24 +59,24 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
   return (
     <>
       {/* Top Header Bar */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-slate-200 h-14 flex items-center justify-between px-4">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[#121212] border-b border-white/10 h-14 flex items-center justify-between px-4">
         {/* Logo */}
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-            <span className="text-white text-[11px] font-bold tracking-tight">IN</span>
+          <div className="w-7 h-7 rounded bg-[#E50914] flex items-center justify-center">
+            <ShieldCheck size={16} className="text-white" />
           </div>
-          <span className="text-slate-900 font-semibold text-sm tracking-tight">
-            Inkloom AI
+          <span className="text-white font-extrabold text-sm tracking-tight uppercase">
+            Inkloom<span className="text-[#E50914]">AI</span>
           </span>
         </div>
 
         {/* Hamburger */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
           aria-label="Open menu"
         >
-          <Menu size={20} className="text-slate-700" />
+          <Menu size={20} className="text-white" />
         </button>
       </header>
 
@@ -88,7 +89,7 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="lg:hidden fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
             onClick={closeDrawer}
           />
         )}
@@ -103,31 +104,31 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="lg:hidden fixed left-0 top-0 h-screen w-72 bg-white z-[60] flex flex-col shadow-2xl"
+            className="lg:hidden fixed left-0 top-0 h-screen w-72 bg-[#121212] border-r border-white/10 z-[60] flex flex-col shadow-2xl"
           >
             {/* Drawer Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold tracking-tight">IN</span>
+                <div className="w-8 h-8 rounded bg-[#E50914] flex items-center justify-center">
+                  <ShieldCheck size={18} className="text-white" />
                 </div>
-                <span className="text-slate-900 font-semibold text-[15px] tracking-tight">
-                  Inkloom AI
+                <span className="text-white font-extrabold text-[15px] tracking-tight uppercase">
+                  Inkloom<span className="text-[#E50914]">AI</span>
                 </span>
               </div>
               <button
                 onClick={closeDrawer}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
                 aria-label="Close menu"
               >
-                <X size={18} className="text-slate-500" />
+                <X size={18} className="text-neutral-400" />
               </button>
             </div>
 
             {/* Navigation Links */}
-            <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-              <p className="px-3 pb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                Menu
+            <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+              <p className="px-3 pb-2 text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                Platform Menu
               </p>
               {navItems.map((item) => {
                 const active = isActive(item.href);
@@ -136,22 +137,22 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
                     key={item.href}
                     href={item.href}
                     onClick={closeDrawer}
-                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-150 group ${
+                    className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-150 group ${
                       active
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                        ? 'bg-[#222222] text-white border-l-4 border-[#E50914]'
+                        : 'text-neutral-400 hover:bg-[#1a1a1a] hover:text-white'
                     }`}
                   >
                     <span
                       className={`flex-shrink-0 transition-colors duration-150 ${
-                        active ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-600'
+                        active ? 'text-[#E50914]' : 'text-neutral-500 group-hover:text-neutral-300'
                       }`}
                     >
                       {item.icon}
                     </span>
                     <span className="truncate">{item.label}</span>
                     {active && (
-                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-600" />
+                      <span className="ml-auto w-1.5 h-1.5 rounded-full bg-[#E50914]" />
                     )}
                   </Link>
                 );
@@ -159,26 +160,26 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
             </nav>
 
             {/* User Profile */}
-            <div className="px-3 py-4 border-t border-slate-100">
-              <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+            <div className="px-3 py-4 border-t border-white/10 bg-[#0d0d0d]">
+              <div className="rounded-lg bg-[#181818] border border-white/10 p-3">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                    <User size={16} className="text-blue-600" />
+                  <div className="w-9 h-9 rounded-full bg-neutral-800 border border-white/10 flex items-center justify-center flex-shrink-0">
+                    <User size={16} className="text-neutral-300" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate leading-tight">
+                    <p className="text-sm font-semibold text-white truncate leading-tight">
                       {session?.fullName ?? 'User'}
                     </p>
-                    <p className="text-xs text-slate-500 truncate leading-tight mt-0.5">
+                    <p className="text-xs text-neutral-400 truncate leading-tight mt-0.5">
                       {session?.companyName ?? 'Company'}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-150 group"
+                  className="flex items-center justify-center gap-2 w-full px-3 py-2 text-xs font-semibold text-neutral-400 hover:text-white hover:bg-[#252525] rounded transition-all duration-150 group"
                 >
-                  <LogOut size={14} className="text-slate-400 group-hover:text-red-500 transition-colors" />
+                  <LogOut size={14} className="text-neutral-500 group-hover:text-red-400 transition-colors" />
                   Sign out
                 </button>
               </div>

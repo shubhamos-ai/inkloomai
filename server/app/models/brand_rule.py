@@ -1,37 +1,41 @@
-"""BrandRule model — one structured brand governance rule."""
+"""BrandRule model for MongoDB — one structured brand governance rule."""
 from __future__ import annotations
 
-import uuid
-
-from sqlalchemy import Boolean, ForeignKey, String, Text, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.base import TimestampMixin, uuid_pk
+from typing import Any
+from app.db.mongodb import get_mongo_db
+from app.models.base import FieldRef, MongoDocument
 
 
-class BrandRule(Base, TimestampMixin):
+class BrandRule(MongoDocument):
     __tablename__ = "brand_rules"
+    __collection__ = "brand_rules"
 
-    id: Mapped[uuid.UUID] = uuid_pk()
-    company_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("companies.id", ondelete="CASCADE"), index=True, nullable=False
-    )
-    brain_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("brand_brains.id", ondelete="CASCADE"), index=True, nullable=False
-    )
+    id = FieldRef("_id")
+    company_id = FieldRef("company_id")
+    brain_id = FieldRef("brain_id")
+    code = FieldRef("code")
+    category = FieldRef("category")
+    requirement = FieldRef("requirement")
+    severity = FieldRef("severity")
+    source_text = FieldRef("source_text")
+    source_type = FieldRef("source_type")
+    enabled = FieldRef("enabled")
+    created_at = FieldRef("created_at")
+    updated_at = FieldRef("updated_at")
 
-    code: Mapped[str] = mapped_column(String(20), nullable=False)  # e.g. BR001
-    category: Mapped[str] = mapped_column(String(60), nullable=False, default="general")
-    requirement: Mapped[str] = mapped_column(Text, nullable=False)
-    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="major")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "category" not in self:
+            self["category"] = "general"
+        if "severity" not in self:
+            self["severity"] = "major"
+        if "enabled" not in self:
+            self["enabled"] = True
+        if "source_type" not in self:
+            self["source_type"] = "manual"
 
-    # Exact original wording the rule was derived from — never rewritten.
-    source_text: Mapped[str] = mapped_column(Text, nullable=False)
-
-    # "manual" if hand-entered, else the AI extraction batch id/date.
-    source_type: Mapped[str] = mapped_column(String(30), default="manual", nullable=False)
-
-    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
-
-    brain = relationship("BrandBrain", back_populates="rules")
+    @property
+    def brain(self) -> Any | None:
+        from app.models.brand_brain import BrandBrain
+        doc = get_mongo_db().brand_brains.find_one({"_id": str(self.brain_id)})
+        return BrandBrain(doc) if doc else None

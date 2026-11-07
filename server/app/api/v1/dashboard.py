@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from app.database import select
+from app.database import Session
 
 from app.api.deps import current_company
 from app.database import get_db

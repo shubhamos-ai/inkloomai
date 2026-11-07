@@ -1,9 +1,8 @@
 """Vision engine interface.
 
-Real mode: sends the advertisement image to the local Ollama Vision SLM
-(model tag configured later, e.g. `gemma3:4b`) and returns structured visual
-observations. In mock mode it returns a deterministic placeholder so the whole
-pipeline can be exercised end-to-end before the model is available.
+Production mode: sends the advertisement image to the configured NVIDIA NIM Vision API
+(e.g. nvidia/nemotron-3.5-super-vl-120b-a12b).
+Fallback / local development: Ollama Vision SLM or labelled mock.
 """
 from __future__ import annotations
 
@@ -11,25 +10,30 @@ import base64
 import mimetypes
 import os
 from pathlib import Path
+from typing import Any
 
 from app.config import settings
 from app.engine.base import NotConfiguredError
 
 
 def is_configured() -> bool:
+    if settings.VISION_PROVIDER == "nvidia_nim":
+        return bool(settings.NVIDIA_API_KEY)
     return bool(settings.OLLAMA_VISION_MODEL)
 
 
 def not_configured_reason() -> str | None:
+    if settings.VISION_PROVIDER == "nvidia_nim":
+        if not settings.NVIDIA_API_KEY:
+            return "NVIDIA_API_KEY is not set — NVIDIA Vision API not connected."
+        return None
     if not settings.OLLAMA_VISION_MODEL:
         return "OLLAMA_VISION_MODEL is not set — Vision SLM not connected yet."
     return None
 
 
 def mock_observations() -> dict:
-    """Clearly-labelled placeholder visual context used by the mock pipeline.
-
-    Deliberately generic: it contains no invented detection results."""
+    """Clearly-labelled placeholder visual context used by the mock pipeline."""
     return {
         "engine": "mock",
         "is_mock": True,
@@ -38,36 +42,48 @@ def mock_observations() -> dict:
     }
 
 
-def analyze_image(image_path: str | Path, *, mock: bool = True) -> dict:
-    """Observe the advertisement image.
+def analyze_image(
+    image_path: str | Path,
+    *,
+    company_name: str = "Company",
+    rules: list[dict[str, Any]] | None = None,
+    mock: bool = False,
+) -> dict:
+    """Observe and analyze the advertisement image.
 
     Args:
         image_path: absolute path to the stored upload.
+        company_name: Name of the company for contextual rule evaluation.
+        rules: Optional company brand rules.
         mock: when True, return the labelled placeholder instead of inferring.
 
-    Returns a dict:
-        {
-          "engine": str, "is_mock": bool, "observations": [VisionObservation],
-          "note": str
-        }
-
-    Raises:
-        NotConfiguredError: when real inference is requested but unavailable.
+    Returns a dict with visual observations and verification details.
     """
-    if mock:
+    if mock or settings.PIPELINE_MODE == "mock":
         return mock_observations()
 
     reason = not_configured_reason()
     if reason:
         raise NotConfiguredError(reason)
 
-    from app.services import ollama_service
-
     path = Path(image_path)
     if not path.is_file():
-        raise NotConfiguredError(f"Vision engine received a missing image path.")
+        raise NotConfiguredError(f"Vision engine received a missing image path: {image_path}")
 
-    mime = mimetypes.guess_type(str(path))[0] or "image/png"
+    # 1. Primary: NVIDIA NIM Vision Engine
+    if settings.VISION_PROVIDER == "nvidia_nim":
+        from app.services.nvidia_vision_service import analyze_advertisement_image
+
+        result = analyze_advertisement_image(
+            image_path=path,
+            company_name=company_name,
+            rules=rules or [],
+        )
+        return result
+
+    # 2. Local Ollama fallback
+    from app.services import ollama_service
+
     with open(path, "rb") as fh:
         b64 = base64.b64encode(fh.read()).decode("ascii")
 

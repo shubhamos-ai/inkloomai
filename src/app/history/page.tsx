@@ -83,13 +83,12 @@ function HistoryContent() {
     router.push('/history');
   };
 
-  // If viewing a specific report
   if (resultId) {
     if (isLoadingReport) {
       return (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
+        <div className="flex flex-col items-center justify-center py-24 gap-3 text-neutral-400">
           <LoadingSpinner size="lg" />
-          <p className="text-sm font-medium text-slate-500">Loading analysis report...</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Loading analysis dossier…</p>
         </div>
       );
     }
@@ -97,14 +96,14 @@ function HistoryContent() {
     if (reportError || !selectedReport) {
       return (
         <div className="max-w-xl mx-auto py-16 text-center space-y-4">
-          <div className="w-12 h-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto text-xl font-bold">
+          <div className="w-12 h-12 rounded-full bg-red-950/80 border border-red-800 text-red-500 flex items-center justify-center mx-auto text-xl font-bold">
             !
           </div>
-          <h2 className="text-xl font-bold text-slate-900">Report Not Found</h2>
-          <p className="text-sm text-slate-500">{reportError || 'The requested report could not be located.'}</p>
+          <h2 className="text-xl font-bold text-white uppercase tracking-wider">Report Not Found</h2>
+          <p className="text-xs text-neutral-400">{reportError || 'The requested analysis record could not be located.'}</p>
           <button
             onClick={handleBackToHistory}
-            className="btn-primary inline-flex items-center gap-2 text-sm py-2.5 px-5"
+            className="btn-primary inline-flex items-center gap-2 text-xs py-2.5 px-5 font-bold uppercase"
           >
             Return to History List
           </button>
@@ -120,21 +119,20 @@ function HistoryContent() {
     );
   }
 
-  // Default: show history list
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6 select-none">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Analysis History</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Review past advertisement scans, compliance scores, and detailed violation reports.
+          <h1 className="text-3xl font-black text-white tracking-tight uppercase">Analysis History</h1>
+          <p className="text-xs text-neutral-400 mt-1">
+            Audit historical advertisement inspections, compliance scores, and flagged policy breaches.
           </p>
         </div>
         <button
           onClick={() => router.push('/analysis')}
-          className="btn-primary flex items-center justify-center gap-2 text-sm py-2.5 px-4 self-start sm:self-auto"
+          className="btn-primary flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider py-2.5 px-5 self-start sm:self-auto"
         >
-          Analyse New Ad
+          Verify New Ad
         </button>
       </div>
 

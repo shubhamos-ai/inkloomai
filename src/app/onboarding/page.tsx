@@ -8,6 +8,7 @@ import StepBrandBrain from '@/components/onboarding/StepBrandBrain';
 import StepBuilding from '@/components/onboarding/StepBuilding';
 import OnboardingProgress from '@/components/onboarding/OnboardingProgress';
 import { setupBrandBrain } from '@/lib/api';
+import { ShieldCheck } from 'lucide-react';
 
 interface OnboardingData {
   fullName: string;
@@ -42,14 +43,12 @@ export default function OnboardingPage() {
   const handleBrandBrainNext = async (brainData: { rulesText?: string; files?: File[] }) => {
     const updatedData = { ...data, ...brainData };
     setData(updatedData);
-    // Persist session before building
     saveUserSession({
       fullName: updatedData.fullName,
       companyName: updatedData.companyName,
       industry: updatedData.industry,
       website: updatedData.website,
     });
-    // Call API (non-blocking for mock)
     setupBrandBrain({
       companyName: updatedData.companyName,
       industry: updatedData.industry,
@@ -72,23 +71,17 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50/30">
+    <div className="min-h-screen bg-[#141414] text-white">
       {step < 4 && (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-slate-100">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-[#121212]/90 backdrop-blur-md border-b border-white/10">
           <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                    stroke="white"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded bg-[#E50914] flex items-center justify-center shadow-lg shadow-red-950/50">
+                <ShieldCheck size={18} className="text-white" />
               </div>
-              <span className="font-semibold text-slate-900 text-sm">Inkloom AI</span>
+              <span className="font-extrabold text-white text-sm tracking-tight uppercase">
+                Inkloom<span className="text-[#E50914]">AI</span>
+              </span>
             </div>
             <OnboardingProgress currentStep={step} />
           </div>

@@ -1,101 +1,129 @@
-"""/auth — user accounts with email + password (Netflix-style onboarding).
+"""Session-based authentication endpoints.
 
-Tokens are opaque random values; the server stores only their SHA-256 hash
-with a server-side expiry. Every protected endpoint already accepts these
-tokens through resolve_context, which resolves the caller's company(s).
+Email/password register and login, password hashing with passlib/bcrypt, and
+session tokens stored in `auth_sessions`.
 """
 from __future__ import annotations
 
 import uuid
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, EmailStr, Field
+from app.database import func, select
+from app.database import Session
 
 from app.api.deps import AuthContext, resolve_context
 from app.config import settings
 from app.database import get_db, utcnow
-from app.models import AuthSession, Company, Analysis, User
-from app.schemas.auth import (
-    AuthSessionResponse,
-    CompanySummary,
-    LoginRequest,
-    MeResponse,
-    RegisterRequest,
-    UpdateMeRequest,
-    UserOut,
-)
-from app.utils.security import (
-    hash_api_key,
-    hash_password,
-    new_session_token,
-    verify_password,
-)
+from app.models import Analysis, AuthSession, Company, User
+from app.utils.security import new_session_token, hash_api_key, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-SESSION_LIFETIME = timedelta(days=30)
+SESSION_TTL_DAYS = 30
 
 
-def _create_session(db: Session, user: User) -> str:
-    token = new_session_token()
-    db.add(
-        AuthSession(
-            user_id=user.id,
-            token_hash=hash_api_key(token),
-            expires_at=utcnow() + SESSION_LIFETIME,
-        )
+class RegisterRequest(BaseModel):
+    name: str = Field(default="", max_length=120)
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(..., min_length=1)
+
+
+class UpdateMeRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+
+
+class UserOut(BaseModel):
+    id: uuid.UUID
+    name: str
+    email: str | None
+    created_at: object
+
+    class Config:
+        from_attributes = True
+
+
+class CompanySummary(BaseModel):
+    id: uuid.UUID
+    company_name: str
+    industry: str | None
+    website: str | None
+    created_at: object
+    analysis_count: int
+    compliance_score: int | None
+
+
+class AuthSessionResponse(BaseModel):
+    user_id: uuid.UUID
+    session_token: str
+    name: str
+    has_company: bool
+    message: str
+
+
+class MeResponse(BaseModel):
+    user: UserOut
+    companies: list[CompanySummary]
+
+
+def _issue_session(db: Session, user: User, user_agent: str | None = None, ip: str | None = None) -> str:
+    raw_token = new_session_token()
+    token_hash = hash_api_key(raw_token)
+    session = AuthSession(
+        user_id=user.id,
+        token_hash=token_hash,
+        user_agent=(user_agent or "")[:255] or None,
+        ip_address=(ip or "")[:45] or None,
+        expires_at=utcnow() + timedelta(days=SESSION_TTL_DAYS),
     )
+    db.add(session)
     db.commit()
-    return token
+    return raw_token
 
 
-@router.post("/register", response_model=AuthSessionResponse, status_code=201)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> AuthSessionResponse:
-    """Register a new user account. Returns an opaque session token."""
-    existing = db.scalar(select(User).where(User.email == payload.email))
-    if existing is not None:
+@router.post("/register", response_model=AuthSessionResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, db: Session = Depends(get_db)):
+    """Create a new user account with email + password."""
+    existing = db.scalar(select(User).where(User.email == payload.email.lower()))
+    if existing:
         raise HTTPException(
-            status_code=409,
-            detail={
-                "error": "email_taken",
-                "message": "An account with this email already exists. Sign in instead.",
-            },
+            status_code=status.HTTP_409_CONFLICT,
+            detail={"error": "email_taken", "message": "An account with that email already exists."},
         )
-
+    user_name = payload.name.strip() if payload.name else payload.email.split("@")[0]
     user = User(
-        name=payload.name or payload.email.rsplit("@", 1)[0],
-        email=payload.email,
+        name=user_name,
+        email=payload.email.lower(),
         password_hash=hash_password(payload.password),
     )
     db.add(user)
     db.commit()
-    db.refresh(user)
-
-    token = _create_session(db, user)
+    token = _issue_session(db, user)
     return AuthSessionResponse(
-        user_id=user.id, session_token=token, name=user.name, has_company=False,
-        message="Account created. Next: add or choose your company.",
+        user_id=user.id,
+        session_token=token,
+        name=user.name,
+        has_company=False,
+        message="Account created successfully.",
     )
 
 
 @router.post("/login", response_model=AuthSessionResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthSessionResponse:
-    """Email + password sign-in. Generic error, no user enumeration."""
-    user = db.scalar(select(User).where(User.email == payload.email))
-    if user is None or not user.password_hash or not verify_password(
-        payload.password, user.password_hash
-    ):
+def login(payload: LoginRequest, db: Session = Depends(get_db)):
+    """Sign in with email + password."""
+    user = db.scalar(select(User).where(User.email == payload.email.lower()))
+    if not user or not user.password_hash or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
-            status_code=401,
-            detail={
-                "error": "invalid_credentials",
-                "message": "Incorrect email or password.",
-            },
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"error": "invalid_credentials", "message": "Incorrect email or password."},
         )
-
-    token = _create_session(db, user)
+    token = _issue_session(db, user)
     has_company = db.scalar(
         select(func.count()).select_from(Company).where(Company.owner_user_id == user.id)
     ) or 0
@@ -151,6 +179,7 @@ def update_me(
     if db_user is None:  # pragma: no cover
         raise HTTPException(status_code=401, detail={"error": "invalid_token", "message": "Session not found."})
     db_user.name = payload.name
+    request_user.user = db_user
     db.commit()
     await_me = me(request_user, db)  # type: ignore[arg-type]
     return await_me

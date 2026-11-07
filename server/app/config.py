@@ -34,9 +34,19 @@ class Settings:
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
 
     # ------------------------------------------------------------------
-    # Database
+    # Database (MongoDB Local Self-Hosted)
     # ------------------------------------------------------------------
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'inkloom.db'}")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "mongodb://127.0.0.1:27017/inkloom")
+    MONGODB_DB_NAME: str = os.getenv("MONGODB_DB_NAME", "inkloom")
+
+    # ------------------------------------------------------------------
+    # NVIDIA NIM Vision API (Production Multimodal Vision Engine)
+    # ------------------------------------------------------------------
+    VISION_PROVIDER: str = os.getenv("VISION_PROVIDER", "nvidia_nim")
+    NVIDIA_API_KEY: str = os.getenv("NVIDIA_API_KEY", "")
+    NVIDIA_BASE_URL: str = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+    NVIDIA_VISION_MODEL: str = os.getenv("NVIDIA_VISION_MODEL", "nvidia/nemotron-3.5-super-vl-120b-a12b")
+    NVIDIA_TIMEOUT_SECONDS: float = float(os.getenv("NVIDIA_TIMEOUT_SECONDS", "90"))
 
     # ------------------------------------------------------------------
     # Storage
@@ -49,45 +59,34 @@ class Settings:
     # ------------------------------------------------------------------
     # Security / auth
     # ------------------------------------------------------------------
-    # Production CORS origin (frontend on Vercel).
     CORS_ORIGINS: list[str] = _env_list(
         "CORS_ORIGINS", "https://inkoom-ai.shubhamos.com"
     )
-    # Additional dev origins (e.g. http://localhost:3000) — set via env if needed.
-    CORS_EXTRA_ORIGINS: list[str] = _env_list("CORS_EXTRA_ORIGINS", "")
+    CORS_EXTRA_ORIGINS: list[str] = _env_list("CORS_EXTRA_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 
     API_PREFIX: str = "/api/v1"
 
-    # Shared dev token so the frontend can integrate before real auth exists.
-    # MUST be replaced by verified sessions/tokens (JWT/OAuth) in production.
     DEV_AUTH_TOKEN: str = os.getenv("DEV_AUTH_TOKEN", "")
     DISABLE_DEV_AUTH: bool = os.getenv("DISABLE_DEV_AUTH", "false").lower() == "true"
 
-    # Rate limiting (requests per minute per client IP for API endpoints).
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
 
     # ------------------------------------------------------------------
-    # Ollama (local only — never exposed to the internet)
+    # Ollama (local fallback / dev only)
     # ------------------------------------------------------------------
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-    # Vision SLM name as it appears in `ollama list`. Left empty until the
-    # model finishes downloading / the user tells us the final tag.
     OLLAMA_VISION_MODEL: str = os.getenv("OLLAMA_VISION_MODEL", "")
     OLLAMA_TIMEOUT_SECONDS: float = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "300"))
 
     # ------------------------------------------------------------------
     # Analysis pipeline
     # ------------------------------------------------------------------
-    # "mock"  -> infrastructure test pipeline (clearly labelled mock output)
-    # "ai"    -> real Ollama vision pipeline (requires OLLAMA_VISION_MODEL)
-    PIPELINE_MODE: str = os.getenv("PIPELINE_MODE", "mock")
+    PIPELINE_MODE: str = os.getenv("PIPELINE_MODE", "ai")
 
     # ------------------------------------------------------------------
     # Worker / job queue
     # ------------------------------------------------------------------
     WORKER_POLL_INTERVAL_SECONDS: float = float(os.getenv("WORKER_POLL_INTERVAL_SECONDS", "1.0"))
-    # A "processing" job with no heartbeat for longer than this is considered
-    # abandoned (e.g. server crash) and gets recovered.
     STALE_JOB_AFTER_SECONDS: float = float(os.getenv("STALE_JOB_AFTER_SECONDS", "300"))
     MAX_JOB_ATTEMPTS: int = int(os.getenv("MAX_JOB_ATTEMPTS", "3"))
 

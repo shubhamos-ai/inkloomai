@@ -22,8 +22,9 @@ _TMP = SERVER_DIR / ".pytest-tmp"
 
 def _setup_env() -> None:
     _TMP.mkdir(exist_ok=True)
-    db_file = _TMP / "test.db"
-    os.environ["DATABASE_URL"] = f"sqlite:///{db_file}"
+    os.environ["DATABASE_URL"] = "mongodb://127.0.0.1:27017/inkloom_test"
+    os.environ["MONGODB_URI"] = "mongodb://127.0.0.1:27017/inkloom_test"
+    os.environ["MONGODB_DB_NAME"] = "inkloom_test"
     os.environ["STORAGE_DIR"] = str(_TMP / "storage")
     os.environ["DEV_AUTH_TOKEN"] = "test-dev-token-12345"
     os.environ["PIPELINE_MODE"] = "mock"
@@ -37,17 +38,24 @@ _setup_env()
 
 from fastapi.testclient import TestClient  # noqa: E402
 
-from app.database import Base, engine  # noqa: E402
+from app.db.mongodb import get_mongo_db  # noqa: E402
 from app.main import app  # noqa: E402
 
-# Create the schema in the temporary test database (production uses Alembic).
-Base.metadata.create_all(engine)
+get_mongo_db()
 
 
 @pytest.fixture()
 def client():
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture(autouse=True)
+def _clean_analysis_collections():
+    db = get_mongo_db()
+    db.analyses.delete_many({})
+    db.analysis_jobs.delete_many({})
+    yield
 
 
 def _png_bytes(size: int = 300, color=(120, 40, 60)) -> bytes:
@@ -115,7 +123,7 @@ def run_queue_until(client, token: str, analysis_id: str, max_iterations: int = 
     """Drive the FIFO worker iterations until OUR analysis completes.
 
     Other companies' jobs may sit ahead of ours in the queue, so we keep
-    pumping until the target analysis is done or.max iterations reached."""
+    pumping until the target analysis is done or max iterations reached."""
     from app.services import job_service
 
     for _ in range(max_iterations):

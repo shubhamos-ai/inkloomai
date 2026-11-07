@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi import Request as FastAPIRequest
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from app.database import select
+from app.database import Session
 
 from app.api.deps import AuthContext, bearer_token, resolve_context
 from app.database import get_db

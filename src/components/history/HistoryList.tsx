@@ -27,24 +27,24 @@ type FilterLevel = 'all' | ComplianceLevel;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const COMPLIANCE_LABELS: Record<ComplianceLevel, string> = {
-  excellent: 'Excellent',
-  needs_minor_improvements: 'Needs Improvement',
-  needs_revision: 'Needs Revision',
-  non_compliant: 'Non-Compliant',
+  excellent: 'APPROVED',
+  needs_minor_improvements: 'APPROVED (Minor)',
+  needs_revision: 'NEEDS REVIEW',
+  non_compliant: 'REJECTED',
 };
 
 const COMPLIANCE_BADGE: Record<ComplianceLevel, string> = {
-  excellent: 'bg-green-50 text-green-700 border-green-200',
-  needs_minor_improvements: 'bg-blue-50 text-blue-700 border-blue-200',
-  needs_revision: 'bg-amber-50 text-amber-700 border-amber-200',
-  non_compliant: 'bg-red-50 text-red-700 border-red-200',
+  excellent: 'bg-emerald-950/80 text-emerald-400 border-emerald-700/60',
+  needs_minor_improvements: 'bg-blue-950/80 text-blue-400 border-blue-700/60',
+  needs_revision: 'bg-amber-950/80 text-amber-400 border-amber-700/60',
+  non_compliant: 'bg-red-950/80 text-red-400 border-red-700/60',
 };
 
 const SCORE_COLOUR: Record<ComplianceLevel, string> = {
-  excellent: 'text-green-600',
-  needs_minor_improvements: 'text-blue-600',
-  needs_revision: 'text-amber-600',
-  non_compliant: 'text-red-600',
+  excellent: 'text-emerald-400',
+  needs_minor_improvements: 'text-blue-400',
+  needs_revision: 'text-amber-400',
+  non_compliant: 'text-[#E50914]',
 };
 
 function formatDate(iso: string): string {
@@ -59,15 +59,15 @@ function formatDate(iso: string): string {
 
 function SkeletonRow() {
   return (
-    <div className="flex items-center gap-4 px-4 py-4 border-b border-slate-100 animate-pulse">
-      <div className="w-12 h-12 rounded-xl bg-slate-200 flex-shrink-0" />
+    <div className="flex items-center gap-4 px-6 py-4 border-b border-white/5 animate-pulse bg-[#141414]">
+      <div className="w-12 h-12 rounded-lg bg-neutral-800 flex-shrink-0" />
       <div className="flex-1 min-w-0 space-y-2">
-        <div className="h-4 bg-slate-200 rounded w-48" />
-        <div className="h-3 bg-slate-100 rounded w-28" />
+        <div className="h-4 bg-neutral-800 rounded w-48" />
+        <div className="h-3 bg-neutral-800 rounded w-28" />
       </div>
-      <div className="hidden sm:block h-6 w-24 bg-slate-200 rounded-full" />
-      <div className="hidden md:block h-4 w-16 bg-slate-200 rounded" />
-      <div className="h-8 w-24 bg-slate-200 rounded-lg" />
+      <div className="hidden sm:block h-6 w-24 bg-neutral-800 rounded-full" />
+      <div className="hidden md:block h-4 w-16 bg-neutral-800 rounded" />
+      <div className="h-8 w-24 bg-neutral-800 rounded-lg" />
     </div>
   );
 }
@@ -81,20 +81,20 @@ function EmptyState({ filtered }: { filtered: boolean }) {
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-20 px-4 text-center"
     >
-      <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center mb-4">
         {filtered ? (
-          <Search className="w-7 h-7 text-slate-400" />
+          <Search className="w-7 h-7 text-neutral-500" />
         ) : (
-          <Image className="w-7 h-7 text-slate-400" />
+          <Image className="w-7 h-7 text-neutral-500" />
         )}
       </div>
-      <h3 className="text-base font-semibold text-slate-800 mb-1">
-        {filtered ? 'No results found' : 'No analyses yet'}
+      <h3 className="text-base font-bold text-white mb-1 uppercase tracking-wider">
+        {filtered ? 'No Matching Records' : 'No Verification Records Yet'}
       </h3>
-      <p className="text-sm text-slate-500 max-w-xs">
+      <p className="text-xs text-neutral-400 max-w-xs">
         {filtered
-          ? "Try adjusting your search or filters to find what you're looking for."
-          : 'Upload your first advertisement to get a detailed compliance report.'}
+          ? 'Try adjusting your search criteria or compliance filter.'
+          : 'Upload your first advertisement to generate an executive compliance dossier.'}
       </p>
     </motion.div>
   );
@@ -116,11 +116,11 @@ function HistoryCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3"
+      className="rounded-xl border border-white/10 bg-[#181818] p-4 space-y-3 shadow-xl"
     >
       <div className="flex items-start gap-3">
         {/* Thumbnail */}
-        <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="w-14 h-14 rounded-lg bg-neutral-900 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
           {item.thumbnailUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -129,30 +129,30 @@ function HistoryCard({
               className="w-full h-full object-cover"
             />
           ) : (
-            <Image className="w-6 h-6 text-slate-400" />
+            <Image className="w-6 h-6 text-neutral-600" />
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-slate-900 text-sm truncate">{item.advertisementName}</p>
-          <div className="flex items-center gap-1 mt-0.5 text-xs text-slate-500">
-            <Calendar className="w-3 h-3" />
+          <p className="font-bold text-white text-sm truncate">{item.advertisementName}</p>
+          <div className="flex items-center gap-1 mt-0.5 text-xs text-neutral-400">
+            <Calendar className="w-3 h-3 text-neutral-500" />
             {formatDate(item.analysedAt)}
           </div>
         </div>
         {/* Score */}
-        <span className={`text-xl font-bold ${SCORE_COLOUR[item.complianceLevel]}`}>
+        <span className={`text-xl font-extrabold ${SCORE_COLOUR[item.complianceLevel]}`}>
           {item.complianceScore}
         </span>
       </div>
 
       <div className="flex items-center justify-between">
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${COMPLIANCE_BADGE[item.complianceLevel]}`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${COMPLIANCE_BADGE[item.complianceLevel]}`}
         >
           {COMPLIANCE_LABELS[item.complianceLevel]}
         </span>
         {item.violationsCount > 0 && (
-          <span className="flex items-center gap-1 text-xs text-slate-500">
+          <span className="flex items-center gap-1 text-xs text-amber-400 font-semibold">
             <AlertTriangle className="w-3 h-3" />
             {item.violationsCount} violation{item.violationsCount !== 1 ? 's' : ''}
           </span>
@@ -161,10 +161,10 @@ function HistoryCard({
 
       <button
         onClick={() => onViewReport(item.id)}
-        className="w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md bg-[#252525] border border-white/10 hover:border-[#E50914] text-white text-xs font-bold uppercase transition-colors"
       >
-        <Eye className="w-4 h-4" />
-        View Report
+        <Eye className="w-4 h-4 text-[#E50914]" />
+        Inspect Report
       </button>
     </motion.div>
   );
@@ -186,12 +186,12 @@ function HistoryRow({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
+      className="border-b border-white/5 hover:bg-[#202020] transition-colors"
     >
       {/* Thumbnail + name */}
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          <div className="w-12 h-12 rounded bg-neutral-900 border border-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
             {item.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -200,23 +200,23 @@ function HistoryRow({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Image className="w-5 h-5 text-slate-400" />
+              <Image className="w-5 h-5 text-neutral-600" />
             )}
           </div>
-          <span className="font-medium text-slate-900 text-sm max-w-[200px] truncate">
+          <span className="font-semibold text-white text-sm max-w-[200px] truncate">
             {item.advertisementName}
           </span>
         </div>
       </td>
 
       {/* Date */}
-      <td className="px-4 py-4 text-sm text-slate-500 whitespace-nowrap">
+      <td className="px-4 py-4 text-xs font-medium text-neutral-400 whitespace-nowrap">
         {formatDate(item.analysedAt)}
       </td>
 
       {/* Score */}
       <td className="px-4 py-4">
-        <span className={`text-sm font-bold ${SCORE_COLOUR[item.complianceLevel]}`}>
+        <span className={`text-sm font-extrabold ${SCORE_COLOUR[item.complianceLevel]}`}>
           {item.complianceScore} / 100
         </span>
       </td>
@@ -224,21 +224,21 @@ function HistoryRow({
       {/* Level badge */}
       <td className="px-4 py-4">
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${COMPLIANCE_BADGE[item.complianceLevel]}`}
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${COMPLIANCE_BADGE[item.complianceLevel]}`}
         >
           {COMPLIANCE_LABELS[item.complianceLevel]}
         </span>
       </td>
 
       {/* Violations */}
-      <td className="px-4 py-4 text-sm text-slate-600">
+      <td className="px-4 py-4 text-xs font-semibold text-neutral-300">
         {item.violationsCount > 0 ? (
-          <span className="flex items-center gap-1">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            {item.violationsCount}
+          <span className="flex items-center gap-1 text-amber-400">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            {item.violationsCount} Flagged
           </span>
         ) : (
-          <span className="text-green-600 font-medium">None</span>
+          <span className="text-emerald-400 font-bold">Compliant</span>
         )}
       </td>
 
@@ -246,10 +246,10 @@ function HistoryRow({
       <td className="px-6 py-4 text-right">
         <button
           onClick={() => onViewReport(item.id)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#252525] border border-white/10 hover:border-[#E50914] text-white text-xs font-bold uppercase transition-colors"
         >
-          <Eye className="w-3.5 h-3.5" />
-          View Report
+          <Eye className="w-3.5 h-3.5 text-[#E50914]" />
+          Inspect
         </button>
       </td>
     </motion.tr>
@@ -260,10 +260,10 @@ function HistoryRow({
 
 const FILTER_OPTIONS: { label: string; value: FilterLevel }[] = [
   { label: 'All Results', value: 'all' },
-  { label: 'Excellent', value: 'excellent' },
-  { label: 'Needs Improvement', value: 'needs_minor_improvements' },
-  { label: 'Needs Revision', value: 'needs_revision' },
-  { label: 'Non-Compliant', value: 'non_compliant' },
+  { label: 'Approved (Excellent)', value: 'excellent' },
+  { label: 'Approved (Minor Fixes)', value: 'needs_minor_improvements' },
+  { label: 'Needs Review', value: 'needs_revision' },
+  { label: 'Rejected (Non-Compliant)', value: 'non_compliant' },
 ];
 
 const SORT_OPTIONS: { label: string; value: SortKey }[] = [
@@ -283,18 +283,15 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
   const processed = useMemo(() => {
     let result = [...items];
 
-    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((item) => item.advertisementName.toLowerCase().includes(q));
     }
 
-    // Filter
     if (filter !== 'all') {
       result = result.filter((item) => item.complianceLevel === filter);
     }
 
-    // Sort
     result.sort((a, b) => {
       if (sort === 'newest') return new Date(b.analysedAt).getTime() - new Date(a.analysedAt).getTime();
       if (sort === 'oldest') return new Date(a.analysedAt).getTime() - new Date(b.analysedAt).getTime();
@@ -309,18 +306,18 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
   const isFiltered = search.trim() !== '' || filter !== 'all';
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 select-none">
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input
             type="text"
-            placeholder="Search advertisements…"
+            placeholder="Search verified advertisements by name…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+            className="w-full pl-9 pr-4 py-2.5 text-xs bg-[#1F1F1F] border border-white/10 rounded-md text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition"
           />
         </div>
 
@@ -328,7 +325,7 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
         <div className="relative">
           <button
             onClick={() => { setFilterOpen(!filterOpen); setSortOpen(false); }}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-700 hover:border-slate-300 transition whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-[#1F1F1F] border border-white/10 rounded-md text-white hover:border-white/20 transition whitespace-nowrap"
           >
             <span>{FILTER_OPTIONS.find((o) => o.value === filter)?.label ?? 'Filter'}</span>
             {filterOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -340,14 +337,14 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-1 z-20 w-52 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
+                className="absolute right-0 top-full mt-1 z-20 w-56 bg-[#181818] border border-white/10 rounded-md shadow-2xl overflow-hidden"
               >
                 {FILTER_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => { setFilter(opt.value); setFilterOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 ${
-                      filter === opt.value ? 'text-blue-600 font-medium bg-blue-50' : 'text-slate-700'
+                    className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-[#252525] ${
+                      filter === opt.value ? 'text-[#E50914] font-bold bg-red-950/20' : 'text-neutral-300'
                     }`}
                   >
                     {opt.label}
@@ -362,7 +359,7 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
         <div className="relative">
           <button
             onClick={() => { setSortOpen(!sortOpen); setFilterOpen(false); }}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl text-slate-700 hover:border-slate-300 transition whitespace-nowrap"
+            className="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold bg-[#1F1F1F] border border-white/10 rounded-md text-white hover:border-white/20 transition whitespace-nowrap"
           >
             <span>{SORT_OPTIONS.find((o) => o.value === sort)?.label ?? 'Sort'}</span>
             {sortOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -374,14 +371,14 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-1 z-20 w-48 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden"
+                className="absolute right-0 top-full mt-1 z-20 w-48 bg-[#181818] border border-white/10 rounded-md shadow-2xl overflow-hidden"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => { setSort(opt.value); setSortOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors hover:bg-slate-50 ${
-                      sort === opt.value ? 'text-blue-600 font-medium bg-blue-50' : 'text-slate-700'
+                    className={`w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-[#252525] ${
+                      sort === opt.value ? 'text-[#E50914] font-bold bg-red-950/20' : 'text-neutral-300'
                     }`}
                   >
                     {opt.label}
@@ -395,14 +392,14 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
 
       {/* Results count */}
       {!isLoading && items.length > 0 && (
-        <p className="text-xs text-slate-500">
-          Showing {processed.length} of {items.length} result{items.length !== 1 ? 's' : ''}
+        <p className="text-xs text-neutral-400">
+          Displaying {processed.length} of {items.length} verification record{items.length !== 1 ? 's' : ''}
         </p>
       )}
 
       {/* Loading skeletons */}
       {isLoading && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="bg-[#181818] rounded-xl border border-white/10 overflow-hidden shadow-xl">
           {[...Array(5)].map((_, i) => (
             <SkeletonRow key={i} />
           ))}
@@ -411,7 +408,7 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
 
       {/* Empty state */}
       {!isLoading && processed.length === 0 && (
-        <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div className="bg-[#181818] rounded-xl border border-white/10 overflow-hidden shadow-xl">
           <EmptyState filtered={isFiltered} />
         </div>
       )}
@@ -419,27 +416,27 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
       {/* Desktop table */}
       {!isLoading && processed.length > 0 && (
         <>
-          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div className="hidden md:block bg-[#181818] rounded-xl border border-white/10 overflow-hidden shadow-2xl">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50">
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Advertisement
+                <tr className="border-b border-white/10 bg-[#121212]">
+                  <th className="px-6 py-3.5 text-left text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Creative Asset
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Date
+                  <th className="px-4 py-3.5 text-left text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Timestamp
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  <th className="px-4 py-3.5 text-left text-xs font-bold text-neutral-400 uppercase tracking-wider">
                     Score
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Status
+                  <th className="px-4 py-3.5 text-left text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Verdict
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Violations
+                  <th className="px-4 py-3.5 text-left text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Policy Issues
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Action
+                  <th className="px-6 py-3.5 text-right text-xs font-bold text-neutral-400 uppercase tracking-wider">
+                    Dossier
                   </th>
                 </tr>
               </thead>

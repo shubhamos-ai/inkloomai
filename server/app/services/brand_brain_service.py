@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from app.database import select
+from app.database import Session
 
 from app.models import BrandBrain, BrandRule, Company
 from app.schemas.brand_brain import BrandRuleOut
@@ -29,7 +29,7 @@ def get_or_create_brain(db: Session, company: Company) -> BrandBrain:
         # Rows are created only through upload; an empty placeholder is safe:
         # original_rules_text is required at the DB level, so store "" default
         # and flip extraction_status to 'pending'.
-        brain = BrandBrain(company_id=company.id, original_rules_text="")
+        brain = BrandBrain(company_id=company.id, original_rules_text="", file_count=0)
         db.add(brain)
         db.flush()
     return brain
@@ -52,7 +52,7 @@ def append_intake(
     documents = documents or []
     file_payloads = file_payloads or []
     brain = get_or_create_brain(db, company)
-    brain.version += 1
+    brain.version = (brain.version or 0) + 1
 
     chunks: list[str] = [f"=== Version {brain.version} ==="]
 
@@ -65,7 +65,7 @@ def append_intake(
                 company.id, brain.id, brain.version,
                 data=data, original_name=name, kind=doc.kind,
             )
-            brain.file_count += 1
+            brain.file_count = (brain.file_count or 0) + 1
             brain.files_dir = str(
                 storage_service.abs_path_for(rel).parent.relative_to(
                     storage_service.abs_path_for("brand_guidelines").parent
@@ -117,7 +117,7 @@ def update_rule(
 ) -> BrandRule | None:
     """Authorised partial update. source_text is never modified here."""
     rule = db.get(BrandRule, rule_id)
-    if rule is None or rule.company_id != company.id:  # company isolation
+    if rule is None or str(rule.company_id) != str(company.id):  # company isolation
         return None
     for key in ("category", "requirement", "severity", "enabled"):
         if key in fields and fields[key] is not None:

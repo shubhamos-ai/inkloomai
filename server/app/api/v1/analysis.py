@@ -22,8 +22,8 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse
-from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from app.database import func, select
+from app.database import Session
 
 from app.api.deps import current_company, get_isolated_analysis, resolve_company_flexibly
 from app.database import get_db

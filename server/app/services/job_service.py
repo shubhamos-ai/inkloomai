@@ -15,12 +15,12 @@ from __future__ import annotations
 import uuid
 from datetime import timedelta
 
-from sqlalchemy import select, update
-from sqlalchemy.orm import Session
+from app.database import select, update
+from app.database import Session
 
 from app.config import settings
 from app.database import utcnow
-from app.models import AnalysisJob
+from app.models import Analysis, AnalysisJob
 
 ACTIVE_JOB_STATUSES = ("queued", "processing")
 
@@ -122,60 +122,43 @@ def recover_stale_jobs(db: Session) -> dict:
 
 
 def _retry_stuck(db: Session, job: AnalysisJob) -> None:
-    from app.models import Analysis
-
-    db.execute(
-        update(AnalysisJob)
-        .where(AnalysisJob.id == job.id)
-        .values(
-            status="queued",
-            current_stage=f"Recovering (was: {job.current_stage or 'processing'})",
-            error=None,
-            progress=min(job.progress, 5),
-            heartbeat_at=utcnow(),
-        )
-    )
-    if job.analysis:
-        db.execute(
-            update(Analysis)
-            .where(Analysis.id == job.analysis_id)
-            .values(status="queued", updated_at=utcnow())
-        )
+    job.status = "queued"
+    job.current_stage = f"Recovering (was: {job.current_stage or 'processing'})"
+    job.error = None
+    job.progress = min(job.progress, 5)
+    job.heartbeat_at = utcnow()
+    analysis = db.get(Analysis, job.analysis_id)
+    if analysis:
+        analysis.status = "queued"
+        analysis.updated_at = utcnow()
 
 
 def _fail_stuck(db: Session, job: AnalysisJob, *, reason: str) -> None:
-    from app.models import Analysis
-
-    db.execute(
-        update(AnalysisJob)
-        .where(AnalysisJob.id == job.id)
-        .values(
-            status="failed",
-            current_stage="Failed",
-            error=reason,
-            completed_at=utcnow(),
-            heartbeat_at=utcnow(),
-        )
-    )
-    if job.analysis:
-        db.execute(
-            update(Analysis)
-            .where(Analysis.id == job.analysis_id)
-            .values(status="failed", summary=reason, updated_at=utcnow())
-        )
+    job.status = "failed"
+    job.current_stage = "Failed"
+    job.error = reason
+    job.completed_at = utcnow()
+    job.heartbeat_at = utcnow()
+    analysis = db.get(Analysis, job.analysis_id)
+    if analysis:
+        analysis.status = "failed"
+        analysis.summary = reason
+        analysis.updated_at = utcnow()
 
 
 def cancel_job(db: Session, company_id: uuid.UUID, job_id: uuid.UUID) -> bool | None:
     """Cancel a queued job for a company. `None` means job not found/owned."""
     job = db.get(AnalysisJob, job_id)
-    if job is None or job.company_id != company_id:
+    if job is None or str(job.company_id) != str(company_id):
         return None
     if job.status != "queued":
         return False
     job.status = "cancelled"
     job.completed_at = utcnow()
-    if job.analysis:
-        job.analysis.status = "cancelled"
+    analysis = db.get(Analysis, job.analysis_id)
+    if analysis:
+        analysis.status = "cancelled"
+        analysis.completed_at = utcnow()
     db.commit()
     return True
 

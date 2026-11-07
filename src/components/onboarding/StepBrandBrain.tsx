@@ -22,20 +22,20 @@ interface StepBrandBrainProps {
 }
 
 const HELPER_ITEMS = [
-  'Brand voice & tone guidelines',
-  'Advertising regulations & restrictions',
-  'Approved claims & messaging',
-  'Brand colours & logo usage rules',
-  'Restricted terms & language',
-  'Industry-specific compliance rules',
-  'Target audience definitions',
-  'Product / service descriptions',
+  'Brand voice & visual identity',
+  'Promotional discount restrictions & ceilings',
+  'Approved claims & mandatory disclaimers',
+  'Brand logos, color palettes & typography',
+  'Prohibited phrases & restricted terms',
+  'Regulatory compliance & allergen/disclaimer rules',
+  'Dates, deadlines, and pricing formats',
+  'Contact info and terms & conditions syntax',
 ];
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) {
@@ -98,7 +98,7 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -24 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
-      className="max-w-2xl mx-auto px-6"
+      className="max-w-2xl mx-auto px-6 select-none"
     >
       {/* Icon Badge */}
       <motion.div
@@ -107,8 +107,8 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
         transition={{ delay: 0.1, duration: 0.4, ease: 'backOut' }}
         className="flex justify-center mb-8"
       >
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-          <Brain className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
+        <div className="w-16 h-16 rounded-2xl bg-[#181818] border border-white/10 flex items-center justify-center shadow-2xl">
+          <Brain className="w-8 h-8 text-[#E50914]" strokeWidth={1.75} />
         </div>
       </motion.div>
 
@@ -119,11 +119,11 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
         transition={{ delay: 0.15, duration: 0.4 }}
         className="text-center mb-8"
       >
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">
-          Build your Brand Brain.
+        <h1 className="text-3xl font-black text-white tracking-tight mb-3">
+          Build Your Brand Brain.
         </h1>
-        <p className="text-slate-500 text-base leading-relaxed max-w-lg mx-auto">
-          Upload your brand guidelines so Inkloom can generate perfectly compliant advertising — every time.
+        <p className="text-neutral-400 text-sm leading-relaxed max-w-lg mx-auto">
+          Specify your advertising policies and compliance constraints. Inkloom AI evaluates every banner upload against these exact policies.
         </p>
       </motion.div>
 
@@ -136,24 +136,24 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
       >
         {/* Textarea */}
         <div>
-          <label htmlFor="rulesText" className="block text-sm font-medium text-slate-700 mb-2">
-            Paste your brand guidelines
+          <label htmlFor="rulesText" className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-2">
+            Paste Corporate Advertising Rules (Rules.txt)
           </label>
           <textarea
             id="rulesText"
             value={rulesText}
             onChange={e => setRulesText(e.target.value)}
-            placeholder={`Include things like:\n• Approved product claims and messaging\n• Restricted terms and language to avoid\n• Brand voice and tone guidelines\n• Regulatory requirements for your industry\n• Target audience descriptions\n• Any specific advertising rules`}
+            placeholder={`Example corporate rule set:\n1. Logos must maintain 20px clear margin and cannot be cropped.\n2. Promotional discounts cannot exceed 40% under any circumstance.\n3. Mandatory allergen disclaimer 'Contains Dairy' must appear on all food items.\n4. Dates must follow DD/MM/YYYY formatting.\n5. Customer support email support@company.com must be visible.`}
             className="input-field w-full resize-none font-mono text-sm leading-relaxed"
-            style={{ minHeight: '300px' }}
+            style={{ minHeight: '260px' }}
           />
         </div>
 
         {/* OR Divider */}
         <div className="flex items-center gap-4">
-          <div className="flex-1 h-px bg-slate-200" />
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">or upload files</span>
-          <div className="flex-1 h-px bg-slate-200" />
+          <div className="flex-1 h-px bg-white/10" />
+          <span className="text-xs font-bold text-neutral-500 uppercase tracking-wider">or attach document</span>
+          <div className="flex-1 h-px bg-white/10" />
         </div>
 
         {/* File Upload Zone */}
@@ -163,29 +163,29 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 ${
+            className={`relative cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all duration-200 ${
               isDragging
-                ? 'border-blue-400 bg-blue-50/60 scale-[1.01]'
-                : 'border-slate-200 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/30'
+                ? 'border-[#E50914] bg-red-950/20 scale-[1.01]'
+                : 'border-white/15 bg-[#181818] hover:border-[#E50914]/60 hover:bg-[#1f1f1f]'
             }`}
           >
             <div className="flex flex-col items-center gap-3">
               <div
                 className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
-                  isDragging ? 'bg-blue-100' : 'bg-white border border-slate-200'
+                  isDragging ? 'bg-red-900/40 text-[#E50914]' : 'bg-[#222222] border border-white/10 text-neutral-400'
                 }`}
               >
                 <Upload
-                  className={`w-6 h-6 transition-colors ${isDragging ? 'text-blue-600' : 'text-slate-400'}`}
+                  className="w-6 h-6"
                   strokeWidth={1.5}
                 />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-700">
-                  {isDragging ? 'Drop files here' : 'Drag & drop or click to upload'}
+                <p className="text-sm font-bold text-white">
+                  {isDragging ? 'Drop rules file here' : 'Drag & drop or click to upload rules'}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  Accepts .txt, .pdf, .docx — multiple files supported
+                <p className="text-xs text-neutral-400 mt-1">
+                  Accepts .txt, .pdf, .docx (e.g. Rules.txt)
                 </p>
               </div>
             </div>
@@ -214,21 +214,21 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10, height: 0, marginTop: 0, paddingTop: 0, paddingBottom: 0 }}
                     transition={{ duration: 0.2 }}
-                    className="flex items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-xl"
+                    className="flex items-center justify-between gap-3 p-3 bg-[#181818] border border-white/10 rounded-lg"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                        <FileText className="w-4 h-4 text-blue-600" />
+                      <div className="w-8 h-8 rounded bg-[#252525] flex items-center justify-center shrink-0">
+                        <FileText className="w-4 h-4 text-[#E50914]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{file.name}</p>
-                        <p className="text-xs text-slate-400">{formatBytes(file.size)}</p>
+                        <p className="text-sm font-semibold text-white truncate">{file.name}</p>
+                        <p className="text-xs text-neutral-400">{formatBytes(file.size)}</p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
-                      className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                      className="shrink-0 w-7 h-7 rounded flex items-center justify-center text-neutral-400 hover:text-red-400 hover:bg-red-950/40 transition-colors"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -240,15 +240,15 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
         </div>
 
         {/* Helper Section */}
-        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+        <div className="p-4 bg-[#181818] rounded-xl border border-white/10">
           <div className="flex items-center gap-2 mb-3">
-            <FileUp className="w-4 h-4 text-slate-500" />
-            <p className="text-sm font-medium text-slate-700">What to include in your guidelines:</p>
+            <FileUp className="w-4 h-4 text-[#E50914]" />
+            <p className="text-xs font-bold text-neutral-300 uppercase tracking-wider">Recommended Rule Disciplines:</p>
           </div>
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {HELPER_ITEMS.map(item => (
-              <li key={item} className="flex items-start gap-2 text-xs text-slate-500">
-                <CheckCircle className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" />
+              <li key={item} className="flex items-start gap-2 text-xs text-neutral-400">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
                 {item}
               </li>
             ))}
@@ -265,10 +265,10 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
               className="sr-only"
             />
             <div
-              className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 ${
+              className={`w-5 h-5 rounded border flex items-center justify-center transition-all duration-200 ${
                 confirmed
-                  ? 'bg-blue-600 border-blue-600'
-                  : 'border-slate-300 bg-white group-hover:border-blue-400'
+                  ? 'bg-[#E50914] border-[#E50914]'
+                  : 'border-white/20 bg-[#1F1F1F] group-hover:border-[#E50914]'
               }`}
             >
               {confirmed && (
@@ -282,8 +282,8 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
               )}
             </div>
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed">
-            I confirm these are authorised company guidelines and I have the right to upload this content.
+          <p className="text-xs text-neutral-300 leading-relaxed">
+            I confirm these represent authorized enterprise brand policies and compliance guidelines for automated verification.
           </p>
         </label>
 
@@ -292,7 +292,7 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
           <button
             type="button"
             onClick={onBack}
-            className="btn-secondary flex items-center justify-center gap-2 py-3.5 px-5"
+            className="btn-secondary flex items-center justify-center gap-2 py-3.5 px-5 text-sm font-semibold"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -300,10 +300,10 @@ export default function StepBrandBrain({ onNext, onBack }: StepBrandBrainProps) 
           <button
             type="submit"
             disabled={!canSubmit}
-            className="btn-primary flex-1 flex items-center justify-center gap-2 py-3.5 text-base disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-primary flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Brain className="w-5 h-5" />
-            Build My Brand Brain
+            Synthesize Brand Brain
           </button>
         </div>
       </motion.form>

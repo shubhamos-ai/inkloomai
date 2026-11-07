@@ -147,33 +147,33 @@ export default function SettingsContent() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
+    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12 text-white">
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Workspace Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold text-white tracking-tight">Workspace Settings</h1>
+        <p className="text-sm text-zinc-400 mt-1">
           Manage your personal profile, company details, AI backend integration, and workspace preferences.
         </p>
       </div>
 
       {/* Backend & AI Integration Status Card */}
-      <div className="card p-6 border-blue-100 bg-gradient-to-r from-blue-50/40 via-white to-white">
+      <div className="bg-[#181818] border border-[#262626] rounded-xl p-6 shadow-xl">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-[#E50914]/20 border border-[#E50914]/40 text-[#E50914] flex items-center justify-center">
               <Server className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900 text-base">External AI Backend Integration</h3>
+                <h3 className="font-semibold text-white text-base">NVIDIA NIM & Backend Integration</h3>
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     backendHealth === 'online'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800'
                       : backendHealth === 'checking'
-                      ? 'bg-slate-100 text-slate-600 border border-slate-200'
-                      : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      ? 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                      : 'bg-amber-950/60 text-amber-400 border border-amber-800'
                   }`}
                 >
                   <span
@@ -181,19 +181,19 @@ export default function SettingsContent() {
                       backendHealth === 'online'
                         ? 'bg-emerald-500 animate-pulse'
                         : backendHealth === 'checking'
-                        ? 'bg-slate-400'
+                        ? 'bg-zinc-400'
                         : 'bg-amber-500'
                     }`}
                   />
                   {backendHealth === 'online'
-                    ? 'Connected (FastAPI + Ollama)'
+                    ? 'Connected (FastAPI + MongoDB + NVIDIA NIM)'
                     : backendHealth === 'checking'
                     ? 'Checking connection...'
                     : 'Backend Standby / Unreachable'}
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-1 font-mono">
-                Endpoint: <span className="text-blue-700">{apiEndpoint}</span>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">
+                Endpoint: <span className="text-[#E50914]">{apiEndpoint}</span>
               </p>
             </div>
           </div>
@@ -203,8 +203,8 @@ export default function SettingsContent() {
               onClick={handleToggleMock}
               className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${
                 isMockMode
-                  ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  ? 'bg-amber-950/60 text-amber-400 border-amber-700 hover:bg-amber-900/60'
+                  : 'bg-zinc-800 text-zinc-200 border-zinc-700 hover:bg-zinc-700'
               }`}
             >
               Mode: {isMockMode ? 'Mock Data (Active)' : 'Real Backend (Active)'}
@@ -215,56 +215,58 @@ export default function SettingsContent() {
                 const healthy = await checkApiHealth();
                 setBackendHealth(healthy ? 'online' : 'offline');
                 if (healthy) success('AI Backend responded OK (/api/v1/health)');
-                else error('Backend did not respond. Check tunnel or CORS.');
+                else error('Backend did not respond. Check tunnel or local FastAPI server.');
               }}
-              className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 font-medium hover:bg-blue-100"
+              className="text-xs px-3 py-1.5 rounded-lg bg-[#E50914] text-white font-medium hover:bg-[#b80710] transition-colors"
             >
               Test Ping
             </button>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600">
+        <div className="mt-4 pt-4 border-t border-[#262626] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-zinc-400">
           <div>
-            <span className="font-semibold text-slate-700">Production Frontend:</span>{' '}
-            <span className="text-slate-500">https://inkoom-ai.shubhamos.com</span>
+            <span className="font-semibold text-zinc-300">Model Engine:</span>{' '}
+            <span className="text-zinc-400 font-mono">nvidia/nemotron-3.5-super-vl-120b-a12b</span>
           </div>
           <div>
-            <span className="font-semibold text-slate-700">Cloudflare Tunnel:</span>{' '}
-            <span className="text-slate-500">https://inkoom-model.shubhamos.com</span>
+            <span className="font-semibold text-zinc-300">Database Engine:</span>{' '}
+            <span className="text-zinc-400 font-mono">MongoDB (mongodb://127.0.0.1:27017/inkloom)</span>
           </div>
         </div>
       </div>
 
       {/* Personal Info */}
-      <div className="card p-6">
-        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+      <div className="bg-[#181818] border border-[#262626] rounded-xl p-6 shadow-xl">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#262626]">
+          <div className="w-8 h-8 rounded-lg bg-zinc-800 text-zinc-200 flex items-center justify-center">
             <User className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Personal Information</h2>
-            <p className="text-xs text-slate-500">Your profile details within the workspace.</p>
+            <h2 className="text-base font-semibold text-white">Personal Information</h2>
+            <p className="text-xs text-zinc-400">Your profile details within the workspace.</p>
           </div>
         </div>
 
         <form onSubmit={handleSavePersonal} className="space-y-4 max-w-lg">
           <div>
-            <label className="label">Full Name</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+              Full Name
+            </label>
             <input
               type="text"
               value={sessionData.fullName}
               onChange={(e) => setSessionData({ ...sessionData, fullName: e.target.value })}
-              className={`input-field ${personalErrors ? 'border-red-300 ring-1 ring-red-300' : ''}`}
+              className={`w-full bg-[#141414] border ${personalErrors ? 'border-red-500 ring-1 ring-red-500' : 'border-[#333333]'} rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#E50914] focus:ring-1 focus:ring-[#E50914] transition-all`}
               placeholder="e.g. Alex Morgan"
             />
-            {personalErrors && <p className="text-xs text-red-600 mt-1">{personalErrors}</p>}
+            {personalErrors && <p className="text-xs text-red-400 mt-1">{personalErrors}</p>}
           </div>
 
           <button
             type="submit"
             disabled={isSavingPersonal}
-            className="btn-primary inline-flex items-center gap-2 text-sm py-2.5 px-4"
+            className="inline-flex items-center gap-2 text-sm py-2.5 px-4 bg-[#E50914] hover:bg-[#b80710] text-white font-medium rounded-lg transition-colors disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             {isSavingPersonal ? 'Saving...' : 'Save Personal Details'}
@@ -273,57 +275,63 @@ export default function SettingsContent() {
       </div>
 
       {/* Company Info */}
-      <div className="card p-6">
-        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+      <div className="bg-[#181818] border border-[#262626] rounded-xl p-6 shadow-xl">
+        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#262626]">
+          <div className="w-8 h-8 rounded-lg bg-zinc-800 text-zinc-200 flex items-center justify-center">
             <Building2 className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Company Information</h2>
-            <p className="text-xs text-slate-500">Organisation branding profile used during AI analysis.</p>
+            <h2 className="text-base font-semibold text-white">Company Information</h2>
+            <p className="text-xs text-zinc-400">Organisation branding profile used during AI analysis.</p>
           </div>
         </div>
 
         <form onSubmit={handleSaveCompany} className="space-y-4 max-w-lg">
           <div>
-            <label className="label">Company Name</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+              Company Name
+            </label>
             <input
               type="text"
               value={sessionData.companyName}
               onChange={(e) => setSessionData({ ...sessionData, companyName: e.target.value })}
-              className={`input-field ${companyErrors.name ? 'border-red-300 ring-1 ring-red-300' : ''}`}
+              className={`w-full bg-[#141414] border ${companyErrors.name ? 'border-red-500 ring-1 ring-red-500' : 'border-[#333333]'} rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#E50914] focus:ring-1 focus:ring-[#E50914] transition-all`}
               placeholder="e.g. Acme Corporation"
             />
-            {companyErrors.name && <p className="text-xs text-red-600 mt-1">{companyErrors.name}</p>}
+            {companyErrors.name && <p className="text-xs text-red-400 mt-1">{companyErrors.name}</p>}
           </div>
 
           <div>
-            <label className="label">Industry (Optional)</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+              Industry (Optional)
+            </label>
             <input
               type="text"
               value={sessionData.industry || ''}
               onChange={(e) => setSessionData({ ...sessionData, industry: e.target.value })}
-              className="input-field"
+              className="w-full bg-[#141414] border border-[#333333] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#E50914] focus:ring-1 focus:ring-[#E50914] transition-all"
               placeholder="e.g. Technology, Retail, Healthcare"
             />
           </div>
 
           <div>
-            <label className="label">Company Website (Optional)</label>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-1.5">
+              Company Website (Optional)
+            </label>
             <input
               type="text"
               value={sessionData.website || ''}
               onChange={(e) => setSessionData({ ...sessionData, website: e.target.value })}
-              className={`input-field ${companyErrors.website ? 'border-red-300 ring-1 ring-red-300' : ''}`}
+              className={`w-full bg-[#141414] border ${companyErrors.website ? 'border-red-500 ring-1 ring-red-500' : 'border-[#333333]'} rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#E50914] focus:ring-1 focus:ring-[#E50914] transition-all`}
               placeholder="https://example.com"
             />
-            {companyErrors.website && <p className="text-xs text-red-600 mt-1">{companyErrors.website}</p>}
+            {companyErrors.website && <p className="text-xs text-red-400 mt-1">{companyErrors.website}</p>}
           </div>
 
           <button
             type="submit"
             disabled={isSavingCompany}
-            className="btn-primary inline-flex items-center gap-2 text-sm py-2.5 px-4"
+            className="inline-flex items-center gap-2 text-sm py-2.5 px-4 bg-[#E50914] hover:bg-[#b80710] text-white font-medium rounded-lg transition-colors disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             {isSavingCompany ? 'Saving...' : 'Save Company Details'}
@@ -332,20 +340,20 @@ export default function SettingsContent() {
       </div>
 
       {/* Brand Brain Summary */}
-      <div className="card p-6">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+      <div className="bg-[#181818] border border-[#262626] rounded-xl p-6 shadow-xl">
+        <div className="flex items-center justify-between pb-4 border-b border-[#262626]">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-zinc-800 text-zinc-200 flex items-center justify-center">
               <Brain className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-900">Brand Brain Knowledge</h2>
-              <p className="text-xs text-slate-500">Active rules engine and governance policies.</p>
+              <h2 className="text-base font-semibold text-white">Brand Brain Knowledge</h2>
+              <p className="text-xs text-zinc-400">Active rules engine and governance policies.</p>
             </div>
           </div>
           <button
             onClick={() => router.push('/brand-brain')}
-            className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
+            className="text-xs py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg flex items-center gap-1.5 transition-colors border border-zinc-700"
           >
             Manage Rules
             <ExternalLink className="w-3.5 h-3.5" />
@@ -353,17 +361,17 @@ export default function SettingsContent() {
         </div>
 
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div className="bg-slate-50 rounded-xl p-3 text-center">
-            <span className="text-xs text-slate-500 block">Total Active Rules</span>
-            <span className="text-xl font-bold text-slate-900 mt-1 block">{ruleCount}</span>
+          <div className="bg-[#141414] border border-[#262626] rounded-xl p-3 text-center">
+            <span className="text-xs text-zinc-400 block">Total Active Rules</span>
+            <span className="text-xl font-bold text-white mt-1 block">{ruleCount}</span>
           </div>
-          <div className="bg-slate-50 rounded-xl p-3 text-center">
-            <span className="text-xs text-slate-500 block">Rules Version</span>
-            <span className="text-xl font-bold text-slate-900 mt-1 block">v{brandBrainVersion}</span>
+          <div className="bg-[#141414] border border-[#262626] rounded-xl p-3 text-center">
+            <span className="text-xs text-zinc-400 block">Rules Version</span>
+            <span className="text-xl font-bold text-white mt-1 block">v{brandBrainVersion}</span>
           </div>
-          <div className="bg-slate-50 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
-            <span className="text-xs text-slate-500 block">Governance Status</span>
-            <span className="text-sm font-semibold text-emerald-600 mt-1.5 inline-flex items-center gap-1">
+          <div className="bg-[#141414] border border-[#262626] rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+            <span className="text-xs text-zinc-400 block">Governance Status</span>
+            <span className="text-sm font-semibold text-emerald-400 mt-1.5 inline-flex items-center gap-1">
               <CheckCircle2 className="w-4 h-4" /> Active
             </span>
           </div>
@@ -371,17 +379,17 @@ export default function SettingsContent() {
       </div>
 
       {/* Session & Sign Out */}
-      <div className="card p-6 border-red-100">
+      <div className="bg-[#181818] border border-red-950/60 rounded-xl p-6 shadow-xl">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-base font-semibold text-slate-900">Sign Out of Workspace</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-base font-semibold text-white">Sign Out of Workspace</h2>
+            <p className="text-xs text-zinc-400 mt-0.5">
               Clears your local session data. You can re-enter your credentials anytime.
             </p>
           </div>
           <button
             onClick={() => setShowLogoutConfirm(true)}
-            className="btn-danger inline-flex items-center gap-2 text-sm py-2.5 px-4"
+            className="inline-flex items-center gap-2 text-sm py-2.5 px-4 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-lg font-medium transition-colors"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -390,8 +398,8 @@ export default function SettingsContent() {
       </div>
 
       {/* About */}
-      <div className="text-center text-xs text-slate-400 py-4">
-        <p className="font-semibold text-slate-500">Inkloom AI (Inkoom AI) v1.0.0</p>
+      <div className="text-center text-xs text-zinc-500 py-4">
+        <p className="font-semibold text-zinc-400">Inkloom AI v1.0.0</p>
         <p className="mt-1">
           Automated Advertising Compliance and Brand Governance Platform
         </p>

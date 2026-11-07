@@ -7,14 +7,14 @@ interface OnboardingProgressProps {
 }
 
 const STEPS = [
-  { id: 1, label: 'Personal', icon: User },
-  { id: 2, label: 'Company', icon: Building2 },
-  { id: 3, label: 'Brand Brain', icon: Brain },
+  { id: 1, label: 'Identity', icon: User },
+  { id: 2, label: 'Enterprise', icon: Building2 },
+  { id: 3, label: 'Brand Rules', icon: Brain },
 ];
 
 export default function OnboardingProgress({ currentStep }: OnboardingProgressProps) {
   return (
-    <div className="flex items-center gap-0">
+    <div className="flex items-center gap-0 select-none">
       {STEPS.map((step, index) => {
         const isCompleted = currentStep > step.id;
         const isActive = currentStep === step.id;
@@ -28,19 +28,19 @@ export default function OnboardingProgress({ currentStep }: OnboardingProgressPr
                 initial={false}
                 animate={{
                   backgroundColor: isCompleted
-                    ? '#16a34a'
+                    ? '#059669'
                     : isActive
-                    ? '#2563EB'
-                    : '#e2e8f0',
+                    ? '#E50914'
+                    : '#1F1F1F',
                   borderColor: isCompleted
-                    ? '#16a34a'
+                    ? '#10b981'
                     : isActive
-                    ? '#2563EB'
-                    : '#cbd5e1',
+                    ? '#E50914'
+                    : '#333333',
                   scale: isActive ? 1.1 : 1,
                 }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className="w-8 h-8 rounded-full border-2 flex items-center justify-center"
+                className="w-8 h-8 rounded-full border-2 flex items-center justify-center shadow-lg"
               >
                 {isCompleted ? (
                   <motion.div
@@ -52,7 +52,7 @@ export default function OnboardingProgress({ currentStep }: OnboardingProgressPr
                   </motion.div>
                 ) : (
                   <Icon
-                    className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`}
+                    className={`w-4 h-4 ${isActive ? 'text-white' : 'text-neutral-500'}`}
                     strokeWidth={2}
                   />
                 )}
@@ -60,12 +60,12 @@ export default function OnboardingProgress({ currentStep }: OnboardingProgressPr
 
               {/* Step Label */}
               <span
-                className={`mt-1 text-[10px] font-medium hidden sm:block whitespace-nowrap ${
+                className={`mt-1 text-[10px] font-bold uppercase tracking-wider hidden sm:block whitespace-nowrap ${
                   isActive
-                    ? 'text-blue-600'
+                    ? 'text-[#E50914]'
                     : isCompleted
-                    ? 'text-green-600'
-                    : 'text-slate-400'
+                    ? 'text-emerald-400'
+                    : 'text-neutral-500'
                 }`}
               >
                 {step.label}
@@ -74,12 +74,12 @@ export default function OnboardingProgress({ currentStep }: OnboardingProgressPr
 
             {/* Connector Line */}
             {index < STEPS.length - 1 && (
-              <div className="relative w-10 sm:w-16 h-[2px] mx-1 mb-3 sm:mb-0 bg-slate-200 overflow-hidden">
+              <div className="relative w-10 sm:w-16 h-[2px] mx-1 mb-3 sm:mb-0 bg-neutral-800 overflow-hidden">
                 <motion.div
                   initial={false}
                   animate={{ width: currentStep > step.id ? '100%' : '0%' }}
                   transition={{ duration: 0.4, ease: 'easeInOut' }}
-                  className="absolute top-0 left-0 h-full bg-green-500"
+                  className="absolute top-0 left-0 h-full bg-[#E50914]"
                 />
               </div>
             )}

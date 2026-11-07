@@ -13,8 +13,8 @@ import time
 import uuid
 
 from fastapi import HTTPException, UploadFile
-from sqlalchemy import select
-from sqlalchemy.orm import Session
+from app.database import select
+from app.database import Session
 
 from app.config import settings
 from app.database import utcnow
@@ -42,8 +42,6 @@ def submit_analysis(
     - File content is validated by bytes, not only by extension.
     - The stored filename is server-generated; the client's name is display-only.
     """
-    # Heavy inference is strictly sequential globally; per company only one
-    # active analysis is allowed.
     active = db.scalar(
         select(AnalysisJob.id)
         .where(
@@ -88,6 +86,10 @@ def submit_analysis(
         brain = brand_brain_service.get_or_create_brain(db, company)
         brain_id = brain.id
 
+    default_engine = (
+        settings.NVIDIA_VISION_MODEL if settings.VISION_PROVIDER == "nvidia_nim"
+        else (settings.OLLAMA_VISION_MODEL or "mock")
+    )
     analysis = Analysis(
         id=analysis_id,
         company_id=company.id,
@@ -95,7 +97,7 @@ def submit_analysis(
         image_path=image_rel,
         original_filename=filename,
         status="queued",
-        engine="mock" if settings.PIPELINE_MODE == "mock" else (settings.OLLAMA_VISION_MODEL or "mock"),
+        engine="mock" if settings.PIPELINE_MODE == "mock" else default_engine,
         is_mock=settings.PIPELINE_MODE == "mock",
     )
     db.add(analysis)
@@ -121,7 +123,7 @@ def submit_analysis(
 def _set_stage(db: Session, job_id: uuid.UUID, *, progress: int, stage: str) -> None:
     """Persist progress + heartbeat. Called between pipeline stages so that a
     crash resumes from a well-known point."""
-    from sqlalchemy import update
+    from app.database import update
 
     from app.models import AnalysisJob
 
@@ -134,9 +136,11 @@ def _set_stage(db: Session, job_id: uuid.UUID, *, progress: int, stage: str) -> 
 
 
 def _use_mock_pipeline() -> bool:
-    """Mock until BOTH the pipeline mode and the Ollama model are live."""
+    """Mock until BOTH the pipeline mode and the selected vision model are live."""
     if settings.PIPELINE_MODE == "mock":
         return True
+    if settings.VISION_PROVIDER == "nvidia_nim":
+        return not bool(settings.NVIDIA_API_KEY)
     from app.services import ollama_service
 
     return not ollama_service.check_status()["available"]
@@ -155,14 +159,19 @@ def run_pipeline(job_id: uuid.UUID) -> None:
 
         job.status = "processing"
         job.started_at = utcnow()
-        job.attempts += 1
+        job.attempts = (job.attempts or 0) + 1
         job.heartbeat_at = utcnow()
-        analysis = job.analysis
+        analysis = db.get(Analysis, job.analysis_id)
+        if analysis is None:
+            analysis = job.analysis
+            if analysis:
+                db.add(analysis)
         analysis.status = "processing"
         db.commit()
 
         _set_stage(db, job.id, progress=10, stage="Preparing image")
         company = db.get(Company, analysis.company_id)
+        company_name = company.company_name if company else "Company"
 
         _, rules = brand_brain_service.enabled_rules_as_dicts(db, company)
         use_mock = _use_mock_pipeline()
@@ -171,29 +180,35 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         _set_stage(db, job.id, progress=30, stage="Analyzing visual composition")
         try:
             vision = vision_engine.analyze_image(
-                str(storage_service.abs_path_for(analysis.image_path)), mock=use_mock
+                str(storage_service.abs_path_for(analysis.image_path)),
+                company_name=company_name,
+                rules=rules,
+                mock=use_mock,
             )
         except vision_engine.NotConfiguredError:
             vision = vision_engine.mock_observations()
 
         # Stage 2 — exact text extraction.
         _set_stage(db, job.id, progress=50, stage="Extracting text from the image")
-        try:
-            ocr = ocr_engine.extract_text(
-                str(storage_service.abs_path_for(analysis.image_path)), mock=use_mock
-            )
-        except ocr_engine.NotConfiguredError:
-            ocr = ocr_engine.mock_ocr()
+        if settings.VISION_PROVIDER == "nvidia_nim" and vision.get("extracted_text"):
+            ocr_text = vision.get("extracted_text", "")
+            ocr_source = "nvidia_multimodal"
+            ocr = {"engine": "nvidia_vision", "is_mock": False, "text": ocr_text}
+        else:
+            try:
+                ocr = ocr_engine.extract_text(
+                    str(storage_service.abs_path_for(analysis.image_path)), mock=use_mock
+                )
+            except ocr_engine.NotConfiguredError:
+                ocr = ocr_engine.mock_ocr()
 
-        # When no dedicated OCR engine exists, fall back to the text the vision
-        # engine transcribed (real inference output, provenance-labelled).
-        ocr_text = ocr.get("text", "")
-        ocr_source = ocr.get("engine", "none")
-        if ocr.get("is_mock") and not vision.get("is_mock"):
-            transcribed = ocr_engine.text_from_vision(vision)
-            if transcribed:
-                ocr_text = transcribed
-                ocr_source = "vision_transcription"
+            ocr_text = ocr.get("text", "")
+            ocr_source = ocr.get("engine", "none")
+            if ocr.get("is_mock") and not vision.get("is_mock"):
+                transcribed = ocr_engine.text_from_vision(vision)
+                if transcribed:
+                    ocr_text = transcribed
+                    ocr_source = "vision_transcription"
 
         # Stage 3 — rule-by-rule compliance evaluation.
         _set_stage(db, job.id, progress=75, stage="Checking brand policies")
@@ -208,6 +223,13 @@ def run_pipeline(job_id: uuid.UUID) -> None:
                 ocr_text=ocr_text,
                 vision_observations=vision.get("observations", []),
             )
+        elif settings.VISION_PROVIDER == "nvidia_nim" and "rule_evaluations" in vision:
+            report = compliance_engine.report_from_nvidia_vision(
+                analysis_id=str(analysis.id),
+                rules=rules,
+                vision=vision,
+                ocr_text=ocr_text,
+            )
         else:
             report = _ai_compliance_report(
                 analysis_id=str(analysis.id), rules=rules, vision=vision, ocr_text=ocr_text
@@ -218,7 +240,11 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         score, overall, summary = scoring_engine.score_report(report)
 
         meta = dict(report.get("analysis_metadata") or {})
-        meta.setdefault("engine", "mock" if use_mock else (settings.OLLAMA_VISION_MODEL or "ai"))
+        engine_label = (
+            settings.NVIDIA_VISION_MODEL if settings.VISION_PROVIDER == "nvidia_nim"
+            else (settings.OLLAMA_VISION_MODEL or "ai")
+        )
+        meta.setdefault("engine", "mock" if use_mock else engine_label)
         meta.setdefault("is_mock", use_mock)
         meta["duration_ms"] = int((time.perf_counter() - started) * 1000)
         meta["brand_rules_count"] = len(rules)
@@ -232,9 +258,16 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         )
         final = validated.model_dump(mode="json")
 
+        final_decision = (
+            "APPROVED" if validated.overall_status == "passed"
+            else ("REJECTED" if validated.overall_status in ("critical_failure", "failed")
+            else "NEEDS REVIEW")
+        )
+
         analysis.report = final
         analysis.compliance_score = score
         analysis.overall_status = validated.overall_status
+        analysis.final_decision = final_decision
         analysis.summary = validated.summary
         analysis.engine = meta.get("engine", "mock")
         analysis.is_mock = bool(meta.get("is_mock", use_mock))
@@ -276,8 +309,6 @@ def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, 
         )
         raw = ollama_service.parse_json_loose(raw_text)
 
-        # Some runs of the SLM answer with empty findings lists; retry once.
-        # If still empty, validate_ai_output marks every rule inconclusive honestly.
         findings_empty = isinstance(raw, dict) and not (raw.get("violations") or raw.get("checks"))
         if findings_empty and rules:
             raw_text = ollama_service.generate(prompt=user, system=system)
@@ -321,7 +352,11 @@ def _mark_failed(job_id: uuid.UUID, *, safe_message: str, debug: str = "") -> No
         job = db.get(AnalysisJob, job_id)
         if job is None:
             return
-        analysis = job.analysis
+        analysis = db.get(Analysis, job.analysis_id)
+        if analysis is None:
+            analysis = job.analysis
+            if analysis:
+                db.add(analysis)
         job.status = "failed"
         job.error = safe_message
         job.current_stage = "Failed"

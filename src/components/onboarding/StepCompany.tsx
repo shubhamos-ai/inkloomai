@@ -4,16 +4,16 @@ import { motion } from 'framer-motion';
 import { ChevronRight, ArrowLeft, Building2, Globe } from 'lucide-react';
 
 const INDUSTRIES = [
-  'Financial Services',
+  'Financial Services & FinTech',
   'Healthcare & Pharmaceuticals',
   'Retail & E-commerce',
   'Technology & SaaS',
   'Food & Beverage',
-  'Automotive',
-  'Real Estate',
-  'Travel & Hospitality',
-  'Education',
+  'Automotive & Aerospace',
+  'Energy & Resources',
+  'CyberSecurity & Data',
   'Media & Entertainment',
+  'Biotechnology',
 ];
 
 interface CompanyData {
@@ -59,7 +59,7 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -24 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
-      className="max-w-lg mx-auto px-6"
+      className="max-w-lg mx-auto px-6 select-none"
     >
       {/* Icon Badge */}
       <motion.div
@@ -68,8 +68,8 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
         transition={{ delay: 0.1, duration: 0.4, ease: 'backOut' }}
         className="flex justify-center mb-8"
       >
-        <div className="w-16 h-16 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
-          <Building2 className="w-8 h-8 text-blue-600" strokeWidth={1.5} />
+        <div className="w-16 h-16 rounded-2xl bg-[#181818] border border-white/10 flex items-center justify-center shadow-2xl">
+          <Building2 className="w-8 h-8 text-[#E50914]" strokeWidth={1.75} />
         </div>
       </motion.div>
 
@@ -80,11 +80,11 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
         transition={{ delay: 0.15, duration: 0.4 }}
         className="text-center mb-10"
       >
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight mb-3">
-          Tell us about your company.
+        <h1 className="text-3xl font-black text-white tracking-tight mb-3">
+          Configure Your Enterprise.
         </h1>
-        <p className="text-slate-500 text-base leading-relaxed">
-          We&apos;ll use this to tailor your compliance rules and advertising workspace.
+        <p className="text-neutral-400 text-sm leading-relaxed">
+          Specify your organisation profile to anchor brand compliance constraints and automated checks.
         </p>
       </motion.div>
 
@@ -98,8 +98,8 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
       >
         {/* Company Name */}
         <div>
-          <label htmlFor="companyName" className="block text-sm font-medium text-slate-700 mb-2">
-            Company name <span className="text-red-400">*</span>
+          <label htmlFor="companyName" className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-2">
+            Company Name <span className="text-[#E50914]">*</span>
           </label>
           <input
             id="companyName"
@@ -109,16 +109,16 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
             value={companyName}
             onChange={e => setCompanyName(e.target.value)}
             onBlur={() => setTouched(true)}
-            placeholder="e.g. Acme Corporation"
+            placeholder="e.g. Nexus Dynamics"
             className={`input-field w-full ${
-              showError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : ''
+              showError ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : ''
             }`}
           />
           {showError && (
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-2 text-sm text-red-500"
+              className="mt-2 text-xs text-red-400"
             >
               Company name must be at least 2 characters.
             </motion.p>
@@ -127,19 +127,19 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
 
         {/* Industry */}
         <div>
-          <label htmlFor="industry" className="block text-sm font-medium text-slate-700 mb-2">
-            Industry{' '}
-            <span className="text-slate-400 font-normal">(optional)</span>
+          <label htmlFor="industry" className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-2">
+            Industry Sector{' '}
+            <span className="text-neutral-500 font-normal">(optional)</span>
           </label>
           <select
             id="industry"
             value={industry}
             onChange={e => setIndustry(e.target.value)}
-            className="input-field w-full appearance-none cursor-pointer"
+            className="input-field w-full appearance-none cursor-pointer bg-[#1F1F1F] text-white"
           >
-            <option value="">Select your industry…</option>
+            <option value="">Select industry classification…</option>
             {INDUSTRIES.map(ind => (
-              <option key={ind} value={ind}>
+              <option key={ind} value={ind} className="bg-[#1F1F1F] text-white">
                 {ind}
               </option>
             ))}
@@ -148,13 +148,13 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
 
         {/* Website */}
         <div>
-          <label htmlFor="website" className="block text-sm font-medium text-slate-700 mb-2">
-            Website{' '}
-            <span className="text-slate-400 font-normal">(optional)</span>
+          <label htmlFor="website" className="block text-xs font-bold text-neutral-300 uppercase tracking-wider mb-2">
+            Corporate Domain{' '}
+            <span className="text-neutral-500 font-normal">(optional)</span>
           </label>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-              <Globe className="w-4 h-4 text-slate-400" />
+              <Globe className="w-4 h-4 text-neutral-500" />
             </div>
             <input
               id="website"
@@ -162,7 +162,7 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
               autoComplete="url"
               value={website}
               onChange={e => setWebsite(e.target.value)}
-              placeholder="https://yourcompany.com"
+              placeholder="https://company.com"
               className="input-field w-full pl-10"
             />
           </div>
@@ -173,16 +173,16 @@ export default function StepCompany({ onNext, onBack, initialData }: StepCompany
           <button
             type="button"
             onClick={onBack}
-            className="btn-secondary flex items-center justify-center gap-2 py-3.5 px-5"
+            className="btn-secondary flex items-center justify-center gap-2 py-3.5 px-5 text-sm font-semibold"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
           <button
             type="submit"
-            className="btn-primary flex-1 flex items-center justify-center gap-2 py-3.5 text-base"
+            className="btn-primary flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-bold uppercase tracking-wider"
           >
-            Continue
+            Continue to Brand Rules
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>

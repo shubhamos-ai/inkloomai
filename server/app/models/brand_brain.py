@@ -1,49 +1,39 @@
-"""BrandBrain model — per-company store of the original rules material.
-
-The original wording is sacred: `original_rules_text` is append-only, and
-`structured_rules` stays null until the AI extraction service produces it.
-"""
+"""BrandBrain model for MongoDB — per-company store of brand rules material."""
 from __future__ import annotations
 
-import uuid
-from typing import Optional
-
-from sqlalchemy import JSON, ForeignKey, Integer, String, Text, Uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from app.database import Base
-from app.models.base import TimestampMixin, uuid_pk
+from typing import Any
+from app.db.mongodb import get_mongo_db
+from app.models.base import FieldRef, MongoDocument
 
 
-class BrandBrain(Base, TimestampMixin):
+class BrandBrain(MongoDocument):
     __tablename__ = "brand_brains"
+    __collection__ = "brand_brains"
 
-    id: Mapped[uuid.UUID] = uuid_pk()
-    company_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid,
-        ForeignKey("companies.id", ondelete="CASCADE"),
-        unique=True,
-        index=True,
-        nullable=False,
-    )
+    id = FieldRef("_id")
+    company_id = FieldRef("company_id")
+    version = FieldRef("version")
+    original_rules_text = FieldRef("original_rules_text")
+    structured_rules = FieldRef("structured_rules")
+    files_dir = FieldRef("files_dir")
+    file_count = FieldRef("file_count")
+    extraction_status = FieldRef("extraction_status")
+    created_at = FieldRef("created_at")
+    updated_at = FieldRef("updated_at")
 
-    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if "version" not in self:
+            self["version"] = 1
+        if "original_rules_text" not in self:
+            self["original_rules_text"] = ""
+        if "file_count" not in self or self["file_count"] is None:
+            self["file_count"] = 0
+        if "extraction_status" not in self:
+            self["extraction_status"] = "pending"
 
-    # Original ingest material, preserved verbatim (append-only).
-    original_rules_text: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    # AI-extracted structured rules (null until extraction runs).
-    structured_rules: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
-
-    # Directory (relative to STORAGE_DIR) where the uploaded guideline files live.
-    files_dir: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    file_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-
-    # pending | manual | ai_extracted
-    extraction_status: Mapped[str] = mapped_column(String(30), default="pending", nullable=False)
-
-    rules = relationship(
-        "BrandRule",
-        back_populates="brain",
-        cascade="all, delete-orphan",
-        order_by="BrandRule.code",
-    )
+    @property
+    def rules(self) -> list[Any]:
+        from app.models.brand_rule import BrandRule
+        docs = get_mongo_db().brand_rules.find({"brain_id": str(self.id)}).sort("code", 1)
+        return [BrandRule(d) for d in docs]
