@@ -119,3 +119,11 @@ def root():
         "docs": "/docs",
         "api": settings.API_PREFIX,
     }
+
+
+@app.on_event("startup")
+def _start_background_services() -> None:
+    # Render.com: process the analysis queue inside the web service.
+    from app.embedded_worker import start_embedded_worker
+
+    start_embedded_worker()

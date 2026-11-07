@@ -1,0 +1,38 @@
+{
+  "extracted_text": "Acme Gadget\nSUMMER LAUNCH SALE\nBUY NOW - LIMITED TIME!",
+  "detected_company_name": "Acme Gadget",
+  "detected_offers": [
+    "SUMMER LAUNCH SALE",
+    "LIMITED TIME"
+  ],
+  "detected_discounts": [],
+  "detected_dates": [],
+  "detected_pricing": [],
+  "branding_elements": [
+    "Acme Gadget wordmark in yellow/gold text",
+    "Dark navy blue background",
+    "Red rectangular call-to-action button",
+    "White uppercase sans-serif typography"
+  ],
+  "spelling_grammar_issues": [],
+  "missing_required_info": [
+    "No governing brand rules were provided for evaluation",
+    "No pricing information visible",
+    "No sale dates or validity period visible",
+    "No contact information (phone, email, website) visible",
+    "No terms and conditions or fine print visible"
+  ],
+  "inconsistencies": [
+    "The image displays 'Acme Gadget' while the governing company is listed as 'Acme Corp'"
+  ],
+  "rule_evaluations": [],
+  "final_decision": "NEEDS REVIEW",
+  "compliance_score": 100,
+  "summary": "The advertisement contains minimal visible content: 'Acme Gadget' branding, 'SUMMER LAUNCH SALE' messaging, and a 'BUY NOW - LIMITED TIME!' call-to-action. No governing brand rules were provided in the input, so no specific compliance rules could be evaluated. The detected brand name in the image ('Acme Gadget') differs slightly from the listed company ('Acme Corp'). Critical information such as pricing, dates, discounts, and legal disclaimers is absent from the visual.",
+  "recommendations": [
+    "Provide the complete set of Acme Corp brand rules for compliance evaluation",
+    "Clarify whether 'Acme Gadget' is an approved product name or brand variant of Acme Corp",
+    "Add required pricing, dates, and terms if mandated by brand policy",
+    "Include necessary disclaimers and contact information per applicable regulations"
+  ]
+}

@@ -1,0 +1,56 @@
+services:
+  # ── Backend (FastAPI + NVIDIA NIM vision) ─────────────────────────────────
+  - type: web
+    name: inkloom-backend
+    runtime: python
+    rootDir: server
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DEBUG
+        value: false
+      - key: PIPELINE_MODE
+        value: ai
+      - key: VISION_PROVIDER
+        value: nvidia_nim
+      - key: NVIDIA_API_KEY
+        sync: false          # set manually in Render dashboard (secret)
+      - key: NVIDIA_BASE_URL
+        value: https://integrate.api.nvidia.com/v1
+      - key: NVIDIA_VISION_MODEL
+        value: nvidia/nemotron-3.5-super-vl-120b-a12b
+      - key: DATABASE_URL
+        sync: false          # MongoDB Atlas SRV connection string (secret)
+      - key: MONGODB_DB_NAME
+        value: inkloom
+      - key: STORAGE_DIR
+        value: ./storage
+      - key: CORS_ORIGINS
+        value: https://inkloom-frontend.onrender.com   # update to the actual frontend URL
+      - key: CORS_EXTRA_ORIGINS
+        value: http://localhost:3000
+      - key: DISABLE_DEV_AUTH
+        value: false
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "120"
+      # No shared disk on Render: run the job loop inside the web service.
+      - key: RUN_EMBEDDED_WORKER
+        value: true
+
+  # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  - type: web
+    name: inkloom-frontend
+    runtime: node
+    rootDir: .
+    plan: free
+    buildCommand: npm install --legacy-peer-deps && npm run build
+    startCommand: npm start
+    envVars:
+      # NEXT_PUBLIC_* vars are baked in at BUILD time and used by the browser,
+      # so this must be the backend's PUBLIC url.
+      - key: NEXT_PUBLIC_AI_API_URL
+        value: https://inkloom-backend.onrender.com
+      - key: NEXT_PUBLIC_USE_MOCK
+        value: false

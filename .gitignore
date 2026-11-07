@@ -3,3 +3,7 @@
 node_modules/
 node_modules/
 .next/
+
+# Test artifacts (never commit)
+server/.pytest-tmp/
+.playwright-mcp/

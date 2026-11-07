@@ -89,6 +89,9 @@ class Settings:
     WORKER_POLL_INTERVAL_SECONDS: float = float(os.getenv("WORKER_POLL_INTERVAL_SECONDS", "1.0"))
     STALE_JOB_AFTER_SECONDS: float = float(os.getenv("STALE_JOB_AFTER_SECONDS", "300"))
     MAX_JOB_ATTEMPTS: int = int(os.getenv("MAX_JOB_ATTEMPTS", "3"))
+    # Run the analysis job loop inside the API process (Render.com — a standalone
+    # worker service cannot share the web service's filesystem).
+    RUN_EMBEDDED_WORKER: bool = os.getenv("RUN_EMBEDDED_WORKER", "false").lower() == "true"
 
     @property
     def all_origins(self) -> list[str]:

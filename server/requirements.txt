@@ -6,6 +6,10 @@ python-multipart>=0.0.12
 # --- Database / migrations ---
 sqlalchemy>=2.0
 alembic>=1.14
+pymongo>=4.8  # MongoDB (production + local)
+
+# --- NVIDIA NIM vision service ---
+json-repair>=0.30  # tolerant parsing of model JSON output
 
 # --- Validation / settings ---
 pydantic>=2.9
