@@ -28,7 +28,7 @@ services:
       - key: STORAGE_DIR
         value: ./storage
       - key: CORS_ORIGINS
-        value: https://inkloom-frontend.onrender.com   # update to the actual frontend URL
+        value: https://inkloom-frontend-rwy2.onrender.com   # update to the actual frontend URL
       - key: CORS_EXTRA_ORIGINS
         value: http://localhost:3000
       - key: DISABLE_DEV_AUTH
@@ -51,6 +51,6 @@ services:
       # NEXT_PUBLIC_* vars are baked in at BUILD time and used by the browser,
       # so this must be the backend's PUBLIC url.
       - key: NEXT_PUBLIC_AI_API_URL
-        value: https://inkloom-backend.onrender.com
+        value: https://inkloom-backend-yw07.onrender.com
       - key: NEXT_PUBLIC_USE_MOCK
         value: false
