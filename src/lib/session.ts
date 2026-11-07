@@ -89,13 +89,10 @@ export function clearUserSession(): void {
 
 export function isOnboardingComplete(): boolean {
   if (typeof window === 'undefined') return false;
-  // Session token alone is sufficient — the user is authenticated and has chosen a company.
+  // User must be authenticated with a session token and have selected an active company workspace.
   const token = localStorage.getItem('inkloom_ai_api_key');
   const companyId = localStorage.getItem('inkloom_company_id');
-  if (token && companyId) return true;
-  // Fallback: legacy check via saved user object.
-  const session = getUserSession();
-  return !!(session?.fullName && session?.companyName);
+  return !!(token && token.startsWith('il_sess_') && companyId);
 }
 
 export function getActiveJobId(): string | null {

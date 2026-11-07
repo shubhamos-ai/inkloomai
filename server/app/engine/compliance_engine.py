@@ -16,8 +16,11 @@ from app.engine import vision_engine
 from app.schemas.report import AnalysisReport, Violation
 
 SYSTEM_HINT = (
-    "You compare an advertisement against brand rules. For each rule return a "
-    "finding with state passed|failed|inconclusive. Never invent rules."
+    "You are the Inkloom AI Compliance Evaluator. You verify advertisements against explicit brand governance "
+    "rules using the image, visual observations, and detected text. "
+    "Meticulously cross-check details: discounts/offers, flavours/variants, slogans, disclaimers, logos, and legibility. "
+    "Ensure claims in the ad match the brand requirements (e.g., if a flavor or discount is promoted, check that it aligns "
+    "with allowed brand guidelines). For each rule return a finding with state passed|failed|inconclusive. Never invent rules."
 )
 
 
@@ -99,13 +102,19 @@ def build_prompt(rules: list[dict[str, Any]], vision: dict, ocr_text: str) -> tu
         '"detail": str, "confidence": 0-1, "rule_uuid": str}], "recommendations": [str]}'
     )
     user = (
-        f"BRAND RULES:\n{rules_json}\n\n"
-        f"VISUAL OBSERVATIONS:\n{json.dumps(vision.get('observations', []), indent=2)}\n\n"
-        f"TEXT DETECTED IN THE ADVERTISEMENT:\n{ocr_text or '(no text extracted)'}\n\n"
-        "Evaluate EVERY brand rule listed above, one by one. For EACH rule include one "
-        "entry in \"checks\" with state passed, failed or inconclusive. Never omit any rule. "
-        "Rules you cannot verify from the image must be marked inconclusive. Findings in "
-        "\"violations\" must reference the exact rule_id."
+        f"BRAND RULES TO EVALUATE:\n{rules_json}\n\n"
+        f"EXTRACTED VISUAL FACTS & OBSERVATIONS:\n{json.dumps(vision.get('observations', []), indent=2)}\n\n"
+        f"VERBATIM TEXT DETECTED IN THE ADVERTISEMENT:\n{ocr_text or '(no text extracted)'}\n\n"
+        "INSTRUCTIONS:\n"
+        "1. Inspect the image and facts carefully. Pay close attention to discounts, prices, promo conditions, "
+        "flavors, product variants, logos, brand colors, contact channels, and required disclaimers.\n"
+        "2. Make sure facts match the requirements: check if any prohibited claims or incorrect flavors/discounts exist.\n"
+        "3. Evaluate EVERY brand rule listed above, one by one. For EACH rule include one "
+        'entry in "checks" with state passed, failed, or inconclusive. Never omit any rule.\n'
+        "4. If an element cannot be determined or verified from the image, mark the check inconclusive.\n"
+        '5. For any failed rule, create a detailed entry in "violations" referencing the exact rule_id, category, '
+        'severity, clear explanation of the discrepancy, exact visual/text evidence, and corrective recommendation.\n'
+        '6. Provide an executive summary and actionable recommendations list in the specified JSON format.'
     )
     return system, user
 

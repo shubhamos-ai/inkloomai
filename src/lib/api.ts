@@ -1,5 +1,5 @@
 // Central API service layer for Inkloom AI
-// Backend: FastAPI on Render.com + NVIDIA NIM (Llama 3.2 11B Vision)
+// Backend: FastAPI on Render.com + Inkloom Vision Engine
 // In production, NEXT_PUBLIC_AI_API_URL is set to the Render backend URL.
 // In development, defaults to http://localhost:8000.
 //

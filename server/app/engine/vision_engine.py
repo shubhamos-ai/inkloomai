@@ -98,31 +98,50 @@ def analyze_image(image_path: str | Path, *, mock: bool = None) -> dict:
     with open(path, "rb") as fh:
         b64 = base64.b64encode(fh.read()).decode("ascii")
 
+    system_prompt = (
+        "You are the Inkloom Vision Engine, an expert multimodal brand-governance system. "
+        "Analyze the advertisement image with forensic precision. Extract neutral visual facts: "
+        "1. Every visible text block verbatim (headlines, body copy, disclaimers, asterisks, footnotes, fine print). "
+        "2. Exact pricing, discount percentages, promo codes, savings claims, and offer terms. "
+        "3. Specific product details: product name, variant, flavor, scent, color, size, volume, net weight, ingredients. "
+        "4. Branding: logos, brand names, taglines, emblems, badges, official certification marks. "
+        "5. Visual styling: dominant brand colors, background palette, typography hierarchy, imagery subjects. "
+        "6. Contact/mandatory info: URL, social handles, phone numbers, addresses, license or registration numbers. "
+        "Return valid JSON matching: "
+        '{"observations": [{"subject": str, "attribute": str, "value": str, "confidence": 0.0-1.0}]}'
+    )
     prompt = (
-        "You are a brand-governance analyst. Describe ONLY what is visible in this "
-        "advertisement image as neutral visual facts (layout, text blocks, logos, "
-        "colors, contact details). Do not judge compliance. Return JSON: "
-        '{"observations": [{"subject": str, "attribute": str, "value": str, '
-        '"confidence": 0.0-1.0}]}'
+        "Examine this advertisement image thoroughly. Record detailed visual observations. "
+        "Carefully transcribe all text verbatim, noting specifically any discounts, prices, "
+        "flavors, product variants, slogans, logos, and disclaimer footnotes. "
+        "Do not evaluate compliance yet; report strictly factual visual evidence in JSON: "
+        '{"observations": [{"subject": str, "attribute": str, "value": str, "confidence": 0.0-1.0}]}'
     )
 
-    # Use NVIDIA NIM if configured, otherwise Ollama
-    if settings.use_nvidia_nim:
-        from app.services import nim_vision_service
+    # Use Inkloom Vision backend (NVIDIA NIM in production) if configured, otherwise Ollama. A provider outage must
+    # degrade to clearly-labelled placeholder observations — never crash the job.
+    try:
+        if settings.use_nvidia_nim:
+            from app.services import nim_vision_service
 
-        raw = nim_vision_service.generate(prompt=prompt, image_b64=b64, images=[b64])
-        parsed = nim_vision_service.parse_json_loose(raw)
-        engine_name = "llama-3.2-11b-vision-instruct"
-    else:
-        from app.services import ollama_service
+            raw = nim_vision_service.generate(prompt=prompt, system=system_prompt, image_b64=b64)
+            parsed = nim_vision_service.parse_json_loose(raw)
+            engine_name = nim_vision_service.get_vision_model()
+        else:
+            from app.services import ollama_service
 
-        raw = ollama_service.generate(prompt=prompt, image_b64=b64, images=[b64])
-        parsed = ollama_service.parse_json_loose(raw)
-        engine_name = settings.OLLAMA_VISION_MODEL
+            raw = ollama_service.generate(prompt=prompt, system=system_prompt, image_b64=b64, images=[b64])
+            parsed = ollama_service.parse_json_loose(raw)
+            engine_name = settings.OLLAMA_VISION_MODEL
+    except Exception as exc:  # noqa: BLE001 — provider hiccup => placeholder, job continues
+        placeholder = mock_observations()
+        placeholder["note"] = f"Vision provider unavailable ({type(exc).__name__})."
+        return placeholder
 
     return {
         "engine": engine_name,
         "is_mock": False,
         "observations": parsed.get("observations", []) if isinstance(parsed, dict) else [],
+        "image_b64": b64,
         "note": "",
     }

@@ -2,7 +2,7 @@
 
 Local dev:   http://127.0.0.1:8000
 Production:  Render.com (set PORT env var, bind to 0.0.0.0)
-AI Vision:   NVIDIA NIM — Llama 3.2 11B Vision Instruct (cloud API, no GPU needed)
+AI Vision:   Inkloom Vision Engine (cloud multimodal API)
 
 Auth lives in this app (api/deps.py). NVIDIA_API_KEY must be set as an env var.
 """
@@ -119,3 +119,11 @@ def root():
         "docs": "/docs",
         "api": settings.API_PREFIX,
     }
+
+
+@app.on_event("startup")
+def _start_background_services() -> None:
+    # Render.com: process the analysis queue inside the web service.
+    from app.embedded_worker import start_embedded_worker
+
+    start_embedded_worker()

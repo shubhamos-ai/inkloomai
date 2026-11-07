@@ -50,7 +50,8 @@ class Settings:
     # Security / auth
     # ------------------------------------------------------------------
     CORS_ORIGINS: list[str] = _env_list(
-        "CORS_ORIGINS", "https://inkoom-ai.shubhamos.com"
+        "CORS_ORIGINS",
+        "https://inkloom-ai.shubhamos.com,https://inkoom-ai.shubhamos.com",
     )
     CORS_EXTRA_ORIGINS: list[str] = _env_list("CORS_EXTRA_ORIGINS", "")
     # Render.com injects RENDER_EXTERNAL_URL for the backend service itself.
@@ -77,6 +78,9 @@ class Settings:
     # Example: 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
     # ------------------------------------------------------------------
     NVIDIA_API_KEY: str = os.getenv("NVIDIA_API_KEY", "")
+    # Vision model served via https://integrate.api.nvidia.com/v1 (OpenAI-compatible).
+    # NOTE: `llama-3.2-11b-vision-instruct` reached end-of-life on 2026-11-05.
+    NVIDIA_VISION_MODEL: str = os.getenv("NVIDIA_VISION_MODEL", "meta/llama-3.2-90b-vision-instruct")
 
     # ------------------------------------------------------------------
     # Ollama (local development only - NOT for production)
@@ -98,6 +102,9 @@ class Settings:
     WORKER_POLL_INTERVAL_SECONDS: float = float(os.getenv("WORKER_POLL_INTERVAL_SECONDS", "1.0"))
     STALE_JOB_AFTER_SECONDS: float = float(os.getenv("STALE_JOB_AFTER_SECONDS", "300"))
     MAX_JOB_ATTEMPTS: int = int(os.getenv("MAX_JOB_ATTEMPTS", "3"))
+    # Run the analysis job loop inside the API process (Render.com — a standalone
+    # worker service cannot share the web service's persistent disk).
+    RUN_EMBEDDED_WORKER: bool = os.getenv("RUN_EMBEDDED_WORKER", "false").lower() == "true"
 
     @property
     def all_origins(self) -> list[str]:

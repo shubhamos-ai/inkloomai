@@ -96,7 +96,8 @@ def submit_analysis(
     # Determine engine based on provider
     engine_name = "mock"
     if settings.use_nvidia_nim:
-        engine_name = "llama-3.2-11b-vision-instruct"
+        from app.services import nim_vision_service as _nim
+        engine_name = _nim.get_vision_model()
     elif settings.use_ollama:
         engine_name = settings.OLLAMA_VISION_MODEL or "ollama"
 
@@ -280,12 +281,16 @@ def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, 
     else:
         vision_service = ollama_service
 
+    vision_kwargs: dict = {}
+    if vision.get("image_b64"):
+        vision_kwargs["images"] = [vision["image_b64"]]
+
     try:
         system, user = compliance_engine.build_prompt(rules, vision, ocr_text)
         raw_text = vision_service.generate(
             prompt=user,
             system=system,
-            images=[vision.get("image_b64")] if vision.get("image_b64") else None,
+            **vision_kwargs,
         )
         raw = vision_service.parse_json_loose(raw_text)
 
@@ -293,11 +298,16 @@ def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, 
         # If still empty, validate_ai_output marks every rule inconclusive honestly.
         findings_empty = isinstance(raw, dict) and not (raw.get("violations") or raw.get("checks"))
         if findings_empty and rules:
-            raw_text = vision_service.generate(prompt=user, system=system)
+            raw_text = vision_service.generate(prompt=user, system=system, **vision_kwargs)
             raw = vision_service.parse_json_loose(raw_text)
 
         # Determine engine name for metadata
-        engine_name = "llama-3.2-11b-vision-instruct" if settings.use_nvidia_nim else settings.OLLAMA_VISION_MODEL
+        if settings.use_nvidia_nim:
+            from app.services import nim_vision_service as _nim
+
+            engine_name = _nim.get_vision_model()
+        else:
+            engine_name = settings.OLLAMA_VISION_MODEL
 
         return compliance_engine.validate_ai_output(
             raw=raw,

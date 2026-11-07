@@ -19,9 +19,19 @@ STATUS_NOT_CONFIGURED = "not_configured"
 STATUS_OFFLINE = "offline"
 STATUS_READY = "ready"
 
-# NVIDIA NIM API endpoints
-NVIDIA_NIM_BASE = "https://api.nvcf.nvidia.com/v2/nim/llama-3.2-11b-vision-instruct"
+# NVIDIA NIM API endpoints (OpenAI-compatible catalog endpoint)
+NVIDIA_NIM_BASE = "https://integrate.api.nvidia.com/v1"
 NVIDIA_NIM_CHAT_COMPLETIONS = f"{NVIDIA_NIM_BASE}/chat/completions"
+
+DEFAULT_VISION_MODEL = "meta/llama-3.2-90b-vision-instruct"
+
+
+def get_vision_model() -> str:
+    """Configured NIM vision model tag (falls back to the live default)."""
+    return os.getenv(
+        "NVIDIA_VISION_MODEL",
+        settings.NVIDIA_VISION_MODEL if hasattr(settings, "NVIDIA_VISION_MODEL") else "",
+    ) or DEFAULT_VISION_MODEL
 
 
 def get_nvidia_api_key() -> str:
@@ -35,42 +45,52 @@ def is_configured() -> bool:
 
 
 def check_status() -> dict:
-    """Check NVIDIA NIM availability."""
+    """Check NVIDIA NIM availability (model listed in the live catalog)."""
     api_key = get_nvidia_api_key()
+    model = get_vision_model()
     if not api_key:
         return {
             "status": STATUS_NOT_CONFIGURED,
             "available": False,
-            "vision_model": "llama-3.2-11b-vision-instruct",
+            "vision_model": model,
             "detail": "NVIDIA_API_KEY not configured. Set NVIDIA_API_KEY environment variable.",
         }
 
     try:
         with httpx.Client(timeout=10.0) as client:
-            # Test with a simple health check to the NIM endpoint
             resp = client.get(
-                "https://api.nvcf.nvidia.com/v2/nim/llama-3.2-11b-vision-instruct/info",
+                f"{NVIDIA_NIM_BASE}/models",
                 headers={"Authorization": f"Bearer {api_key}"},
             )
             if resp.status_code == 200:
+                listed = False
+                try:
+                    ids = [m.get("id") for m in resp.json().get("data", [])]
+                    listed = model in ids
+                except Exception:  # noqa: BLE001 — health must never raise
+                    listed = False
                 return {
-                    "status": STATUS_READY,
-                    "available": True,
-                    "vision_model": "llama-3.2-11b-vision-instruct",
-                    "detail": "NVIDIA NIM Vision API is ready",
+                    "status": STATUS_READY if listed else STATUS_OFFLINE,
+                    "available": listed,
+                    "vision_model": model,
+                    "detail": (
+                        "NVIDIA NIM Vision API is ready"
+                        if listed
+                        else f"Configured model {model!r} is not served by the NVIDIA API catalog"
+                    ),
                 }
             else:
                 return {
                     "status": STATUS_OFFLINE,
                     "available": False,
-                    "vision_model": "llama-3.2-11b-vision-instruct",
+                    "vision_model": model,
                     "detail": f"NVIDIA API returned status {resp.status_code}",
                 }
     except Exception as exc:
         return {
             "status": STATUS_OFFLINE,
             "available": False,
-            "vision_model": "llama-3.2-11b-vision-instruct",
+            "vision_model": model,
             "detail": f"NVIDIA API unreachable: {str(exc)}",
         }
 
@@ -107,20 +127,18 @@ def generate(
     if not api_key:
         raise RuntimeError("NVIDIA_API_KEY not configured. Set NVIDIA_API_KEY environment variable.")
 
-    # Handle images - encode if paths provided
-    image_data = []
+    # Handle images - encode if file paths provided, accept raw base64 directly
+    image_data: list[str] = []
     if images:
-        for img_path in images:
-            if os.path.exists(img_path):
-                image_data.append({
-                    "type": "base64",
-                    "data": encode_image(img_path),
-                })
+        for img in images:
+            if isinstance(img, str) and img and os.path.exists(img):
+                # File path provided — encode it
+                image_data.append(encode_image(img))
+            elif isinstance(img, str) and img:
+                # Already a base64 string — use directly
+                image_data.append(img)
     elif image_b64:
-        image_data.append({
-            "type": "base64",
-            "data": image_b64,
-        })
+        image_data.append(image_b64)
 
     # Build messages for multimodal input
     messages = []
@@ -128,23 +146,35 @@ def generate(
     if system:
         messages.append({"role": "system", "content": system})
 
-    # Build content array for user message (text + images)
-    content_parts = []
     if prompt:
-        content_parts.append({"type": "text", "text": prompt})
-
-    for img in image_data:
-        content_parts.append({
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:image/jpeg;base64,{img['data']}",
-            },
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": prompt},
+                *[
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{data}"},
+                    }
+                    for data in image_data
+                ],
+            ],
+        })
+    elif image_data:
+        # Image-only message with a neutral instruction
+        messages.append({
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Describe this image."},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{image_data[0]}"},
+                },
+            ],
         })
 
-    messages.append({"role": "user", "content": content_parts})
-
     payload = {
-        "model": "llama-3.2-11b-vision-instruct",
+        "model": get_vision_model(),
         "messages": messages,
         "max_tokens": 2048,
         "temperature": 0.1,
@@ -160,7 +190,7 @@ def generate(
         "NVCF-Use-Async-Op": "false",
     }
 
-    with httpx.Client(timeout=120.0) as client:
+    with httpx.Client(timeout=90.0) as client:
         try:
             resp = client.post(
                 NVIDIA_NIM_CHAT_COMPLETIONS,

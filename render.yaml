@@ -23,13 +23,17 @@ services:
       - key: STORAGE_DIR
         value: /var/data/storage
       - key: CORS_ORIGINS
-        value: https://inkloom-frontend.onrender.com   # update to your actual frontend URL
+        value: https://inkloom-ai.shubhamos.com,https://inkloom-frontend.onrender.com
       - key: CORS_EXTRA_ORIGINS
         value: http://localhost:3000
       - key: DISABLE_DEV_AUTH
         value: false
       - key: RATE_LIMIT_PER_MINUTE
         value: "120"
+      # Render cannot share one persistent disk across services, so a standalone
+      # worker cannot read uploads. Run the job loop inside the API process.
+      - key: RUN_EMBEDDED_WORKER
+        value: true
     disk:
       name: inkloom-storage
       mountPath: /var/data
@@ -43,11 +47,13 @@ services:
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: npm start
     envVars:
+      # NEXT_PUBLIC_* vars are baked in at BUILD time and used by the browser,
+      # so they must be the backend's PUBLIC url (fromService property 'host'
+      # returns the private-network hostname, which browsers cannot reach).
+      # Update this if your onrender subdomain differs (Render may add a hash
+      # suffix when the name is taken).
       - key: NEXT_PUBLIC_AI_API_URL
-        fromService:
-          name: inkloom-backend
-          type: web
-          property: host         # Render injects the backend's internal URL
+        value: https://inkloom-backend.onrender.com
       - key: NEXT_PUBLIC_USE_MOCK
         value: false
 

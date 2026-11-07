@@ -10,8 +10,14 @@ def test_health_is_online(client):
     assert body["service"] == "Inkloom AI"
     assert body["version"] == "1.0.0"
     assert body["database"] == "connected"
-    # Not configured in the test environment -> honest, non-error state.
-    assert body["ollama_status"] in ("not_configured", "offline", "ready", "model_missing")
+    # Provider health is honest, non-error state regardless of configuration.
+    assert body["vision_status"] in ("not_configured", "offline", "ready", "unknown", "ready_mock")
+    assert isinstance(body.get("providers"), dict)
+    for name in ("ollama", "nvidia_nim"):
+        assert name in body["providers"]
+        assert body["providers"][name]["status"] in (
+            "not_configured", "offline", "ready", "model_missing"
+        )
 
 
 def test_root_and_docs(client):

@@ -189,7 +189,7 @@ export default function SettingsContent() {
                     }`}
                   />
                   {backendHealth === 'online'
-                    ? 'Connected — NVIDIA NIM'
+                    ? 'Connected — Inkloom AI Engine'
                     : backendHealth === 'checking'
                     ? 'Checking…'
                     : 'Offline / Unreachable'}
@@ -230,11 +230,11 @@ export default function SettingsContent() {
         <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-500">
           <div>
             <span className="font-medium text-neutral-400">Vision Model:</span>{' '}
-            Llama 3.2 11B Vision Instruct (NVIDIA NIM)
+            Inkloom Vision v1 (Multimodal)
           </div>
           <div>
             <span className="font-medium text-neutral-400">Deployment:</span>{' '}
-            Render.com
+            Cloud Service
           </div>
         </div>
       </div>
@@ -397,7 +397,7 @@ export default function SettingsContent() {
       {/* About */}
       <div className="text-center text-xs text-neutral-600 py-4">
         <p className="font-semibold text-neutral-500">Inkloom AI v1.0.0</p>
-        <p className="mt-1">Advertising Compliance &amp; Brand Governance — Powered by NVIDIA NIM</p>
+        <p className="mt-1">Advertising Compliance &amp; Brand Governance — Powered by Inkloom AI Model</p>
       </div>
 
       {/* Confirmation Dialog */}

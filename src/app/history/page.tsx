@@ -36,8 +36,12 @@ function HistoryContent() {
   }, []);
 
   useEffect(() => {
+    if (!isOnboardingComplete()) {
+      router.replace('/onboarding');
+      return;
+    }
     loadHistory();
-  }, [loadHistory]);
+  }, [router, loadHistory]);
 
   // Load specific report if ?result=ID is in URL
   useEffect(() => {
