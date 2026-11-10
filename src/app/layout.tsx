@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { BackendProvider } from '@/context/BackendContext';
 
 export const metadata: Metadata = {
   title: 'Inkloom AI — Advertising Compliance & Brand Governance',
@@ -20,7 +21,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <BackendProvider>
+          {children}
+        </BackendProvider>
+      </body>
     </html>
   );
 }

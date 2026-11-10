@@ -9,6 +9,7 @@ import StepCompanySelect from '@/components/onboarding/StepCompanySelect';
 import StepNewCompany from '@/components/onboarding/StepNewCompany';
 import StepBuilding from '@/components/onboarding/StepBuilding';
 import OnboardingProgress from '@/components/onboarding/OnboardingProgress';
+import BackendStatusBanner from '@/components/ui/BackendStatusBanner';
 import {
   registerAccount,
   loginAccount,
@@ -300,6 +301,9 @@ export default function OnboardingPage() {
             </span>
           </button>
         </header>
+
+        {/* Backend health & wake status alert banner */}
+        <BackendStatusBanner />
 
         {/* Progress rail — hidden on the building screen */}
         {step !== 'building' && (

@@ -3,6 +3,7 @@
 import React from 'react';
 import Sidebar from '@/components/layout/Sidebar';
 import MobileNav from '@/components/layout/MobileNav';
+import BackendStatusBanner from '@/components/ui/BackendStatusBanner';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,11 @@ export default function DashboardLayout({ children, currentPath }: DashboardLayo
           background: 'radial-gradient(50rem 20rem at 50% -10%, rgba(229, 9, 20, 0.08), transparent 70%)',
         }}
       />
+
+      {/* Backend Spin-Down Alert / Auto-Wake Banner */}
+      <div className="lg:ml-60 relative z-30">
+        <BackendStatusBanner />
+      </div>
 
       {/* Desktop Sidebar */}
       <Sidebar currentPath={currentPath} />

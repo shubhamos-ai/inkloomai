@@ -8,8 +8,9 @@ import React, {
   ChangeEvent,
 } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, ImageIcon, X, AlertCircle, Loader2, Scan } from 'lucide-react';
+import { Upload, ImageIcon, X, AlertCircle, Loader2, Scan, Server, AlertTriangle } from 'lucide-react';
 import { validateImageFile } from '@/lib/validation';
+import { useBackend } from '@/context/BackendContext';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 
@@ -40,6 +41,7 @@ export default function AdvertisementUpload({
   onUpload,
   isAnalysing,
 }: AdvertisementUploadProps) {
+  const { isOnline, isWaking, recheck } = useBackend();
   const [fileState, setFileState] = useState<FileState | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -96,12 +98,17 @@ export default function AdvertisementUpload({
 
   /* Submit */
   const handleAnalyse = () => {
+    if (!isOnline) {
+      setValidationError('AI Engine cluster is currently booting up from spin-down. Please allow ~20-30 seconds.');
+      recheck();
+      return;
+    }
     if (fileState && !isAnalysing) {
       onUpload(fileState.file);
     }
   };
 
-  const canSubmit = !!fileState && !isAnalysing;
+  const canSubmit = !!fileState && !isAnalysing && isOnline;
 
   return (
     <div className="space-y-4">
@@ -278,29 +285,41 @@ export default function AdvertisementUpload({
         )}
 
         {/* Analyse button */}
-        <button
-          type="button"
-          onClick={handleAnalyse}
-          disabled={!canSubmit}
-          className={[
-            'flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-150',
-            canSubmit
-              ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95 shadow-sm'
-              : 'bg-slate-100 text-slate-400 cursor-not-allowed',
-          ].join(' ')}
-        >
-          {isAnalysing ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Analysis in progress…
-            </>
-          ) : (
-            <>
-              <Scan className="h-4 w-4" />
-              Analyse Advertisement
-            </>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            type="button"
+            onClick={handleAnalyse}
+            disabled={!fileState || isAnalysing || !isOnline}
+            className={[
+              'flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-sm font-semibold transition-all duration-150',
+              fileState && !isAnalysing && isOnline
+                ? 'bg-[#E50914] text-white hover:brightness-105 active:scale-95 shadow-md shadow-red-500/20'
+                : 'bg-[#E8E2D9] text-neutral-400 cursor-not-allowed shadow-none',
+            ].join(' ')}
+          >
+            {isAnalysing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-white" />
+                <span>Analysing visual compliance…</span>
+              </>
+            ) : !isOnline ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                <span>Waiting for AI Cluster to wake…</span>
+              </>
+            ) : (
+              <>
+                <Scan className="h-4 w-4" />
+                <span>Analyse Advertisement</span>
+              </>
+            )}
+          </button>
+          {!isOnline && fileState && (
+            <p className="text-[11px] text-amber-700 font-medium">
+              Backend instance is booting up. Analysis unlocks automatically when ready.
+            </p>
           )}
-        </button>
+        </div>
       </div>
     </div>
   );
