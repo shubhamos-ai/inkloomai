@@ -156,6 +156,15 @@ class Settings:
     @property
     def all_origins(self) -> list[str]:
         origins = list(self.CORS_ORIGINS) + list(self.CORS_EXTRA_ORIGINS)
+        # Always ensure production custom domains and Render hosts are recognized
+        for known in (
+            "https://inkloom-ai.shubhamos.com",
+            "https://inkoom-ai.shubhamos.com",
+            "https://inkloom-frontend-rwy2.onrender.com",
+            "https://inkloom-frontend.onrender.com",
+        ):
+            if known not in origins:
+                origins.append(known)
         # Auto-include Render's frontend URL when set
         if self.RENDER_FRONTEND_URL and self.RENDER_FRONTEND_URL not in origins:
             origins.append(self.RENDER_FRONTEND_URL)
