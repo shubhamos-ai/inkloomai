@@ -87,3 +87,4 @@ Because free/starter tier cloud instances spin down during periods of inactivity
   - **Stat Cards & Metric Panels**: Elevated card designs with color-graded compliance badges.
   - **Brand Brain Studio**: Interactive category tags, instant rule toggles, source quote callouts, and structured rule inspection drawers.
   - **Analysis Studio & Reports**: Full-screen split view featuring the uploaded creative, rule-by-rule violation breakdown with confidence scores, impact ratings, and actionable remediation recommendations.
+

@@ -83,3 +83,4 @@ In Round 3, Tensor Titans implemented the **three official commitments** promise
 - **Backend Test Suite**: 38/38 unit and integration tests passing (`server/.venv/bin/pytest server/tests -q`).
 - **Frontend Build**: Clean static generation with zero TypeScript errors across all routes (`npm run build`).
 - **Live Auth & API Endpoints**: Verified end-to-end user registration, session issuance, and login on the live production backend.
+
