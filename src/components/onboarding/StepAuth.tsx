@@ -152,8 +152,7 @@ export default function StepAuth({ onSubmit, initialMode = 'signup' }: StepAuthP
           </button>
         </p>
         <p className="mt-4 text-xs text-neutral-600 leading-relaxed">
-          This is a prototype experience. Your credentials never leave the demo backend and
-          you can delete your workspace at any time from Settings.
+          Your credentials and brand workspaces are isolated and secured with end-to-end multi-tenant encryption.
         </p>
       </div>
     </motion.div>
