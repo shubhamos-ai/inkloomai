@@ -68,7 +68,8 @@ def check_status() -> dict:
 
 def generate(
     *, prompt: str, system: Optional[str] = None, image_b64: Optional[str] = None,
-    images: Optional[list[str]] = None, fmt: str = "json", stream: bool = False
+    images: Optional[list[str]] = None, fmt: str = "json", stream: bool = False,
+    model: Optional[str] = None,
 ) -> str:
     """Send a generation request. Raises RuntimeError on any failure so callers
     can degrade to mock-labeled behaviour."""
@@ -76,7 +77,7 @@ def generate(
         raise RuntimeError("Ollama vision model is not configured.")
 
     payload: dict = {
-        "model": settings.OLLAMA_VISION_MODEL,
+        "model": model or settings.OLLAMA_VISION_MODEL,
         "prompt": prompt,
         "stream": stream,
     }

@@ -38,11 +38,17 @@ class AnalysisJob(Base, TimestampMixin):
 
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Machine-readable failure class: provider_error | configuration_error |
+    # internal_error | cancelled. Used to decide retry vs terminal failure.
+    error_code: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
 
     queued_at: Mapped[datetime] = mapped_column(DateTime, default=None, nullable=True)
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     # Refreshed while processing; used for crash recovery.
     heartbeat_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # Exponential backoff gate; NULL means "claimable immediately".
+    next_attempt_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    locked_by: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
 
     analysis = relationship("Analysis", back_populates="job")

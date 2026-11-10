@@ -45,9 +45,49 @@ class BrandRuleOut(BaseModel):
     severity: Severity
     source_text: str
     source_type: str
+    version: int = 1
     enabled: bool
     created_at: datetime
     updated_at: datetime
+
+
+class BrandRuleVersionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    company_id: uuid.UUID
+    rule_id: Optional[uuid.UUID] = None
+    version: int
+    change_type: str
+    snapshot: dict
+    changed_by_user_id: Optional[uuid.UUID] = None
+    extraction_run_id: Optional[uuid.UUID] = None
+    created_at: datetime
+
+
+class ExtractionRunOut(BaseModel):
+    id: str
+    company_id: str
+    status: str
+    attempts: int
+    max_attempts: int
+    source_version: int
+    source_chars: int
+    model: str
+    proposed_rules: list = []
+    rejected_rules: list = []
+    warnings: list = []
+    error: Optional[str] = None
+    error_code: Optional[str] = None
+    created_at: str
+    completed_at: Optional[str] = None
+    committed_at: Optional[str] = None
+    committed_rule_count: int = 0
+    next_attempt_at: Optional[str] = None
+
+
+class ExtractionCommitRequest(BaseModel):
+    rules: list[dict] = Field(description="List of reviewed and approved rules/proposals")
 
 
 class BrandRulesListResponse(BaseModel):

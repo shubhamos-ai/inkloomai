@@ -5,17 +5,32 @@ import { AnimatePresence, motion } from 'framer-motion';
 import {
   Brain,
   Building2,
+  Check,
   ChevronDown,
   ChevronRight,
   Copy,
   Edit2,
   Eye,
   EyeOff,
+  History,
   Layers,
+  Loader2,
   Plus,
+  RefreshCw,
   Save,
+  Sparkles,
+  Trash2,
 } from 'lucide-react';
-import { getBrandBrain, RULE_CATEGORY_LABELS, updateBrandBrain } from '@/lib/api';
+import {
+  commitExtractionProposals,
+  getBrandBrain,
+  getLatestExtractionRun,
+  getRuleVersions,
+  RULE_CATEGORY_LABELS,
+  triggerRuleExtraction,
+  updateBrandBrain,
+  type ExtractionRunInfo,
+} from '@/lib/api';
 import { getUserSession } from '@/lib/session';
 import type { BrandBrain, BrandRule, RuleCategory } from '@/types/brand-rules';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
@@ -286,6 +301,17 @@ export default function BrandBrainContent() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<BrandRule | undefined>(undefined);
 
+  // AI Brand Rule Extraction State (Improvement 1)
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [latestRun, setLatestRun] = useState<ExtractionRunInfo | null>(null);
+  const [selectedProposals, setSelectedProposals] = useState<Record<string, boolean>>({});
+  const [isCommitting, setIsCommitting] = useState(false);
+
+  // Rule Versioning Modal State (Improvement 1)
+  const [versionModalOpen, setVersionModalOpen] = useState(false);
+  const [versions, setVersions] = useState<Array<Record<string, unknown>>>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+
   // Load
   useEffect(() => {
     let cancelled = false;
@@ -369,6 +395,74 @@ export default function BrandBrainContent() {
     }
   }
 
+  async function handleTriggerExtraction() {
+    setIsExtracting(true);
+    try {
+      const res = await triggerRuleExtraction();
+      if (!res.ok) {
+        toast.error(res.message || 'Could not trigger rule extraction.');
+      } else {
+        toast.success('AI rule extraction finished.');
+        if (res.run) {
+          setLatestRun(res.run);
+          const initialSelection: Record<string, boolean> = {};
+          res.run.proposed_rules.forEach((p) => {
+            initialSelection[p.proposal_id] = true;
+          });
+          setSelectedProposals(initialSelection);
+        }
+      }
+    } catch {
+      toast.error('An error occurred during extraction.');
+    } finally {
+      setIsExtracting(false);
+    }
+  }
+
+  async function handleCommitProposals() {
+    if (!latestRun) return;
+    const accepted = latestRun.proposed_rules.filter(
+      (p) => selectedProposals[p.proposal_id]
+    );
+    if (accepted.length === 0) {
+      toast.error('Please select at least one proposed rule to commit.');
+      return;
+    }
+    setIsCommitting(true);
+    try {
+      const res = await commitExtractionProposals(latestRun.id, accepted);
+      if (res.ok) {
+        toast.success(`Successfully committed ${res.committed_count} brand rules.`);
+        setLatestRun(null);
+        // Refresh brain and rules
+        const updated = await getBrandBrain();
+        if (updated) {
+          setBrain(updated);
+          setRules(updated.rules);
+        }
+      } else {
+        toast.error(res.message || 'Failed to commit proposals.');
+      }
+    } catch {
+      toast.error('Failed to commit brand rules.');
+    } finally {
+      setIsCommitting(false);
+    }
+  }
+
+  async function handleOpenVersions() {
+    setVersionModalOpen(true);
+    setLoadingVersions(true);
+    try {
+      const res = await getRuleVersions();
+      setVersions(res.versions);
+    } catch {
+      toast.error('Failed to load version history.');
+    } finally {
+      setLoadingVersions(false);
+    }
+  }
+
   // ── Group rules by category ──
 
   const rulesByCategory = ORDERED_CATEGORIES.reduce<Record<RuleCategory, BrandRule[]>>(
@@ -416,7 +510,33 @@ export default function BrandBrainContent() {
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            <button
+              onClick={handleOpenVersions}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-slate-200 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors shadow-sm"
+              title="Audit trail and version history of rules"
+            >
+              <History size={13} className="text-slate-500" />
+              History
+            </button>
+            <button
+              onClick={handleTriggerExtraction}
+              disabled={isExtracting || !rulesText.trim()}
+              className="flex items-center gap-1.5 h-9 px-3.5 rounded-xl bg-purple-50 border border-purple-200 text-xs font-medium text-purple-700 hover:bg-purple-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              title="Extract structured brand compliance rules from guideline text with AI"
+            >
+              {isExtracting ? (
+                <>
+                  <Loader2 size={13} className="animate-spin text-purple-600" />
+                  Extracting…
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} className="text-purple-600" />
+                  Extract Rules with AI
+                </>
+              )}
+            </button>
             {isDirty && (
               <motion.button
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -496,6 +616,93 @@ export default function BrandBrainContent() {
           onDirty={markDirty}
         />
 
+        {/* ── AI Extraction Proposals Review (Improvement 1) ── */}
+        {latestRun && latestRun.proposed_rules && latestRun.proposed_rules.length > 0 && (
+          <div className="bg-gradient-to-r from-purple-50/70 via-white to-blue-50/70 rounded-2xl border border-purple-200/80 p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-pulse" />
+                  <h3 className="text-sm font-bold text-slate-900">
+                    AI Proposed Rules Review ({latestRun.proposed_rules.length} proposals)
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Extracted from your guidelines via {latestRun.model}. Review proposals and check the ones to commit.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setLatestRun(null)}
+                  className="h-8 px-3 rounded-lg border border-slate-200 bg-white text-xs text-slate-600 hover:bg-slate-50 transition-colors"
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={handleCommitProposals}
+                  disabled={isCommitting}
+                  className="flex items-center gap-1.5 h-8 px-4 rounded-lg bg-purple-600 text-xs font-semibold text-white hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-sm"
+                >
+                  {isCommitting ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" />
+                      Committing…
+                    </>
+                  ) : (
+                    <>
+                      <Check size={12} />
+                      Commit Selected Rules
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+              {latestRun.proposed_rules.map((prop) => (
+                <div
+                  key={prop.proposal_id}
+                  className={`p-3.5 rounded-xl border text-xs transition-all ${
+                    selectedProposals[prop.proposal_id]
+                      ? 'bg-white border-purple-300 shadow-sm'
+                      : 'bg-slate-50/70 border-slate-200 opacity-60'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <label className="flex items-start gap-2.5 cursor-pointer flex-1">
+                      <input
+                        type="checkbox"
+                        checked={!!selectedProposals[prop.proposal_id]}
+                        onChange={(e) =>
+                          setSelectedProposals((prev) => ({
+                            ...prev,
+                            [prop.proposal_id]: e.target.checked,
+                          }))
+                        }
+                        className="mt-0.5 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                      />
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-slate-900">{prop.requirement}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-purple-100 text-[10px] font-medium text-purple-700 uppercase">
+                            {RULE_CATEGORY_LABELS[prop.category] || prop.category}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] text-slate-600 font-medium">
+                            {prop.severity}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono italic bg-slate-50 p-2 rounded border border-slate-100">
+                          Source Quote: "{prop.source_text}"
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Rules by category ── */}
         <div>
           <h2 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
@@ -564,6 +771,128 @@ export default function BrandBrainContent() {
         onSave={handleModalSave}
         onClose={handleModalClose}
       />
+
+      {/* ── Version History Modal ── */}
+      <AnimatePresence>
+        {versionModalOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="vh-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setVersionModalOpen(false)}
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
+            />
+
+            {/* Panel */}
+            <motion.div
+              key="vh-panel"
+              initial={{ opacity: 0, x: 48 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 48 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+              className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                <div className="flex items-center gap-2.5">
+                  <History size={16} className="text-purple-600" />
+                  <span className="text-sm font-semibold text-slate-900">Rule Audit Trail</span>
+                </div>
+                <button
+                  onClick={() => setVersionModalOpen(false)}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-500"
+                  aria-label="Close history panel"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto px-5 py-4">
+                {loadingVersions ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                    <Loader2 size={24} className="animate-spin" />
+                    <span className="text-sm">Loading history…</span>
+                  </div>
+                ) : versions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400">
+                    <History size={28} className="text-slate-200" />
+                    <span className="text-sm font-medium text-slate-500">No version history yet</span>
+                    <span className="text-xs text-center text-slate-400">
+                      Rule edits and AI extractions will appear here.
+                    </span>
+                  </div>
+                ) : (
+                  <ol className="relative border-l border-slate-100 ml-2 space-y-5">
+                    {versions.map((v, idx) => {
+                      const changeType = String(v.change_type ?? '');
+                      const changedAt = v.changed_at ? new Date(String(v.changed_at)).toLocaleString() : '—';
+                      const isFirst = idx === 0;
+
+                      const badgeColor =
+                        changeType === 'created'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : changeType === 'updated'
+                          ? 'bg-blue-100 text-blue-700'
+                          : changeType === 'ai_extracted'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-slate-100 text-slate-600';
+
+                      return (
+                        <li key={idx} className="ml-5">
+                          {/* Timeline dot */}
+                          <span
+                            className={`absolute -left-[9px] w-4 h-4 rounded-full border-2 border-white flex items-center justify-center ${
+                              isFirst ? 'bg-purple-500' : 'bg-slate-200'
+                            }`}
+                          />
+
+                          <div className="bg-slate-50 rounded-xl p-3.5 space-y-2">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${badgeColor}`}
+                              >
+                                {changeType || 'change'}
+                              </span>
+                              <span className="text-[10px] text-slate-400">{changedAt}</span>
+                            </div>
+
+                            {Boolean(v.title) && (
+                              <p className="text-xs font-semibold text-slate-800">{String(v.title)}</p>
+                            )}
+
+                            {Boolean(v.description) && (
+                              <p className="text-xs text-slate-600 leading-relaxed">{String(v.description)}</p>
+                            )}
+
+                            {Boolean(v.source_text) && (
+                              <div className="text-[11px] text-slate-500 italic font-mono bg-white border border-slate-100 rounded-lg p-2">
+                                &ldquo;{String(v.source_text)}&rdquo;
+                              </div>
+                            )}
+
+                            {Boolean(v.changed_by) && (
+                              <p className="text-[10px] text-slate-400">by {String(v.changed_by)}</p>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-slate-100 px-5 py-3 text-xs text-slate-400">
+                {versions.length} version record{versions.length !== 1 ? 's' : ''} across all rules
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* ── Toasts ── */}
       <ToastContainer toasts={toast.toasts} onDismiss={toast.dismissToast} />

@@ -1,0 +1,82 @@
+INKLOOM AI — HACKATHON ANSWERS
+
+============================================================
+WHAT YOU BUILT
+============================================================
+The list of features you completed (only what is finished and working in the deployed link).
+
+- Multi-step onboarding wizard: identity, company profile, brand guidelines, and setup.
+- Company profile creation with industry and website details.
+- Brand Brain intake: paste brand rules as text or upload PDF, TXT, and DOCX guideline documents.
+- Advertisement image upload with type, size, and dimension validation.
+- Asynchronous advertisement analysis pipeline with live progress polling.
+- Real AI visual compliance report: overall score, risk level, executive summary, and rule-level findings.
+- Analysis history with per-report retrieval and detail view.
+- Compliance dashboard with aggregate statistics.
+- Brand Brain management screen with rule categories, toggles, and edits.
+- Settings page for workspace preferences.
+- Secured REST API with API-key and session authentication, company-level data isolation, and rate limiting.
+- Health-check endpoint reporting service, database, and pipeline status.
+- Full-stack production deployment on Render (Next.js frontend, FastAPI backend, MongoDB Atlas, NVIDIA NIM vision model).
+
+============================================================
+TECHNOLOGY AND IMPLEMENTATION DETAILS
+============================================================
+Stack, architecture, models and APIs used, and how the pieces fit together.
+
+Stack:
+- Frontend: Next.js 15 (App Router), React 18, TypeScript, Tailwind CSS, Framer Motion.
+- Backend: Python FastAPI, Pydantic, Uvicorn.
+- Database: MongoDB Atlas (PyMongo), with a compatibility session layer over the document store.
+- AI: NVIDIA NIM hosted multimodal model — nvidia/nemotron-3.5-super-vl-120b-a12b — called through the NVIDIA OpenAI-compatible chat completions API.
+- Deployment: Render.com blueprint (render.yaml) with a free Python web service and a free Node web service.
+
+Architecture and data flow:
+1. The Next.js client collects onboarding data and brand guidelines, then uploads an advertisement image.
+2. The FastAPI backend validates the image, stores it, creates an analysis record and a queued job in MongoDB, and returns immediately with HTTP 202.
+3. A worker loop claims the job, sends the image and the company's rules to the NVIDIA NIM vision model, parses the model JSON tolerantly, runs the compliance/scoring engines, and persists the final report.
+4. The client polls the status endpoint for live progress, then fetches the completed report and history.
+
+Technically hard parts:
+- Reliable JSON extraction from a vision LLM: multi-stage parsing with json-repair as a fallback so a slightly malformed model response never crashes the pipeline.
+- Running the background worker inside the web process: Render cannot share a persistent disk across services, so the job loop runs in a daemon thread (RUN_EMBEDDED_WORKER) and still recovers stale jobs.
+- Company-level isolation: every analysis, rule, and asset is scoped to the authenticated company so one tenant cannot read another's data.
+- Production parity: the same code path runs locally and on Render, with environment-driven configuration for the database, storage, model endpoint, and CORS.
+
+============================================================
+WHAT CHANGED FROM YOUR ORIGINAL PROPOSAL, AND WHY
+============================================================
+Anything you added, dropped, replaced or rethought since Round 1.
+
+- Replaced the self-hosted local vision model (Ollama) with the hosted NVIDIA NIM Nemotron vision model. Reason: better image understanding and a stable, production-grade endpoint without GPU infrastructure.
+- Replaced the file-based/SQL database with MongoDB Atlas. Reason: durable managed persistence that works on a free hosting tier with no attached disk.
+- Replaced the separate worker service and public tunnel with a single Render web service and an embedded worker. Reason: Render's free tier cannot share a persistent disk between services, and the tunnel added an unnecessary external dependency.
+- Kept the Brand Brain as the core product concept but re-scoped it to intake and management first, with AI structuring planned as the next step. Reason: shipping a reliable upload-and-analysis path matters more than a half-working extraction step.
+
+============================================================
+WHAT DOES NOT WORK YET?
+============================================================
+Known bugs, unfinished features, anything a judge will hit and be confused by.
+
+- Brand rules entered during onboarding are stored as raw guideline text, not converted into structured rules. The analysis therefore reports that no governing brand rules were provided. The automatic extraction endpoint is intentionally stubbed (auto_extraction_available: false) until the text-extraction step is built.
+- New rules added in the Brand Brain screen are saved in the browser; the server endpoint currently updates existing rules and skips newly created ones, so they do not affect backend analysis yet.
+- There is no dedicated sign-in or sign-up screen. The live demo uses a pre-provisioned company API key; a brand-new visitor's onboarding does not yet create an authenticated per-user backend account.
+- Uploaded images live on the service's ephemeral disk, so an original image may be unavailable after a redeploy or restart. Reports and history survive because they are stored in MongoDB.
+- The free Render instance sleeps after inactivity, so the first request after idle can take around 30–60 seconds.
+- OCR falls back to a labelled mock because the Tesseract binary is not installed in the deployment.
+
+============================================================
+YOUR THREE IMPROVEMENTS FOR ROUND 3
+============================================================
+
+Improvement 1 — AI Brand-Rule Extraction
+What it is: Convert uploaded or pasted brand guidelines into structured, versioned rules with the exact source wording attached, using an LLM extraction and validation step.
+What it changes for the user: The compliance score becomes genuinely brand-specific. Every advertisement is judged against the company's real rules, with traceable evidence for each finding instead of a generic analysis.
+
+Improvement 2 — Real Authentication and Multi-Tenancy
+What it is: A complete sign-up and sign-in flow with secure sessions, per-user accounts, and per-company ownership of all data and assets.
+What it changes for the user: Each team gets its own private workspace. Users can return to their history, manage their own brand rules, and trust that their reports and uploads are isolated from other organisations.
+
+Improvement 3 — Durable Storage and a Scalable Analysis Pipeline
+What it is: Move uploads to durable object storage (S3-compatible), and run analysis on a dedicated queue-backed worker with retries and status tracking instead of a thread inside the web process.
+What it changes for the user: Uploaded creatives and their previews persist across deploys and restarts, analyses keep running reliably under load, and the product scales beyond a single free instance without losing work.

@@ -48,9 +48,18 @@ def main() -> None:
         if recovered.get("stale_found"):
             print(f"[inkloom-worker] startup recovery: {recovered}", flush=True)
 
+        from app.services import extraction_service
+        recovered_ext = extraction_service.recover_stale_extractions(db)
+        if recovered_ext.get("stale_found"):
+            print(f"[inkloom-worker] startup extraction recovery: {recovered_ext}", flush=True)
+
+    from app.services import extraction_service
+
     while not stop:
         try:
-            processed = job_service.worker_loop_once()
+            processed_analysis = job_service.worker_loop_once()
+            processed_extraction = extraction_service.worker_loop_once()
+            processed = processed_analysis or processed_extraction
         except Exception as exc:  # noqa: BLE001
             print(f"[inkloom-worker] loop error (continuing): {exc}", flush=True)
             processed = False

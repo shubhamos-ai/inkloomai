@@ -109,6 +109,7 @@ def generate(
     images: Optional[list[str]] = None,
     fmt: str = "json",
     stream: bool = False,
+    model: Optional[str] = None,
 ) -> str:
     """Generate response from NVIDIA NIM Vision API.
 
@@ -174,7 +175,7 @@ def generate(
         })
 
     payload = {
-        "model": get_vision_model(),
+        "model": model or get_vision_model(),
         "messages": messages,
         "max_tokens": 2048,
         "temperature": 0.1,

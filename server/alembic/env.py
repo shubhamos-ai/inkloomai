@@ -10,9 +10,12 @@ from app.database import Base  # noqa: E402
 from app.models import (  # noqa: F401,E402  (importing registers tables)
     Analysis,
     AnalysisJob,
+    Asset,
     BrandBrain,
     BrandRule,
+    BrandRuleVersion,
     Company,
+    ExtractionRun,
     User,
 )
 

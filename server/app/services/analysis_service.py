@@ -86,6 +86,10 @@ def submit_analysis(
     image_rel = storage_service.write_analysis_image(
         company.id, analysis_id, data=data, kind=validated.kind
     )
+    # Generate and store thumbnail preview for durable rendering across restarts
+    preview_rel = storage_service.write_analysis_preview(
+        company.id, analysis_id, image_data=data
+    )
 
     if brain_id is None:
         from app.services import brand_brain_service
@@ -112,6 +116,21 @@ def submit_analysis(
         is_mock=settings.use_mock,
     )
     db.add(analysis)
+    db.flush()
+
+    from app.services import asset_service
+
+    asset_service.record_asset(
+        db,
+        company_id=company.id,
+        analysis_id=analysis_id,
+        kind="analysis_image",
+        object_key=image_rel,
+        original_filename=filename,
+        content_type=content_type,
+        preview_key=preview_rel,
+        data=data,
+    )
 
     job = AnalysisJob(
         analysis_id=analysis_id,

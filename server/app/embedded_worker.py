@@ -33,7 +33,13 @@ def _loop() -> None:
             if iteration % 60 == 0:
                 with SessionLocal() as db:
                     job_service.recover_stale_jobs(db)
-            processed = job_service.worker_loop_once()
+                    from app.services import extraction_service
+                    extraction_service.recover_stale_extractions(db)
+
+            from app.services import extraction_service
+            processed_analysis = job_service.worker_loop_once()
+            processed_extraction = extraction_service.worker_loop_once()
+            processed = processed_analysis or processed_extraction
         except Exception as exc:  # noqa: BLE001 — never kill the thread
             print(f"[inkloom-embedded-worker] loop error (continuing): {exc}", flush=True)
             processed = False

@@ -15,7 +15,7 @@ from fastapi import (
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 
-from app.api.deps import current_company
+from app.api.deps import AuthContext, current_company, resolve_context
 from app.config import settings
 from app.database import get_db
 from app.models import Company
@@ -24,10 +24,13 @@ from app.schemas.brand_brain import (
     BrandRuleCreate,
     BrandRuleOut,
     BrandRuleUpdate,
+    BrandRuleVersionOut,
     BrandRulesListResponse,
+    ExtractionCommitRequest,
+    ExtractionRunOut,
     GuidelineFileOut,
 )
-from app.services import brand_brain_service, ollama_service
+from app.services import brand_brain_service, extraction_service, ollama_service
 from app.utils.security import sanitize_filename
 from app.utils.validators import (
     DocumentValidationError,
@@ -386,25 +389,145 @@ def _find_rule(db: Session, company: Company, key: str):
 
 
 # ---------------------------------------------------------------------------
-# Future AI hook (documented, not wired until the model is available)
+# AI Brand-Rule Extraction Pipeline (Improvement 1)
 # ---------------------------------------------------------------------------
 
 @router.post("/extract")
-def trigger_extraction(db: Session = Depends(get_db), company: Company = Depends(current_company)):
-    """
-    Placeholder for AI-automated structuring of the brand brain.
+def trigger_extraction(
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(resolve_context),
+):
+    """POST /brand-brain/extract — enqueue AI extraction from original guideline text."""
+    company = ctx.company
+    if company is None:
+        raise HTTPException(status_code=401, detail={"error": "company_required", "message": "Company required."})
+    user_id = ctx.user.id if ctx.user else None
 
-    Once the vision/text model is connected this endpoint enqueues an
-    extraction job that converts `original_rules_text` into BrandRule rows while
-    copying each rule's exact `source_text`. Until then it reports honest state.
-    """
-    brain = brand_brain_service.get_or_create_brain(db, company)
+    try:
+        run = extraction_service.enqueue_extraction(db, company, user_id=user_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail={"error": "empty_guidelines", "message": str(exc)})
+
+    # If run in development or synchronous embedded worker, execute synchronously or claim immediately
+    if settings.RUN_EMBEDDED_WORKER or settings.DEBUG:
+        try:
+            extraction_service.run_extraction_pipeline(run.id)
+            db.refresh(run)
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "run_id": str(run.id),
+        "status": run.status,
+        "run": extraction_service.serialize_run(run),
+        "message": "Brand rule extraction initiated.",
+    }
+
+
+@router.get("/extract/runs")
+def list_extraction_runs(
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """GET /brand-brain/extract/runs — list past extraction runs for this company."""
+    runs = extraction_service.list_runs(db, company)
+    return {"runs": [extraction_service.serialize_run(r) for r in runs]}
+
+
+@router.get("/extract/latest")
+def get_latest_extraction_run(
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """GET /brand-brain/extract/latest — get the most recent extraction run."""
+    run = extraction_service.latest_run(db, company)
+    if run is None:
+        return {"run": None, "status": "none"}
+    return {"run": extraction_service.serialize_run(run), "status": run.status}
+
+
+@router.get("/extract/{run_id}")
+def get_extraction_status(
+    run_id: str,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """GET /brand-brain/extract/{run_id} — poll extraction progress and proposals."""
+    import uuid as _uuid
+    try:
+        rid = _uuid.UUID(run_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"error": "invalid_run_id", "message": "Invalid run ID."})
+
+    run = extraction_service.get_run(db, company, rid)
+    if run is None:
+        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Extraction run not found."})
+
+    return extraction_service.serialize_run(run)
+
+
+@router.post("/extract/{run_id}/commit")
+def commit_extraction_proposals(
+    run_id: str,
+    payload: ExtractionCommitRequest,
+    db: Session = Depends(get_db),
+    ctx: AuthContext = Depends(resolve_context),
+):
+    """POST /brand-brain/extract/{run_id}/commit — commit approved rules to MongoDB/SQL."""
+    import uuid as _uuid
+    company = ctx.company
+    if company is None:
+        raise HTTPException(status_code=401, detail={"error": "company_required", "message": "Company required."})
+
+    try:
+        rid = _uuid.UUID(run_id)
+    except ValueError:
+        raise HTTPException(status_code=422, detail={"error": "invalid_run_id", "message": "Invalid run ID."})
+
+    user_id = ctx.user.id if ctx.user else None
+    try:
+        created, skipped = extraction_service.commit_run(
+            db, company, rid, rules=payload.rules, user_id=user_id
+        )
+    except LookupError:
+        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Extraction run not found."})
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail={"error": "invalid_commit", "message": str(exc)})
+
+    return {
+        "ok": True,
+        "committed_count": len(created),
+        "rules": [rule_to_out_dict(r) for r in created],
+        "skipped": skipped,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Rule Versions / History (Improvement 1 & 2)
+# ---------------------------------------------------------------------------
+
+@router.get("/versions")
+def list_rule_versions(
+    rule_id: str | None = None,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """GET /brand-brain/versions — immutable rule revision history."""
+    import uuid as _uuid
+    rid = None
+    if rule_id:
+        try:
+            rid = _uuid.UUID(rule_id)
+        except ValueError:
+            pass
+
+    versions = brand_brain_service.versions_for(db, company, rule_id=rid)
     return {
         "company_id": str(company.id),
-        "extraction_status": brain.extraction_status,
-        "auto_extraction_available": False,
-        "message": (
-            "Automatic rule extraction will start once the Vision SLM is connected. "
-            "Structured rules can be hand-managed via /rules meanwhile."
-        ),
+        "count": len(versions),
+        "versions": [
+            BrandRuleVersionOut.model_validate(v, from_attributes=True).model_dump(mode="json")
+            for v in versions
+        ],
     }

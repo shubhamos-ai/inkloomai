@@ -34,6 +34,28 @@ services:
       # worker cannot read uploads. Run the job loop inside the API process.
       - key: RUN_EMBEDDED_WORKER
         value: true
+      # ── Object Storage (S3-compatible) ───────────────────────────────────────
+      # Set STORAGE_BACKEND=s3 and fill in S3_* vars when using Cloudflare R2 /
+      # AWS S3 / MinIO. Leave as "local" to use the mounted disk below.
+      - key: STORAGE_BACKEND
+        value: local
+      - key: S3_BUCKET
+        sync: false          # set in Render dashboard (secret)
+      - key: S3_ENDPOINT_URL
+        sync: false
+      - key: S3_REGION
+        value: auto
+      - key: S3_ACCESS_KEY_ID
+        sync: false
+      - key: S3_SECRET_ACCESS_KEY
+        sync: false
+      - key: S3_PREFIX
+        value: inkloom/
+      - key: STORAGE_CACHE_DIR
+        value: /var/data/cache
+      # ── Extraction ───────────────────────────────────────────────────────────
+      - key: EXTRACTION_PROVIDER
+        value: auto
     disk:
       name: inkloom-storage
       mountPath: /var/data

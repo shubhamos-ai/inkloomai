@@ -46,6 +46,23 @@ class Settings:
     MIN_IMAGE_DIMENSION: int = int(os.getenv("MIN_IMAGE_DIMENSION", "64"))
     MAX_IMAGE_DIMENSION: int = int(os.getenv("MAX_IMAGE_DIMENSION", "8000"))
 
+    # "auto" = S3 when S3_BUCKET + credentials are configured, else local.
+    # "local" is for development/tests only; "s3" fails fast if misconfigured.
+    STORAGE_BACKEND: str = os.getenv("STORAGE_BACKEND", "auto").lower()
+    S3_BUCKET: str = os.getenv("S3_BUCKET", "")
+    S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "")  # e.g. Cloudflare R2 / MinIO
+    S3_REGION: str = os.getenv("S3_REGION", "auto")
+    S3_ACCESS_KEY_ID: str = os.getenv("S3_ACCESS_KEY_ID", "")
+    S3_SECRET_ACCESS_KEY: str = os.getenv("S3_SECRET_ACCESS_KEY", "")
+    S3_PREFIX: str = os.getenv("S3_PREFIX", "inkloom")
+    S3_FORCE_PATH_STYLE: bool = os.getenv("S3_FORCE_PATH_STYLE", "false").lower() == "true"
+    S3_PRESIGN_EXPIRES_SECONDS: int = int(os.getenv("S3_PRESIGN_EXPIRES_SECONDS", "900"))
+    # Local cache used to materialise S3 objects for Pillow/vision engines.
+    STORAGE_CACHE_DIR: Path = Path(
+        os.getenv("STORAGE_CACHE_DIR", str(BASE_DIR / ".storage-cache"))
+    )
+    PREVIEW_MAX_DIMENSION: int = int(os.getenv("PREVIEW_MAX_DIMENSION", "640"))
+
     # ------------------------------------------------------------------
     # Security / auth
     # ------------------------------------------------------------------
@@ -65,6 +82,23 @@ class Settings:
     DISABLE_DEV_AUTH: bool = os.getenv("DISABLE_DEV_AUTH", "false").lower() == "true"
 
     RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "120"))
+    # Stricter per-IP budget for /auth/login and /auth/register.
+    AUTH_RATE_LIMIT_PER_MINUTE: int = int(os.getenv("AUTH_RATE_LIMIT_PER_MINUTE", "10"))
+
+    # ------------------------------------------------------------------
+    # Cookie sessions / CSRF
+    # ------------------------------------------------------------------
+    SESSION_COOKIE_NAME: str = os.getenv("SESSION_COOKIE_NAME", "inkloom_session")
+    CSRF_COOKIE_NAME: str = os.getenv("CSRF_COOKIE_NAME", "inkloom_csrf")
+    SESSION_LIFETIME_DAYS: int = int(os.getenv("SESSION_LIFETIME_DAYS", "30"))
+    # Secure cookies require HTTPS. DEBUG defaults to true locally, so this
+    # automatically disables Secure on http://localhost.
+    COOKIE_SECURE: bool = os.getenv(
+        "COOKIE_SECURE", "false" if os.getenv("DEBUG", "true").lower() == "true" else "true"
+    ).lower() == "true"
+    COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax")
+    # Comma-separated extra origins allowed to read credentialed responses.
+    COOKIE_DOMAIN: str = os.getenv("COOKIE_DOMAIN", "")
 
     # ------------------------------------------------------------------
     # AI Vision Provider Selection
@@ -97,13 +131,26 @@ class Settings:
     PIPELINE_MODE: str = os.getenv("PIPELINE_MODE", "ai")
 
     # ------------------------------------------------------------------
+    # Brand-rule extraction (AI structuring of the original guidelines)
+    # ------------------------------------------------------------------
+    # "auto" -> NVIDIA NIM when configured, then Ollama, else not configured.
+    EXTRACTION_PROVIDER: str = os.getenv("EXTRACTION_PROVIDER", "auto")
+    EXTRACTION_MODEL: str = os.getenv("EXTRACTION_MODEL", "")  # blank = provider default
+    EXTRACTION_MAX_RULES: int = int(os.getenv("EXTRACTION_MAX_RULES", "80"))
+    EXTRACTION_MAX_CHARS: int = int(os.getenv("EXTRACTION_MAX_CHARS", "60000"))
+    EXTRACTION_TIMEOUT_SECONDS: float = float(os.getenv("EXTRACTION_TIMEOUT_SECONDS", "120"))
+
+    # ------------------------------------------------------------------
     # Worker / job queue
     # ------------------------------------------------------------------
     WORKER_POLL_INTERVAL_SECONDS: float = float(os.getenv("WORKER_POLL_INTERVAL_SECONDS", "1.0"))
     STALE_JOB_AFTER_SECONDS: float = float(os.getenv("STALE_JOB_AFTER_SECONDS", "300"))
     MAX_JOB_ATTEMPTS: int = int(os.getenv("MAX_JOB_ATTEMPTS", "3"))
-    # Run the analysis job loop inside the API process (Render.com — a standalone
-    # worker service cannot share the web service's persistent disk).
+    WORKER_ID: str = os.getenv("WORKER_ID", "")
+    JOB_BACKOFF_BASE_SECONDS: float = float(os.getenv("JOB_BACKOFF_BASE_SECONDS", "10"))
+    JOB_BACKOFF_MAX_SECONDS: float = float(os.getenv("JOB_BACKOFF_MAX_SECONDS", "300"))
+    # Run the analysis job loop inside the API process. Kept only for local
+    # single-process development; production uses the dedicated worker service.
     RUN_EMBEDDED_WORKER: bool = os.getenv("RUN_EMBEDDED_WORKER", "false").lower() == "true"
 
     @property
@@ -142,6 +189,30 @@ class Settings:
         if not self.use_nvidia_nim and not self.use_ollama:
             return True
         return False
+
+    @property
+    def use_s3(self) -> bool:
+        """True when the S3-compatible backend is the configured store."""
+        if self.STORAGE_BACKEND == "local":
+            return False
+        if self.STORAGE_BACKEND == "s3":
+            return True
+        return bool(self.S3_BUCKET and self.S3_ACCESS_KEY_ID and self.S3_SECRET_ACCESS_KEY)
+
+    @property
+    def storage_backend_name(self) -> str:
+        return "s3" if self.use_s3 else "local"
+
+    @property
+    def extraction_provider_name(self) -> str:
+        """Resolve the extraction provider without calling any API."""
+        if self.EXTRACTION_PROVIDER in ("nvidia_nim", "ollama"):
+            return self.EXTRACTION_PROVIDER
+        if self.use_nvidia_nim:
+            return "nvidia_nim"
+        if self.use_ollama:
+            return "ollama"
+        return "not_configured"
 
 
 @lru_cache

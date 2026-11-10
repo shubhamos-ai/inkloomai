@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import Boolean, ForeignKey, String, Text, Uuid
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -29,8 +29,14 @@ class BrandRule(Base, TimestampMixin):
     # Exact original wording the rule was derived from — never rewritten.
     source_text: Mapped[str] = mapped_column(Text, nullable=False)
 
-    # "manual" if hand-entered, else the AI extraction batch id/date.
-    source_type: Mapped[str] = mapped_column(String(30), default="manual", nullable=False)
+    # "manual" if hand-entered, "ai_extraction:<run_id>" for AI proposals.
+    source_type: Mapped[str] = mapped_column(String(80), default="manual", nullable=False)
+    extraction_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("extraction_runs.id", ondelete="SET NULL"), nullable=True
+    )
+
+    # Monotonic per-rule revision, mirrored into brand_rule_versions.
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
 
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
 

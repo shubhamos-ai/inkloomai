@@ -1008,6 +1008,83 @@ export function addAnalysisToHistory(item: AnalysisHistoryItem): void {
   saveToHistory(item);
 }
 
+// ─── AI Brand Rule Extraction API (Improvement 1) ───────────────────────────
+
+export interface ExtractionRunInfo {
+  id: string;
+  company_id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  attempts: number;
+  max_attempts: number;
+  source_version: number;
+  source_chars: number;
+  model: string;
+  proposed_rules: Array<{
+    proposal_id: string;
+    category: RuleCategory;
+    requirement: string;
+    severity: 'critical' | 'major' | 'minor' | 'info';
+    source_text: string;
+    confidence: number;
+  }>;
+  rejected_rules: Array<Record<string, unknown>>;
+  warnings: string[];
+  error?: string | null;
+  error_code?: string | null;
+  created_at: string;
+  completed_at?: string | null;
+  committed_at?: string | null;
+  committed_rule_count: number;
+}
+
+export async function triggerRuleExtraction(): Promise<{ ok: boolean; run_id?: string; run?: ExtractionRunInfo; message?: string }> {
+  const res = await fetchApi('/api/v1/brand-brain/extract', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res) return { ok: false, message: 'Backend unreachable.' };
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    return { ok: false, message: body?.detail?.message || `Extraction failed (HTTP ${res.status}).` };
+  }
+  return await res.json();
+}
+
+export async function getLatestExtractionRun(): Promise<{ run: ExtractionRunInfo | null; status: string }> {
+  const res = await fetchApi('/api/v1/brand-brain/extract/latest');
+  if (!res?.ok) return { run: null, status: 'none' };
+  return await res.json();
+}
+
+export async function getExtractionStatus(runId: string): Promise<ExtractionRunInfo | null> {
+  const res = await fetchApi(`/api/v1/brand-brain/extract/${runId}`);
+  if (!res?.ok) return null;
+  return await res.json();
+}
+
+export async function commitExtractionProposals(
+  runId: string,
+  rules: Array<{ proposal_id?: string; category?: string; requirement?: string; severity?: string; source_text?: string }>
+): Promise<{ ok: boolean; committed_count: number; rules: Record<string, unknown>[]; message?: string }> {
+  const res = await fetchApi(`/api/v1/brand-brain/extract/${runId}/commit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rules }),
+  });
+  if (!res?.ok) {
+    const body = await res?.json().catch(() => null);
+    return { ok: false, committed_count: 0, rules: [], message: body?.detail?.message || 'Commit failed.' };
+  }
+  return await res.json();
+}
+
+export async function getRuleVersions(ruleId?: string): Promise<{ versions: Array<Record<string, unknown>>; count: number }> {
+  const q = ruleId ? `?rule_id=${ruleId}` : '';
+  const res = await fetchApi(`/api/v1/brand-brain/versions${q}`);
+  if (!res?.ok) return { versions: [], count: 0 };
+  return await res.json();
+}
+
 export const RULE_CATEGORY_LABELS: Record<RuleCategory, string> = {
   logo: 'Logo',
   typography: 'Typography',

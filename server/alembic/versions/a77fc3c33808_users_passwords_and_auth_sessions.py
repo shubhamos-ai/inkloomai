@@ -47,13 +47,3 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_auth_sessions_token_hash"), table_name="auth_sessions")
     op.drop_table("auth_sessions")
     op.drop_column("users", "password_hash")
-
-
-def upgrade() -> None:
-    """Upgrade schema."""
-    pass
-
-
-def downgrade() -> None:
-    """Downgrade schema."""
-    pass
