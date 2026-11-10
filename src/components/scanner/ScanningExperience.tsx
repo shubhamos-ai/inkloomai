@@ -72,9 +72,9 @@ function StageIcon({
         key="check"
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        transition={{ type: 'spring', stiffness: 350, damping: 20 }}
       >
-        <CheckCircle className="w-5 h-5 text-emerald-500" />
+        <CheckCircle className="w-5 h-5 text-emerald-600" />
       </motion.div>
     );
   }
@@ -87,7 +87,7 @@ function StageIcon({
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.2 }}
       >
-        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+        <Loader2 className="w-5 h-5 text-[#E50914] animate-spin" />
       </motion.div>
     );
   }
@@ -118,8 +118,12 @@ function StageRow({
       initial={{ opacity: 0, x: -12 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.07, duration: 0.4, ease: 'easeOut' }}
-      className={`flex items-center gap-3 py-2.5 px-3 rounded-xl transition-colors duration-300 ${
-        isActive ? 'bg-blue-50 border border-blue-100' : ''
+      className={`flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all duration-300 ${
+        isActive
+          ? 'bg-red-50/80 border border-red-200/80 shadow-sm'
+          : isCompleted
+          ? 'bg-white/60 border border-emerald-100/60'
+          : 'border border-transparent'
       }`}
     >
       {/* Stage icon */}
@@ -137,16 +141,16 @@ function StageRow({
       <span
         className={`text-sm font-medium transition-colors duration-300 ${
           isCompleted
-            ? 'text-emerald-600'
+            ? 'text-emerald-700 font-semibold'
             : isActive
-            ? 'text-blue-700'
+            ? 'text-red-900 font-semibold'
             : 'text-slate-400'
         }`}
       >
         {stage.label}
       </span>
 
-      {/* Completed line-through effect */}
+      {/* Completed indicator */}
       {isCompleted && (
         <motion.div
           className="flex-1 h-px bg-emerald-200 ml-auto max-w-[32px]"
@@ -156,22 +160,27 @@ function StageRow({
           transition={{ duration: 0.3 }}
         />
       )}
+      {isActive && (
+        <span className="ml-auto text-[10px] font-mono tracking-wider font-semibold text-[#E50914] bg-red-100/80 px-2 py-0.5 rounded-full animate-pulse">
+          AUDITING
+        </span>
+      )}
     </motion.div>
   );
 }
 
 function ProgressBar({ progress }: { progress: number }) {
   return (
-    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+    <div className="w-full h-2.5 bg-stone-100 rounded-full overflow-hidden border border-stone-200 p-[1px]">
       <motion.div
         className="h-full rounded-full"
         style={{
-          background: 'linear-gradient(to right, #2563EB, #60A5FA)',
-          boxShadow: '0 0 8px rgba(37,99,235,0.4)',
+          background: 'linear-gradient(90deg, #E50914, #B81D24)',
+          boxShadow: '0 0 10px rgba(229,9,20,0.5)',
         }}
         initial={{ width: '0%' }}
         animate={{ width: `${progress}%` }}
-        transition={{ duration: 0.6, ease: 'easeInOut' }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
       />
     </div>
   );
@@ -185,21 +194,20 @@ function ErrorState({ onFailed }: { onFailed: () => void }) {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4 }}
     >
-      <div className="w-14 h-14 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
-        <XCircle className="w-7 h-7 text-red-500" />
+      <div className="w-14 h-14 rounded-full bg-red-50 border border-red-200 flex items-center justify-center">
+        <XCircle className="w-7 h-7 text-[#E50914]" />
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-slate-800">
+        <h3 className="text-lg font-semibold text-stone-900">
           Analysis Failed
         </h3>
-        <p className="mt-1 text-sm text-slate-500 max-w-xs mx-auto">
-          We encountered an error while analysing your advertisement. Please try
-          again.
+        <p className="mt-1 text-sm text-stone-500 max-w-xs mx-auto">
+          We encountered an issue communicating with the AI cluster. Please verify backend status and try again.
         </p>
       </div>
       <button
         onClick={onFailed}
-        className="mt-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-colors duration-200 shadow-sm"
+        className="mt-2 px-5 py-2.5 bg-[#E50914] hover:bg-[#B81D24] text-white text-sm font-semibold rounded-xl transition-all duration-200 shadow-sm hover:shadow"
       >
         Try Again
       </button>
@@ -371,7 +379,7 @@ export default function ScanningExperience({
 
         {/* ── RIGHT: Progress panel ── */}
         <div className="flex flex-col justify-center">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 lg:p-8">
+          <div className="bg-white rounded-2xl border border-stone-200/80 shadow-sm p-6 lg:p-8">
             <AnimatePresence mode="wait">
               {isError ? (
                 <ErrorState key="error" onFailed={onFailed} />
@@ -385,27 +393,32 @@ export default function ScanningExperience({
                 >
                   {/* Header */}
                   <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 border border-red-200 text-[#E50914]">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#E50914] animate-ping" />
+                        AI Multimodal Audit
+                      </span>
+                    </div>
                     <motion.h2
-                      className="text-xl font-bold text-slate-900 leading-snug"
+                      className="text-xl font-bold text-stone-900 leading-snug tracking-tight"
                       initial={{ opacity: 0, y: -6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1, duration: 0.4 }}
                     >
-                      Analysing your advertisement
+                      Auditing Creative Compliance
                     </motion.h2>
                     <motion.p
-                      className="mt-1.5 text-sm text-slate-500 leading-relaxed"
+                      className="mt-1 text-sm text-stone-500 leading-relaxed"
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.18, duration: 0.4 }}
                     >
-                      Your Brand Brain is reviewing every element of your
-                      advertisement.
+                      Evaluating advertisement against your active company brand rules and regulatory constraints.
                     </motion.p>
                   </div>
 
                   {/* Divider */}
-                  <div className="h-px bg-slate-100" />
+                  <div className="h-px bg-stone-100" />
 
                   {/* Stage list */}
                   <div className="flex flex-col gap-0.5">
@@ -426,7 +439,7 @@ export default function ScanningExperience({
                     <div className="flex items-center justify-between">
                       <motion.p
                         key={activeStage?.label}
-                        className="text-xs font-medium text-blue-600 truncate max-w-[200px]"
+                        className="text-xs font-semibold text-[#E50914] truncate max-w-[220px]"
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3 }}
@@ -436,7 +449,7 @@ export default function ScanningExperience({
 
                       <motion.span
                         key={progress}
-                        className="text-xs font-semibold text-slate-500 ml-2 tabular-nums flex-shrink-0"
+                        className="text-xs font-semibold text-stone-500 ml-2 tabular-nums flex-shrink-0"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.2 }}
@@ -448,10 +461,10 @@ export default function ScanningExperience({
 
                   {/* Status label */}
                   <div className="flex items-center gap-2 pt-1">
-                    <Loader2 className="w-3.5 h-3.5 text-blue-500 animate-spin flex-shrink-0" />
+                    <Loader2 className="w-3.5 h-3.5 text-[#E50914] animate-spin flex-shrink-0" />
                     <motion.span
                       key={status}
-                      className="text-xs text-slate-500 font-medium"
+                      className="text-xs text-stone-600 font-medium"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}

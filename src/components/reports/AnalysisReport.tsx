@@ -117,11 +117,11 @@ function ViolationCard({ violation, index }: { violation: Violation; index: numb
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.07, duration: 0.35 }}
-      className={`rounded-2xl border ${cfg.border} bg-white overflow-hidden`}
+      transition={{ delay: index * 0.08, duration: 0.4 }}
+      className={`rounded-2xl border ${cfg.border} bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200`}
     >
       {/* Header */}
-      <div className="flex items-start gap-3 px-5 pt-5 pb-4 border-b border-slate-100">
+      <div className="flex items-start gap-3 px-5 pt-5 pb-4 border-b border-stone-100">
         <div className="mt-0.5">{cfg.icon}</div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -130,39 +130,42 @@ function ViolationCard({ violation, index }: { violation: Violation; index: numb
             >
               {cfg.label}
             </span>
+            <span className="text-xs font-mono font-medium text-stone-400">
+              Rule #{violation.ruleId}
+            </span>
           </div>
-          <h4 className="font-semibold text-slate-900 text-sm">{violation.title}</h4>
+          <h4 className="font-semibold text-stone-900 text-sm">{violation.title}</h4>
         </div>
       </div>
 
       {/* Body */}
       <div className="px-5 py-4 space-y-4">
         {/* Explanation */}
-        <p className="text-sm text-slate-700 leading-relaxed">{violation.explanation}</p>
+        <p className="text-sm text-stone-700 leading-relaxed">{violation.explanation}</p>
 
         {/* Relevant Rule */}
-        <div className="rounded-xl bg-slate-50 border border-slate-100 px-4 py-3">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-            Relevant Rule · <span className="normal-case font-mono">{violation.ruleId}</span>
+        <div className="rounded-xl bg-stone-50 border border-stone-200/70 px-4 py-3">
+          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
+            Active Brand Constraint · <span className="normal-case font-mono">{violation.ruleId}</span>
           </p>
-          <p className="text-sm text-slate-700 leading-relaxed">{violation.relevantRule}</p>
+          <p className="text-sm text-stone-800 leading-relaxed font-medium">{violation.relevantRule}</p>
         </div>
 
         {/* Evidence */}
         {violation.evidence && (
-          <div className="rounded-xl border-l-4 border-amber-400 bg-amber-50 px-4 py-3">
-            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">Evidence</p>
-            <blockquote className="text-sm text-amber-900 italic">&ldquo;{violation.evidence}&rdquo;</blockquote>
+          <div className="rounded-xl border-l-4 border-[#E50914] bg-red-50/60 px-4 py-3">
+            <p className="text-xs font-semibold text-[#E50914] uppercase tracking-wider mb-1">Detected Evidence</p>
+            <blockquote className="text-sm text-red-950 italic">&ldquo;{violation.evidence}&rdquo;</blockquote>
           </div>
         )}
 
         {/* Suggested correction */}
         {violation.suggestedCorrection && (
-          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3">
-            <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-1">
-              Suggested Correction
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3">
+            <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-1">
+              Remediation Action
             </p>
-            <p className="text-sm text-green-900 leading-relaxed">{violation.suggestedCorrection}</p>
+            <p className="text-sm text-emerald-950 leading-relaxed font-medium">{violation.suggestedCorrection}</p>
           </div>
         )}
       </div>
