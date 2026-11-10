@@ -1,0 +1,89 @@
+# INKLOOM AI — ROUND 3 COMPREHENSIVE IMPROVEMENTS & SPECIFICATION
+## CodeNexus India 2026 | Team Tensor Titans
+
+This document details all structural, architectural, visual, and operational enhancements implemented in Inkloom AI for Round 3.
+
+---
+
+### 1. THE THREE OFFICIAL ROUND 3 CORE IMPROVEMENTS
+
+#### Improvement 1: AI Brand-Rule Extraction & Versioned Audit Trail
+- **Guideline Ingestion Engine**:
+  - Direct text entry along with multi-format document ingestion (.pdf, .txt, .docx).
+  - Robust backend server extraction avoiding client-side only state reliance.
+- **LLM-Powered Extraction & Normalization**:
+  - Uses AI model to parse complex brand manuals and unstructured text into structured, versioned, enforceable rule entities.
+  - Normalized fields: `rule_id`, `company_id`, `category`, `title`, `description`, `source_quote`, `version`, `is_active`.
+  - Every extracted rule retains exact source citations (`source_quote`) from the original guideline document, ensuring traceable compliance decisions.
+- **Audit Trail & Immutability**:
+  - Implemented `BrandRuleVersion` audit ledger capturing timestamped revisions, changed parameters, and the user/system responsible.
+
+#### Improvement 2: Multi-Tenancy & Secure Authentication
+- **Frictionless Onboarding & Multi-Tenant Isolation**:
+  - Users enter their credentials with automated sign-in / sign-up reconciliation.
+  - No disruptive friction or mock alerts—the flow effortlessly creates or restores active workspace sessions.
+  - Organization and workspace scoping: Every brand rule, creative asset, analysis job, and historical scan is strictly partitioned by `company_id`.
+- **Session Architecture**:
+  - Hashed, opaque session tokens with cryptographic verification and strict CORS validation.
+  - Per-tenant API authorization ensuring complete isolation between teams and companies.
+
+#### Improvement 3: Durable Storage & Queue-Backed Analysis Pipeline
+- **S3-Compatible Durable Object Store**:
+  - Migration from ephemeral container storage to an S3-compatible backend (AWS S3, Cloudflare R2, MinIO) with local mounted disk fallback.
+  - Pre-signed URLs for secure, authenticated image retrieval and report asset previews.
+- **Dedicated Queue Worker with Retry Capabilities**:
+  - Decoupled analysis execution from the web request cycle into an asynchronous job queue.
+  - Exponential backoff retries, dead-letter tracking, and real-time state polling (`queued`, `processing`, `completed`, `failed`).
+  - Worker concurrency control prevents memory exhaustion and timeout drops during heavy load.
+
+---
+
+### 2. ARCHITECTURE, DEPLOYMENT & INFRASTRUCTURE
+
+#### Render Service Alignment & Production URLs
+- **Backend Service**:
+  - Service ID: `srv-dbnngou417fc73e8hdqg`
+  - Production URL: `https://inkloom-backend-yw07.onrender.com`
+  - Tech: FastAPI + Uvicorn + SQLAlchemy / SQLite / PostgreSQL + NVIDIA NIM API.
+- **Frontend Service**:
+  - Service ID: `srv-dbnngou417fc73e8hdpg`
+  - Production URL: `https://inkloom-frontend-rwy2.onrender.com`
+  - Custom Domain: `https://inkloom-ai.shubhamos.com`
+  - Tech: Next.js 15, React 18, Tailwind CSS, Framer Motion.
+- **CORS & Environment Modernization**:
+  - Updated `render.yaml` and backend config with expanded origins covering the production custom domain, Render domains, and local dev environments.
+  - Unified repository synchronization between private staging and public production auto-deploy branches (`shubhamos-ai/inkloomai`).
+
+---
+
+### 3. AUTOMATIC BACKEND AWAKENING & SLEEP-STATE HANDLING
+
+Because free/starter tier cloud instances spin down during periods of inactivity, a zero-latency UX recovery strategy was introduced:
+- **`BackendContext` Service**:
+  - Centralized React context continuously monitoring backend responsiveness.
+  - Proactive background wakeup ping on initial app mount (polls health every 4s while booting, transitioning to 45s keepalives once online).
+- **Graceful Spin-Down Alert Banner (`BackendStatusBanner.tsx`)**:
+  - Elegant ambient alert informing users when the AI inference engine is spinning up.
+  - Allows full exploration of historical scans, brand guidelines, and UI navigation while the backend boots.
+  - Interactive "Wake AI Server" manual retry trigger.
+- **Intelligent Scan Lock**:
+  - Disables creative scan submission until the AI cluster confirms readiness.
+  - Replaces generic errors with clear status indicators ("Waiting for AI Cluster to wake up…").
+
+---
+
+### 4. LUXURY "NETFLIX LIGHT MODE" DESIGN & UI ENHANCEMENTS
+
+- **Sophisticated Visual Language**:
+  - Primary Background: Warm Cream (`#FAF8F5`).
+  - Card & Container Surface: Crisp White (`#FFFFFF`) with subtle warm slate borders (`#E5E5E5` / `#ECEAE5`).
+  - Signature Brand Accent: Crimson Red (`#E50914`).
+  - Typography: Refined with Plus Jakarta Sans and Inter font stacks.
+- **Skeleton Loading & Smooth Micro-Interactions**:
+  - Premium skeleton loading shimmers (`.skeleton::after`) across dashboards, score rings, and brand rule lists.
+  - Framer Motion transitions across routing, modal drawers, and report expansions.
+- **Redesigned Component Suite**:
+  - **Sidebar & MobileNav**: Glassmorphic cream navigation with active crimson indicators.
+  - **Stat Cards & Metric Panels**: Elevated card designs with color-graded compliance badges.
+  - **Brand Brain Studio**: Interactive category tags, instant rule toggles, source quote callouts, and structured rule inspection drawers.
+  - **Analysis Studio & Reports**: Full-screen split view featuring the uploaded creative, rule-by-rule violation breakdown with confidence scores, impact ratings, and actionable remediation recommendations.
