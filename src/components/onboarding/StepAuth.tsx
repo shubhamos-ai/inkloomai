@@ -49,68 +49,71 @@ export default function StepAuth({ onSubmit, initialMode = 'signup' }: StepAuthP
       className="w-full max-w-md mx-auto"
     >
       {/* Card */}
-      <div className="rounded-xl bg-black/60 p-8 sm:p-10 border border-white/10 shadow-2xl backdrop-blur-sm">
-        <h1 className="text-white text-3xl font-bold mb-2 tracking-tight">
+      <div className="rounded-2xl bg-white p-8 sm:p-10 border border-[#E8E2D9] shadow-[0_12px_40px_rgba(26,24,22,0.06)]">
+        <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center mb-6 border border-red-100">
+          <Lock className="w-5 h-5 text-[#E50914]" />
+        </div>
+        <h1 className="text-neutral-900 text-3xl font-black mb-2 tracking-tight">
           {mode === 'signup' ? 'Create your account' : 'Welcome back'}
         </h1>
-        <p className="text-neutral-400 text-sm mb-8">
+        <p className="text-neutral-500 text-sm mb-8">
           {mode === 'signup'
-            ? 'One account. Every ad your brand runs — governed in one place.'
-            : 'Sign in to pick up where your brand left off.'}
+            ? 'One enterprise workspace. Every creative governed against brand rules.'
+            : 'Sign in to access your advertising compliance dashboard.'}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           {/* Email */}
           <div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
                 <Mail className="w-4 h-4" />
               </span>
               <input
                 type="email"
                 autoComplete="email"
-                placeholder="Email address"
+                placeholder="Work email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full rounded-md bg-neutral-800/80 border ${
-                  touched && !emailOk ? 'border-[#E50914]' : 'border-white/15'
-                } pl-11 pr-4 py-3.5 text-white placeholder-neutral-500 outline-none
-                   focus:border-neutral-300 focus:bg-neutral-800 transition-colors`}
+                className={`w-full rounded-xl bg-[#FAF8F5] border ${
+                  touched && !emailOk ? 'border-[#E50914]' : 'border-[#E0D8CB]'
+                } pl-11 pr-4 py-3.5 text-neutral-900 placeholder-neutral-400 outline-none
+                   focus:border-[#E50914] focus:bg-white transition-all text-sm`}
               />
             </div>
             {touched && !emailOk && (
-              <p className="mt-1.5 text-xs text-[#EB3942]">Enter a valid email address.</p>
+              <p className="mt-1.5 text-xs text-[#E50914] font-medium">Enter a valid email address.</p>
             )}
           </div>
 
           {/* Password */}
           <div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400">
                 <Lock className="w-4 h-4" />
               </span>
               <input
                 type={showPassword ? 'text' : 'password'}
                 autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                placeholder="••••••••"
+                placeholder="Password (minimum 8 characters)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full rounded-md bg-neutral-800/80 border ${
-                  touched && !passOk ? 'border-[#E50914]' : 'border-white/15'
-                } pl-11 pr-11 py-3.5 text-white placeholder-neutral-600 outline-none
-                   focus:border-neutral-300 focus:bg-neutral-800 transition-colors`}
+                className={`w-full rounded-xl bg-[#FAF8F5] border ${
+                  touched && !passOk ? 'border-[#E50914]' : 'border-[#E0D8CB]'
+                } pl-11 pr-11 py-3.5 text-neutral-900 placeholder-neutral-400 outline-none
+                   focus:border-[#E50914] focus:bg-white transition-all text-sm`}
               />
               <button
                 type="button"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             {touched && !passOk && (
-              <p className="mt-1.5 text-xs text-[#EB3942]">
+              <p className="mt-1.5 text-xs text-[#E50914] font-medium">
                 {mode === 'signup' ? 'Password must be at least 8 characters.' : 'Enter your password.'}
               </p>
             )}
@@ -120,7 +123,7 @@ export default function StepAuth({ onSubmit, initialMode = 'signup' }: StepAuthP
             <motion.p
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-md bg-[#E50914]/15 border border-[#E50914]/40 px-4 py-3 text-sm text-[#FF6B6B]"
+              className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-[#E50914] font-medium"
             >
               {error}
             </motion.p>
@@ -129,29 +132,29 @@ export default function StepAuth({ onSubmit, initialMode = 'signup' }: StepAuthP
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-md font-semibold py-3.5 transition-all text-white
-                       shadow-lg hover:brightness-110 active:scale-[0.99] disabled:opacity-60"
+            className="w-full rounded-xl font-bold py-3.5 transition-all text-white
+                       shadow-lg shadow-red-500/25 hover:brightness-105 active:scale-[0.99] disabled:opacity-60"
             style={{ backgroundColor: RED }}
           >
             <span className="inline-flex items-center justify-center gap-2">
               {busy && <Loader2 className="w-4 h-4 animate-spin" />}
-              {mode === 'signup' ? 'Sign Up — Continue' : 'Sign In'}
+              {mode === 'signup' ? 'Continue with Email' : 'Sign In'}
             </span>
           </button>
         </form>
 
         {/* Toggle mode */}
-        <p className="mt-6 text-sm text-neutral-400">
-          {mode === 'signup' ? 'Already have an account?' : 'New to Inkloom?'}{' '}
+        <p className="mt-6 text-sm text-neutral-500 text-center">
+          {mode === 'signup' ? 'Already have a workspace?' : 'New organisation?'}{' '}
           <button
             type="button"
             onClick={() => switchMode(mode === 'signup' ? 'login' : 'signup')}
-            className="text-white font-medium hover:underline"
+            className="text-[#E50914] font-bold hover:underline"
           >
-            {mode === 'signup' ? 'Sign in' : 'Sign up'}
+            {mode === 'signup' ? 'Sign in' : 'Create workspace'}
           </button>
         </p>
-        <p className="mt-4 text-xs text-neutral-600 leading-relaxed">
+        <p className="mt-5 text-xs text-neutral-400 text-center leading-relaxed">
           Your credentials and brand workspaces are isolated and secured with end-to-end multi-tenant encryption.
         </p>
       </div>

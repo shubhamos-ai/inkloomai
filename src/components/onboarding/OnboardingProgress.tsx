@@ -13,21 +13,21 @@ export default function OnboardingProgress({ currentStep, total = 5 }: Onboardin
 
   return (
     <div className="w-full max-w-md mx-auto">
-      <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+      <div className="h-1.5 rounded-full bg-[#E8E2D9] overflow-hidden shadow-inner">
         <motion.div
-          className="h-full rounded-full"
+          className="h-full rounded-full shadow-sm"
           style={{ backgroundColor: '#E50914' }}
           initial={false}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.45, ease: 'easeOut' }}
         />
       </div>
-      <div className="mt-2 flex justify-between text-[10px] uppercase tracking-widest text-neutral-600">
+      <div className="mt-2.5 flex justify-between text-[10px] font-bold uppercase tracking-wider text-neutral-400">
         <span>Account</span>
-        <span>Name</span>
-        <span>Company</span>
-        <span>Rules</span>
-        <span>Ready</span>
+        <span>Identity</span>
+        <span>Workspace</span>
+        <span>Brand Brain</span>
+        <span>Launch</span>
       </div>
     </div>
   );

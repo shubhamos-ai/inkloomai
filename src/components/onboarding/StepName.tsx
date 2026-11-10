@@ -30,15 +30,14 @@ export default function StepName({ onSubmit, initialName = '' }: StepNameProps) 
       transition={{ duration: 0.45, ease: 'easeOut' }}
       className="w-full max-w-md mx-auto"
     >
-      <div className="rounded-xl bg-black/60 p-8 sm:p-10 border border-white/10 shadow-2xl backdrop-blur-sm">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6"
-             style={{ backgroundColor: '#E5091420' }}>
+      <div className="rounded-2xl bg-white p-8 sm:p-10 border border-[#E8E2D9] shadow-[0_12px_40px_rgba(26,24,22,0.06)]">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-red-50 border border-red-100">
           <User className="w-6 h-6" style={{ color: '#E50914' }} />
         </div>
-        <h1 className="text-white text-3xl font-bold mb-2 tracking-tight">
+        <h1 className="text-neutral-900 text-3xl font-black mb-2 tracking-tight">
           What should we call you?
         </h1>
-        <p className="text-neutral-400 text-sm mb-8">
+        <p className="text-neutral-500 text-sm mb-8">
           This is how you&apos;ll appear on reports and to your team.
         </p>
 
@@ -47,23 +46,23 @@ export default function StepName({ onSubmit, initialName = '' }: StepNameProps) 
             autoFocus
             type="text"
             autoComplete="name"
-            placeholder="Your name"
+            placeholder="Your full name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={`w-full rounded-md bg-neutral-800/80 border ${
-              showError ? 'border-[#E50914]' : 'border-white/15'
-            } px-4 py-3.5 text-white placeholder-neutral-500 outline-none
-               focus:border-neutral-300 focus:bg-neutral-800 transition-colors`}
+            className={`w-full rounded-xl bg-[#FAF8F5] border ${
+              showError ? 'border-[#E50914]' : 'border-[#E0D8CB]'
+            } px-4 py-3.5 text-neutral-900 placeholder-neutral-400 outline-none
+               focus:border-[#E50914] focus:bg-white transition-all text-sm`}
           />
           {showError && (
-            <p className="mt-1.5 text-xs text-[#EB3942]">Name needs at least 2 characters.</p>
+            <p className="mt-1.5 text-xs text-[#E50914] font-medium">Name needs at least 2 characters.</p>
           )}
 
           <button
             type="submit"
             disabled={!isValid}
-            className="w-full mt-6 rounded-md font-semibold py-3.5 text-white transition-all
-                       shadow-lg hover:brightness-110 active:scale-[0.99] disabled:opacity-30"
+            className="w-full mt-6 rounded-xl font-bold py-3.5 text-white transition-all
+                       shadow-lg shadow-red-500/25 hover:brightness-105 active:scale-[0.99] disabled:opacity-30"
             style={{ backgroundColor: '#E50914' }}
           >
             Continue

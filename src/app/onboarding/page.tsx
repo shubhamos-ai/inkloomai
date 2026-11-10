@@ -256,41 +256,47 @@ export default function OnboardingPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#141414] overflow-hidden">
-      {/* Cinematic backdrop: soft red glow vignette */}
+    <div className="relative min-h-screen bg-[#FAF8F5] text-neutral-900 overflow-hidden">
+      {/* Light Luxury backdrop: warm cream with soft Netflix red glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            'radial-gradient(60rem 40rem at 50% -10%, rgba(229,9,20,0.22), transparent 60%),' +
-            'radial-gradient(40rem 30rem at 85% 110%, rgba(229,9,20,0.10), transparent 60%)',
+            'radial-gradient(65rem 40rem at 50% -10%, rgba(229,9,20,0.12), transparent 70%),' +
+            'radial-gradient(40rem 30rem at 85% 100%, rgba(229,9,20,0.06), transparent 70%)',
         }}
       />
-      {/* Subtle grid texture */}
+      {/* Subtle fine dotted grid */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        className="pointer-events-none absolute inset-0 opacity-[0.03]"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),' +
-            'linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
-          backgroundSize: '56px 56px',
+            'linear-gradient(rgba(0,0,0,0.8) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(0,0,0,0.8) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
         }}
       />
 
       <div className="relative z-10">
         {/* Header / brand mark */}
-        <header className="flex items-center justify-between px-6 sm:px-12 py-5">
+        <header className="flex items-center justify-between px-6 sm:px-12 py-6 border-b border-[#E8E2D9]/60 bg-[#FAF8F5]/80 backdrop-blur-md">
           <button onClick={() => router.replace('/')} className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
+              style={{ backgroundColor: '#E50914' }}
+            >
+              <span className="text-white text-xs font-black tracking-tight">IN</span>
+            </div>
             <span
-              className="text-2xl font-extrabold tracking-tight"
-              style={{ color: '#E50914', textShadow: '0 0 24px rgba(229,9,20,0.45)' }}
+              className="text-2xl font-black tracking-tight"
+              style={{ color: '#E50914' }}
             >
               INKLOOM
             </span>
-            <span className="text-neutral-500 text-xs tracking-[0.35em] uppercase mt-1 hidden sm:inline">
-              AI Governance
+            <span className="text-neutral-400 text-[10px] font-bold tracking-[0.25em] uppercase mt-1 hidden sm:inline px-2 py-0.5 rounded bg-[#F0EBE1]">
+              AI Brand Governance
             </span>
           </button>
         </header>

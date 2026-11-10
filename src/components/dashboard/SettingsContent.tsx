@@ -151,25 +151,25 @@ export default function SettingsContent() {
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold text-neutral-900 tracking-tight">Settings</h1>
         <p className="text-sm text-neutral-500 mt-1">
           Manage your profile, company details, AI backend, and workspace.
         </p>
       </div>
 
       {/* Backend & AI Integration Status Card */}
-      <div className="bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm p-5">
+      <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm p-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
               style={{ backgroundColor: '#E50914' }}
             >
-              <Server className="w-5 h-5 text-white" />
+              <Server className="w-5 h-5 text-neutral-900" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-white text-base">AI Backend</h3>
+                <h3 className="font-semibold text-neutral-900 text-base">AI Backend</h3>
                 <span
                   className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                     backendHealth === 'online'
@@ -207,7 +207,7 @@ export default function SettingsContent() {
               className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-all ${
                 isMockMode
                   ? 'bg-orange-500/15 text-orange-400 border-orange-500/30 hover:bg-orange-500/25'
-                  : 'bg-white/5 text-neutral-300 border-white/20 hover:bg-white/10'
+                  : 'bg-[#FAF8F5] text-neutral-300 border-white/20 hover:bg-white/10'
               }`}
             >
               {isMockMode ? 'Mode: Mock Data' : 'Mode: Real Backend'}
@@ -220,14 +220,14 @@ export default function SettingsContent() {
                 if (healthy) success('AI Backend responded OK (/api/v1/health)');
                 else error('Backend did not respond. Check your NEXT_PUBLIC_AI_API_URL.');
               }}
-              className="text-xs px-3 py-1.5 rounded-lg border border-white/20 bg-white/5 text-white font-medium hover:bg-white/10 transition-all"
+              className="text-xs px-3 py-1.5 rounded-lg border border-white/20 bg-[#FAF8F5] text-neutral-900 font-medium hover:bg-white/10 transition-all"
             >
               Test Ping
             </button>
           </div>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-500">
+        <div className="mt-4 pt-4 border-t border-[#F0EBE1] grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-500">
           <div>
             <span className="font-medium text-neutral-400">Vision Model:</span>{' '}
             Inkloom Vision v1 (Multimodal)
@@ -240,13 +240,13 @@ export default function SettingsContent() {
       </div>
 
       {/* Personal Info */}
-      <div className="bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm p-5">
-        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/5">
+      <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm p-5">
+        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE1]">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(229,9,20,0.2)' }}>
             <User className="w-4 h-4" style={{ color: '#E50914' }} />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Personal Information</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Personal Information</h2>
             <p className="text-xs text-neutral-500">Your profile details within the workspace.</p>
           </div>
         </div>
@@ -258,7 +258,7 @@ export default function SettingsContent() {
               type="text"
               value={sessionData.fullName}
               onChange={(e) => setSessionData({ ...sessionData, fullName: e.target.value })}
-              className={`w-full px-4 py-3 rounded-lg border bg-white/5 text-white placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm ${personalErrors ? 'border-red-500/50' : 'border-white/15'}`}
+              className={`w-full px-4 py-3 rounded-lg border bg-[#FAF8F5] text-neutral-900 placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm ${personalErrors ? 'border-red-500/50' : 'border-white/15'}`}
               placeholder="e.g. Alex Morgan"
             />
             {personalErrors && <p className="text-xs text-red-400 mt-1">{personalErrors}</p>}
@@ -267,7 +267,7 @@ export default function SettingsContent() {
           <button
             type="submit"
             disabled={isSavingPersonal}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-white rounded-lg px-4 py-2.5 transition-all hover:brightness-110 active:scale-95"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white rounded-xl px-5 py-2.5 transition-all hover:brightness-110 active:scale-95"
             style={{ backgroundColor: '#E50914' }}
           >
             <Save className="w-4 h-4" />
@@ -277,13 +277,13 @@ export default function SettingsContent() {
       </div>
 
       {/* Company Info */}
-      <div className="bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm p-5">
-        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/5">
+      <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm p-5">
+        <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[#F0EBE1]">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(229,9,20,0.2)' }}>
             <Building2 className="w-4 h-4" style={{ color: '#E50914' }} />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-white">Company Information</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Company Information</h2>
             <p className="text-xs text-neutral-500">Organisation branding profile used during AI analysis.</p>
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function SettingsContent() {
               type="text"
               value={sessionData.companyName}
               onChange={(e) => setSessionData({ ...sessionData, companyName: e.target.value })}
-              className={`w-full px-4 py-3 rounded-lg border bg-white/5 text-white placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm ${companyErrors.name ? 'border-red-500/50' : 'border-white/15'}`}
+              className={`w-full px-4 py-3 rounded-lg border bg-[#FAF8F5] text-neutral-900 placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm ${companyErrors.name ? 'border-red-500/50' : 'border-white/15'}`}
               placeholder="e.g. Acme Corporation"
             />
             {companyErrors.name && <p className="text-xs text-red-400 mt-1">{companyErrors.name}</p>}
@@ -307,7 +307,7 @@ export default function SettingsContent() {
               type="text"
               value={sessionData.industry || ''}
               onChange={(e) => setSessionData({ ...sessionData, industry: e.target.value })}
-              className="w-full px-4 py-3 rounded-lg border border-white/15 bg-white/5 text-white placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm"
+              className="w-full px-4 py-3 rounded-lg border border-white/15 bg-[#FAF8F5] text-neutral-900 placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm"
               placeholder="e.g. Technology, Retail, Healthcare"
             />
           </div>
@@ -318,7 +318,7 @@ export default function SettingsContent() {
               type="text"
               value={sessionData.website || ''}
               onChange={(e) => setSessionData({ ...sessionData, website: e.target.value })}
-              className={`w-full px-4 py-3 rounded-lg border bg-white/5 text-white placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm ${companyErrors.website ? 'border-red-500/50' : 'border-white/15'}`}
+              className={`w-full px-4 py-3 rounded-lg border bg-[#FAF8F5] text-neutral-900 placeholder-neutral-500 outline-none focus:ring-2 focus:ring-[#E50914] focus:border-transparent transition-all text-sm ${companyErrors.website ? 'border-red-500/50' : 'border-white/15'}`}
               placeholder="https://example.com"
             />
             {companyErrors.website && <p className="text-xs text-red-400 mt-1">{companyErrors.website}</p>}
@@ -327,7 +327,7 @@ export default function SettingsContent() {
           <button
             type="submit"
             disabled={isSavingCompany}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-white rounded-lg px-4 py-2.5 transition-all hover:brightness-110 active:scale-95"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white rounded-xl px-5 py-2.5 transition-all hover:brightness-110 active:scale-95"
             style={{ backgroundColor: '#E50914' }}
           >
             <Save className="w-4 h-4" />
@@ -337,20 +337,20 @@ export default function SettingsContent() {
       </div>
 
       {/* Brand Brain Summary */}
-      <div className="bg-black/40 rounded-xl border border-white/10 backdrop-blur-sm p-5">
-        <div className="flex items-center justify-between pb-4 border-b border-white/5">
+      <div className="bg-white rounded-2xl border border-[#E8E2D9] shadow-sm p-5">
+        <div className="flex items-center justify-between pb-4 border-b border-[#F0EBE1]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(229,9,20,0.2)' }}>
               <Brain className="w-4 h-4" style={{ color: '#E50914' }} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">Brand Brain</h2>
+              <h2 className="text-base font-semibold text-neutral-900">Brand Brain</h2>
               <p className="text-xs text-neutral-500">Active rules engine and governance policies.</p>
             </div>
           </div>
           <button
             onClick={() => router.push('/brand-brain')}
-            className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-white border border-white/20 rounded-lg px-3 py-2 hover:bg-white/5 transition-all"
+            className="flex items-center gap-1.5 text-xs font-medium text-neutral-400 hover:text-neutral-900 border border-white/20 rounded-lg px-3 py-2 hover:bg-[#FAF8F5] transition-all"
           >
             Manage Rules
             <ExternalLink className="w-3.5 h-3.5" />
@@ -358,15 +358,15 @@ export default function SettingsContent() {
         </div>
 
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+          <div className="bg-[#FAF8F5] rounded-lg p-3 text-center border border-[#F0EBE1]">
             <span className="text-xs text-neutral-500 block">Active Rules</span>
-            <span className="text-xl font-bold text-white mt-1 block">{ruleCount}</span>
+            <span className="text-xl font-bold text-neutral-900 mt-1 block">{ruleCount}</span>
           </div>
-          <div className="bg-white/5 rounded-lg p-3 text-center border border-white/5">
+          <div className="bg-[#FAF8F5] rounded-lg p-3 text-center border border-[#F0EBE1]">
             <span className="text-xs text-neutral-500 block">Version</span>
-            <span className="text-xl font-bold text-white mt-1 block">v{brandBrainVersion}</span>
+            <span className="text-xl font-bold text-neutral-900 mt-1 block">v{brandBrainVersion}</span>
           </div>
-          <div className="bg-white/5 rounded-lg p-3 text-center col-span-2 sm:col-span-1 border border-white/5">
+          <div className="bg-[#FAF8F5] rounded-lg p-3 text-center col-span-2 sm:col-span-1 border border-[#F0EBE1]">
             <span className="text-xs text-neutral-500 block">Status</span>
             <span className="text-sm font-semibold text-emerald-400 mt-1.5 inline-flex items-center gap-1">
               <CheckCircle2 className="w-4 h-4" /> Active
@@ -376,10 +376,10 @@ export default function SettingsContent() {
       </div>
 
       {/* Session & Sign Out */}
-      <div className="bg-black/40 rounded-xl border border-red-500/20 backdrop-blur-sm p-5">
+      <div className="bg-black/40 rounded-xl border border-red-200 p-5">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="text-base font-semibold text-white">Sign Out</h2>
+            <h2 className="text-base font-semibold text-neutral-900">Sign Out</h2>
             <p className="text-xs text-neutral-500 mt-0.5">
               Clears your local session. You can sign back in anytime.
             </p>
