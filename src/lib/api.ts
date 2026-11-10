@@ -35,10 +35,12 @@ import { getUserSession } from './session';
 // ─── Configuration ────────────────────────────────────────────────────────────
 
 // In dev: http://localhost:8000
-// In production (Render): set NEXT_PUBLIC_AI_API_URL to your Render backend URL
-// e.g. https://inkloom-backend.onrender.com
+// In production (Render): default to live Render backend instance
 export const DEFAULT_API_BASE_URL =
-  process.env.NEXT_PUBLIC_AI_API_URL || 'http://localhost:8000';
+  process.env.NEXT_PUBLIC_AI_API_URL ||
+  (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1'
+    ? 'https://inkloom-backend-yw07.onrender.com'
+    : 'http://localhost:8000');
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {

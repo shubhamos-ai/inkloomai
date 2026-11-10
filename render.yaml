@@ -23,9 +23,9 @@ services:
       - key: STORAGE_DIR
         value: /var/data/storage
       - key: CORS_ORIGINS
-        value: https://inkloom-ai.shubhamos.com,https://inkloom-frontend.onrender.com
+        value: https://inkloom-ai.shubhamos.com,https://inkloom-frontend.onrender.com,https://inkloom-frontend-rwy2.onrender.com
       - key: CORS_EXTRA_ORIGINS
-        value: http://localhost:3000
+        value: http://localhost:3000,http://127.0.0.1:3000
       - key: DISABLE_DEV_AUTH
         value: false
       - key: RATE_LIMIT_PER_MINUTE
@@ -75,7 +75,7 @@ services:
       # Update this if your onrender subdomain differs (Render may add a hash
       # suffix when the name is taken).
       - key: NEXT_PUBLIC_AI_API_URL
-        value: https://inkloom-backend.onrender.com
+        value: https://inkloom-backend-yw07.onrender.com
       - key: NEXT_PUBLIC_USE_MOCK
         value: false
 
