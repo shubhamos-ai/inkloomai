@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
 interface ScoreRingProps {
-  score: number;
+  score: number | null | undefined;
   size?: number;
   strokeWidth?: number;
   showLabel?: boolean;
@@ -16,7 +16,10 @@ type ScoreColour = {
   label: string;
 };
 
-function getScoreColour(score: number): ScoreColour {
+function getScoreColour(score: number | null | undefined): ScoreColour {
+  if (score === null || score === undefined) {
+    return { stroke: '#94a3b8', text: 'text-slate-500', label: 'Inconclusive' };
+  }
   if (score >= 90) {
     return { stroke: '#16a34a', text: 'text-green-600', label: 'Excellent' };
   }
@@ -35,14 +38,15 @@ export default function ScoreRing({
   strokeWidth = 8,
   showLabel = true,
 }: ScoreRingProps) {
-  const clampedScore = Math.min(100, Math.max(0, Math.round(score)));
-  const colour = getScoreColour(clampedScore);
+  const isNull = score === null || score === undefined;
+  const clampedScore = isNull ? 0 : Math.min(100, Math.max(0, Math.round(score)));
+  const colour = getScoreColour(score);
 
   const radius = useMemo(() => (size - strokeWidth) / 2, [size, strokeWidth]);
   const circumference = useMemo(() => 2 * Math.PI * radius, [radius]);
   const dashOffset = useMemo(
-    () => circumference - (clampedScore / 100) * circumference,
-    [circumference, clampedScore]
+    () => (isNull ? circumference : circumference - (clampedScore / 100) * circumference),
+    [circumference, clampedScore, isNull]
   );
 
   const cx = size / 2;
@@ -84,20 +88,20 @@ export default function ScoreRing({
           transition={{ duration: 1.1, ease: 'easeOut', delay: 0.15 }}
         />
 
-        {/* Score Number */}
+        {/* Score Number or Dash */}
         <text
           x={cx}
           y={cy}
           textAnchor="middle"
           dominantBaseline="central"
           style={{
-            fontSize: size * 0.22,
+            fontSize: isNull ? size * 0.28 : size * 0.22,
             fontFamily: 'inherit',
             fontWeight: 700,
             fill: colour.stroke,
           }}
         >
-          {clampedScore}
+          {isNull ? '—' : clampedScore}
         </text>
       </svg>
 

@@ -45,9 +45,9 @@ interface DashboardStats {
 interface AnalysisRecord {
   id: string;
   name: string;
-  score: number;
+  score: number | null;
   date: string;
-  status: 'excellent' | 'needs_revision' | 'non_compliant' | 'needs_minor_improvements';
+  status: 'excellent' | 'needs_revision' | 'non_compliant' | 'needs_minor_improvements' | 'inconclusive';
   thumbnailUrl?: string;
   violations?: string[];
 }
@@ -77,13 +77,15 @@ function formatDate(dateStr: string): string {
   });
 }
 
-function scoreColour(score: number): { bg: string; text: string; border: string } {
+function scoreColour(score: number | null): { bg: string; text: string; border: string } {
+  if (score === null) return { bg: 'bg-slate-50 text-slate-500', text: 'text-slate-500', border: 'border-slate-200' };
   if (score >= 85) return { bg: 'bg-emerald-50 text-emerald-700', text: 'text-emerald-700', border: 'border-emerald-200' };
   if (score >= 60) return { bg: 'bg-amber-50 text-amber-700', text: 'text-amber-700', border: 'border-amber-200' };
   return { bg: 'bg-red-50 text-red-700', text: 'text-red-700', border: 'border-red-200' };
 }
 
-function scoreLabel(score: number): string {
+function scoreLabel(score: number | null): string {
+  if (score === null) return 'Inconclusive';
   if (score >= 85) return 'Excellent';
   if (score >= 60) return 'Needs Work';
   return 'Non-Compliant';
@@ -400,7 +402,7 @@ export default function DashboardContent({ session }: DashboardContentProps) {
 
                     {/* Score badge */}
                     <div className={`flex items-center gap-1 px-2.5 py-1 rounded-full border text-xs font-bold ${scoreColors.bg} ${scoreColors.border}`}>
-                      <span>{item.score}%</span>
+                      <span>{item.score !== null ? `${item.score}%` : '—'}</span>
                     </div>
 
                     {/* View button */}

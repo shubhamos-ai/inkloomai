@@ -1,7 +1,26 @@
 // Analysis types
 export type AnalysisStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
 export type ViolationSeverity = 'critical' | 'major' | 'minor' | 'passed';
-export type ComplianceLevel = 'excellent' | 'needs_minor_improvements' | 'needs_revision' | 'non_compliant';
+export type ComplianceLevel = 'excellent' | 'needs_minor_improvements' | 'needs_revision' | 'non_compliant' | 'inconclusive';
+
+export interface VisionObservation {
+  subject: string;
+  attribute: string;
+  value: string;
+  confidence?: number;
+}
+
+export interface AnalysisMetadata {
+  engine?: string;
+  is_mock?: boolean;
+  model?: string;
+  ocr_text?: string;
+  ocr_source?: string;
+  duration_ms?: number;
+  brand_rules_count?: number;
+  notes?: string;
+  vision_observations?: VisionObservation[];
+}
 
 export interface Violation {
   id: string;
@@ -36,7 +55,7 @@ export interface AnalysisResult {
   advertisementName: string;
   imageUrl: string;
   companyName: string;
-  complianceScore: number;
+  complianceScore: number | null;
   complianceLevel: ComplianceLevel;
   status: AnalysisStatus;
   analysedAt: string;
@@ -44,6 +63,7 @@ export interface AnalysisResult {
   recommendations: AIRecommendation[];
   passedChecks: string[];
   summary: string;
+  metadata?: AnalysisMetadata;
 }
 
 export interface AnalysisHistoryItem {
@@ -51,7 +71,7 @@ export interface AnalysisHistoryItem {
   advertisementName: string;
   thumbnailUrl: string;
   analysedAt: string;
-  complianceScore: number;
+  complianceScore: number | null;
   complianceLevel: ComplianceLevel;
   status: AnalysisStatus;
   violationsCount: number;

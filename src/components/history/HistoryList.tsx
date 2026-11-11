@@ -31,6 +31,7 @@ const COMPLIANCE_LABELS: Record<ComplianceLevel, string> = {
   needs_minor_improvements: 'Needs Improvement',
   needs_revision: 'Needs Revision',
   non_compliant: 'Non-Compliant',
+  inconclusive: 'Inconclusive',
 };
 
 const COMPLIANCE_BADGE: Record<ComplianceLevel, string> = {
@@ -38,6 +39,7 @@ const COMPLIANCE_BADGE: Record<ComplianceLevel, string> = {
   needs_minor_improvements: 'bg-blue-50 text-blue-700 border-blue-200',
   needs_revision: 'bg-amber-50 text-amber-700 border-amber-200',
   non_compliant: 'bg-red-50 text-red-700 border-red-200',
+  inconclusive: 'bg-slate-100 text-slate-600 border-slate-300',
 };
 
 const SCORE_COLOUR: Record<ComplianceLevel, string> = {
@@ -45,6 +47,7 @@ const SCORE_COLOUR: Record<ComplianceLevel, string> = {
   needs_minor_improvements: 'text-blue-600',
   needs_revision: 'text-amber-600',
   non_compliant: 'text-red-600',
+  inconclusive: 'text-slate-500',
 };
 
 function formatDate(iso: string): string {
@@ -141,7 +144,7 @@ function HistoryCard({
         </div>
         {/* Score */}
         <span className={`text-xl font-bold ${SCORE_COLOUR[item.complianceLevel]}`}>
-          {item.complianceScore}
+          {item.complianceScore ?? '—'}
         </span>
       </div>
 
@@ -217,7 +220,7 @@ function HistoryRow({
       {/* Score */}
       <td className="px-4 py-4">
         <span className={`text-sm font-bold ${SCORE_COLOUR[item.complianceLevel]}`}>
-          {item.complianceScore} / 100
+          {item.complianceScore !== null ? `${item.complianceScore} / 100` : '— / 100'}
         </span>
       </td>
 
@@ -264,6 +267,7 @@ const FILTER_OPTIONS: { label: string; value: FilterLevel }[] = [
   { label: 'Needs Improvement', value: 'needs_minor_improvements' },
   { label: 'Needs Revision', value: 'needs_revision' },
   { label: 'Non-Compliant', value: 'non_compliant' },
+  { label: 'Inconclusive', value: 'inconclusive' },
 ];
 
 const SORT_OPTIONS: { label: string; value: SortKey }[] = [
@@ -298,8 +302,8 @@ export default function HistoryList({ items, onViewReport, isLoading }: HistoryL
     result.sort((a, b) => {
       if (sort === 'newest') return new Date(b.analysedAt).getTime() - new Date(a.analysedAt).getTime();
       if (sort === 'oldest') return new Date(a.analysedAt).getTime() - new Date(b.analysedAt).getTime();
-      if (sort === 'highest') return b.complianceScore - a.complianceScore;
-      if (sort === 'lowest') return a.complianceScore - b.complianceScore;
+      if (sort === 'highest') return (b.complianceScore ?? -1) - (a.complianceScore ?? -1);
+      if (sort === 'lowest') return (a.complianceScore ?? 101) - (b.complianceScore ?? 101);
       return 0;
     });
 

@@ -127,12 +127,15 @@ function complianceLevelFromOverall(overall: string | null | undefined): Complia
   switch (overall) {
     case 'passed':
       return 'excellent';
+    case 'needs_minor_improvements':
+      return 'needs_minor_improvements';
     case 'needs_revision':
       return 'needs_revision';
     case 'critical_failure':
       return 'non_compliant';
+    case 'inconclusive':
+      return 'inconclusive';
     default:
-      // inconclusive / failed / unknown — be conservative but honest
       return 'needs_minor_improvements';
   }
 }
@@ -191,7 +194,7 @@ function adaptReport(raw: Record<string, unknown>): AnalysisResult {
     })
     .filter(Boolean);
 
-  const score = typeof raw.compliance_score === 'number' ? raw.compliance_score : 0;
+  const score = typeof raw.compliance_score === 'number' ? raw.compliance_score : null;
 
   return {
     id: analysisId,
@@ -208,6 +211,7 @@ function adaptReport(raw: Record<string, unknown>): AnalysisResult {
     recommendations,
     passedChecks,
     summary: String(raw.summary ?? ''),
+    metadata: meta as unknown as AnalysisResult['metadata'],
   };
 }
 
@@ -225,7 +229,7 @@ function adaptHistoryItem(raw: Record<string, unknown>): AnalysisHistoryItem {
   )
     ? String(raw.status)
     : 'processing') as AnalysisStatus;
-  const score = typeof raw.compliance_score === 'number' ? raw.compliance_score : 0;
+  const score = typeof raw.compliance_score === 'number' ? raw.compliance_score : null;
 
   return {
     id: analysisId,
@@ -591,14 +595,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   // Local aggregate from honest stored history (no invented numbers).
   const history = getStoredHistory();
   const completed = history.filter((h) => h.status === 'completed');
-  const scores = completed.map((h) => h.complianceScore);
+  const scores = completed.map((h) => h.complianceScore).filter((s): s is number => s !== null);
   return {
     totalAnalyses: history.length,
     averageComplianceScore: scores.length
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
       : 0,
-    needsAttention: completed.filter((h) => h.complianceScore < 75).length,
-    fullyCompliant: completed.filter((h) => h.complianceScore >= 90).length,
+    needsAttention: completed.filter((h) => h.complianceScore !== null && h.complianceScore < 75).length,
+    fullyCompliant: completed.filter((h) => h.complianceScore !== null && h.complianceScore >= 90).length,
   };
 }
 

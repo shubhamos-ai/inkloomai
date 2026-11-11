@@ -6,6 +6,7 @@ Supports deployment on Render.com and other cloud platforms.
 from __future__ import annotations
 
 import base64
+import io
 import json
 import os
 from typing import Optional
@@ -22,6 +23,11 @@ STATUS_READY = "ready"
 # NVIDIA NIM API endpoints (OpenAI-compatible catalog endpoint)
 NVIDIA_NIM_BASE = "https://integrate.api.nvidia.com/v1"
 NVIDIA_NIM_CHAT_COMPLETIONS = f"{NVIDIA_NIM_BASE}/chat/completions"
+
+# Image resizing: NIM times out / errors on very large base64 payloads.
+# Resize images so the longest edge is at most this many pixels before encoding.
+MAX_IMAGE_DIMENSION = 1024  # px — large enough for text/logo detection
+MAX_IMAGE_B64_BYTES = 1_500_000  # ~1.5MB b64 hard-cap (NIM recommends < 2MB)
 
 DEFAULT_VISION_MODEL = "meta/llama-3.2-90b-vision-instruct"
 
@@ -96,9 +102,80 @@ def check_status() -> dict:
 
 
 def encode_image(image_path: str) -> str:
-    """Encode image to base64 for API upload."""
-    with open(image_path, "rb") as f:
-        return base64.b64encode(f.read()).decode("utf-8")
+    """Encode image to base64 for API upload, resizing if necessary.
+
+    NIM times out on very large image payloads.  Any image whose longest
+    side exceeds MAX_IMAGE_DIMENSION is downscaled proportionally before
+    encoding.  The result is re-encoded as JPEG (quality 85) to keep the
+    payload well under the 2 MB soft-cap.
+    """
+    try:
+        from PIL import Image  # type: ignore[import-untyped]
+
+        with Image.open(image_path) as img:
+            # Convert RGBA / palette → RGB so JPEG save works
+            if img.mode in ("RGBA", "P", "LA"):
+                bg = Image.new("RGB", img.size, (255, 255, 255))
+                if img.mode == "P":
+                    img = img.convert("RGBA")
+                bg.paste(img, mask=img.split()[-1] if img.mode in ("RGBA", "LA") else None)
+                img = bg
+            elif img.mode != "RGB":
+                img = img.convert("RGB")
+
+            # Resize if needed
+            w, h = img.size
+            longest = max(w, h)
+            if longest > MAX_IMAGE_DIMENSION:
+                scale = MAX_IMAGE_DIMENSION / longest
+                img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
+            # Encode to JPEG in memory
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=85, optimize=True)
+            raw_bytes = buf.getvalue()
+
+            # If still too big, re-encode at lower quality
+            if len(raw_bytes) * 1.37 > MAX_IMAGE_B64_BYTES:  # rough b64 inflation
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=60, optimize=True)
+                raw_bytes = buf.getvalue()
+
+            return base64.b64encode(raw_bytes).decode()
+
+    except ImportError:
+        # PIL not available — fall back to raw file encoding (may be large)
+        with open(image_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+
+
+def _resize_b64_if_needed(b64_str: str) -> str:
+    """If a raw base64 image string is oversized for NIM, decode→resize→re-encode.
+
+    NIM reliably times out on payloads > ~2 MB.  This helper is a no-op when
+    PIL is unavailable or the image is already small enough.
+    """
+    if len(b64_str) <= MAX_IMAGE_B64_BYTES:
+        return b64_str  # already within limits
+
+    try:
+        from PIL import Image  # type: ignore[import-untyped]
+
+        raw = base64.b64decode(b64_str)
+        with Image.open(io.BytesIO(raw)) as img:
+            if img.mode not in ("RGB",):
+                img = img.convert("RGB")
+            w, h = img.size
+            longest = max(w, h)
+            if longest > MAX_IMAGE_DIMENSION:
+                scale = MAX_IMAGE_DIMENSION / longest
+                img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=85, optimize=True)
+            return base64.b64encode(buf.getvalue()).decode()
+    except Exception:  # noqa: BLE001
+        # If anything fails, pass through original (NIM may still handle it)
+        return b64_str
 
 
 def generate(
@@ -138,13 +215,13 @@ def generate(
     if images:
         for img in images:
             if isinstance(img, str) and img and os.path.exists(img):
-                # File path provided — encode it
+                # File path provided — encode it (with auto-resize)
                 image_data.append(encode_image(img))
             elif isinstance(img, str) and img:
-                # Already a base64 string — use directly
-                image_data.append(img)
+                # Already a base64 string — resize if oversized
+                image_data.append(_resize_b64_if_needed(img))
     elif image_b64:
-        image_data.append(image_b64)
+        image_data.append(_resize_b64_if_needed(image_b64))
 
     # Build messages for multimodal input
     messages = []

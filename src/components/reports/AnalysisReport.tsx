@@ -17,10 +17,15 @@ import {
   Hash,
   Building2,
   Image,
+  Cpu,
+  FileText,
+  Clock,
+  BookOpen,
+  ScanLine,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import ScoreRing from '@/components/ui/ScoreRing';
-import type { AnalysisResult, Violation, AIRecommendation, ComplianceLevel, ViolationSeverity } from '@/types/analysis';
+import type { AnalysisResult, Violation, AIRecommendation, ComplianceLevel, ViolationSeverity, AnalysisMetadata } from '@/types/analysis';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -29,6 +34,7 @@ const COMPLIANCE_LABELS: Record<ComplianceLevel, string> = {
   needs_minor_improvements: 'Needs Minor Improvements',
   needs_revision: 'Needs Revision',
   non_compliant: 'Non-Compliant',
+  inconclusive: 'Inconclusive',
 };
 
 const COMPLIANCE_BADGE: Record<ComplianceLevel, string> = {
@@ -36,6 +42,7 @@ const COMPLIANCE_BADGE: Record<ComplianceLevel, string> = {
   needs_minor_improvements: 'bg-blue-50 text-blue-700 border-blue-200',
   needs_revision: 'bg-amber-50 text-amber-700 border-amber-200',
   non_compliant: 'bg-red-50 text-red-700 border-red-200',
+  inconclusive: 'bg-slate-100 text-slate-600 border-slate-300',
 };
 
 const SEVERITY_CONFIG: Record<
@@ -353,6 +360,165 @@ function PassedChecks({ checks }: { checks: string[] }) {
   );
 }
 
+// ─── AI Metadata Panel ────────────────────────────────────────────────────────
+
+function AIMetadataPanel({ meta }: { meta: AnalysisMetadata }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasOcr = meta.ocr_text && meta.ocr_text.trim() !== '' && meta.ocr_text !== 'none';
+  const hasObs = Array.isArray(meta.vision_observations) && meta.vision_observations.length > 0;
+
+  if (!hasOcr && !hasObs && !meta.model && !meta.duration_ms) return null;
+
+  return (
+    <section className="rounded-2xl border border-purple-200 bg-white overflow-hidden">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-6 py-4 border-b border-purple-100 hover:bg-purple-50/40 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-purple-600 flex items-center justify-center">
+            <Cpu className="w-3.5 h-3.5 text-white" />
+          </div>
+          <h2 className="font-semibold text-slate-900 text-sm">AI Engine Observations</h2>
+          {meta.is_mock && (
+            <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 border border-amber-200 font-medium">
+              Mock
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Quick stats */}
+          {meta.model && (
+            <span className="hidden sm:flex items-center gap-1 text-xs text-slate-500">
+              <ScanLine className="w-3 h-3" /> {meta.model}
+            </span>
+          )}
+          {meta.duration_ms && (
+            <span className="hidden sm:flex items-center gap-1 text-xs text-slate-500">
+              <Clock className="w-3 h-3" /> {(meta.duration_ms / 1000).toFixed(1)}s
+            </span>
+          )}
+          {meta.brand_rules_count !== undefined && (
+            <span className="hidden sm:flex items-center gap-1 text-xs text-slate-500">
+              <BookOpen className="w-3 h-3" /> {meta.brand_rules_count} rules
+            </span>
+          )}
+          {expanded ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+        </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <div className="px-6 py-5 space-y-5">
+              {/* Engine info row */}
+              <div className="flex flex-wrap gap-4 text-sm">
+                {meta.engine && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Cpu className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium">Engine:</span> {meta.engine}
+                  </div>
+                )}
+                {meta.model && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <ScanLine className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium">Model:</span>
+                    <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">{meta.model}</span>
+                  </div>
+                )}
+                {meta.duration_ms && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <Clock className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium">Duration:</span> {(meta.duration_ms / 1000).toFixed(2)}s
+                  </div>
+                )}
+                {meta.brand_rules_count !== undefined && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <BookOpen className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium">Brand Rules Checked:</span> {meta.brand_rules_count}
+                  </div>
+                )}
+                {meta.ocr_source && (
+                  <div className="flex items-center gap-2 text-slate-600">
+                    <FileText className="w-4 h-4 text-purple-500" />
+                    <span className="font-medium">OCR Source:</span> {meta.ocr_source}
+                  </div>
+                )}
+              </div>
+
+              {/* Vision Observations table */}
+              {hasObs && (
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5" /> Vision Observations ({meta.vision_observations!.length})
+                  </h3>
+                  <div className="rounded-xl border border-slate-200 overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50 border-b border-slate-200">
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Subject</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Attribute</th>
+                          <th className="px-4 py-2.5 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Value</th>
+                          <th className="px-4 py-2.5 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Confidence</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {meta.vision_observations!.map((obs, i) => (
+                          <tr key={i} className="hover:bg-purple-50/40 transition-colors">
+                            <td className="px-4 py-2.5 font-medium text-slate-800">{obs.subject}</td>
+                            <td className="px-4 py-2.5 text-slate-600">{obs.attribute}</td>
+                            <td className="px-4 py-2.5 text-slate-700">{obs.value}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              {obs.confidence !== undefined ? (
+                                <span className={`text-xs font-semibold ${obs.confidence >= 0.8 ? 'text-green-600' : obs.confidence >= 0.5 ? 'text-amber-600' : 'text-red-600'}`}>
+                                  {Math.round(obs.confidence * 100)}%
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 text-xs">—</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* OCR Text */}
+              {hasOcr && (
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" /> Extracted Text (OCR)
+                  </h3>
+                  <pre className="text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 whitespace-pre-wrap font-mono leading-relaxed">
+                    {meta.ocr_text}
+                  </pre>
+                </div>
+              )}
+
+              {/* Notes */}
+              {meta.notes && (
+                <div className="rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+                  <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-1">Engine Notes</p>
+                  <p className="text-sm text-amber-900">{meta.notes}</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 // ─── Download helper ──────────────────────────────────────────────────────────
 
 function downloadReport(result: AnalysisResult): void {
@@ -636,6 +802,13 @@ export default function AnalysisReport({ result, onBack, onAnalyseAgain }: Analy
       {result.passedChecks.length > 0 && (
         <motion.div variants={sectionVariants}>
           <PassedChecks checks={result.passedChecks} />
+        </motion.div>
+      )}
+
+      {/* ── AI Engine Observations ───────────────────────────────────────── */}
+      {result.metadata && (
+        <motion.div variants={sectionVariants}>
+          <AIMetadataPanel meta={result.metadata} />
         </motion.div>
       )}
 
