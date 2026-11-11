@@ -27,14 +27,14 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import current_company, get_isolated_analysis, resolve_company_flexibly
 from app.database import get_db
-from app.models import Analysis, AnalysisJob, Company
+from app.models import Analysis, AnalysisJob, Asset, Company
 from app.schemas.analysis import (
     AnalysisListItem,
     AnalysisStatusResponse,
     AnalysisSubmitResponse,
     PaginatedHistory,
 )
-from app.services import analysis_service, job_service, storage_service
+from app.services import analysis_service, asset_service, job_service, storage_service
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -217,6 +217,94 @@ def cancel(
     return {"analysis_id": analysis.id, "status": "cancelled"}
 
 
+@router.post("/{analysis_id}/retry")
+def retry(
+    analysis_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """POST /analysis/{analysis_id}/retry — requeue a failed analysis."""
+    analysis = get_isolated_analysis(analysis_id, company, db)
+    job = db.scalar(select(AnalysisJob).where(AnalysisJob.analysis_id == analysis.id))
+    if job is None:
+        raise HTTPException(
+            status_code=404, detail={"error": "not_found", "message": "Job not found."}
+        )
+    try:
+        job_service.retry_job(db, company.id, job.id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=409, detail={"error": "not_retryable", "message": str(exc)}
+        )
+    return {"analysis_id": analysis.id, "status": "queued"}
+
+
+@router.get("/{analysis_id}/assets")
+def assets(
+    analysis_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """GET /analysis/{analysis_id}/assets — durable object metadata."""
+    analysis = get_isolated_analysis(analysis_id, company, db)
+    rows = asset_service.list_assets(db, company.id, analysis_id=analysis.id)
+    return {
+        "analysis_id": str(analysis.id),
+        "assets": [
+            {
+                "id": str(a.id),
+                "kind": a.kind,
+                "object_key": a.object_key,
+                "preview_key": a.preview_key,
+                "content_type": a.content_type,
+                "size_bytes": a.size_bytes,
+                "storage_backend": a.storage_backend,
+                "checksum_sha256": a.checksum_sha256,
+            }
+            for a in rows
+        ],
+    }
+
+
+def _serve_stored(request: Request, token: str | None, db: Session, analysis_id: uuid.UUID, *, preview: bool):
+    ctx = resolve_company_flexibly(request, token_query=token, db=db)
+    analysis = get_isolated_analysis(analysis_id, ctx.company, db)
+    rel = None
+    if preview:
+        row = db.scalar(
+            select(Asset).where(
+                Asset.company_id == ctx.company.id,
+                Asset.analysis_id == analysis.id,
+                Asset.preview_key.is_not(None),
+            )
+        )
+        rel = row.preview_key if row else None
+    # Fall back to the original upload when no thumbnail exists yet.
+    rel = rel or analysis.image_path
+    try:
+        path = storage_service.abs_path_for(rel)
+    except Exception:  # noqa: BLE001 — missing object
+        path = None
+    if path is None or not path.is_file():
+        raise HTTPException(
+            status_code=404, detail={"error": "not_found", "message": "Image missing."}
+        )
+    suffix = path.suffix.lower().lstrip(".")
+    media = f"image/{'jpeg' if suffix == 'jpg' else suffix}" if suffix else "application/octet-stream"
+    return FileResponse(path, media_type=media)
+
+
+@router.get("/{analysis_id}/preview")
+def preview(
+    analysis_id: uuid.UUID,
+    request: Request,
+    token: str | None = None,
+    db: Session = Depends(get_db),
+):
+    """GET /analysis/{analysis_id}/preview — durable JPEG thumbnail."""
+    return _serve_stored(request, token, db, analysis_id, preview=True)
+
+
 @router.get("/{analysis_id}/image")
 def image(
     analysis_id: uuid.UUID,
@@ -229,9 +317,4 @@ def image(
     Auth via `Authorization: Bearer` header OR `?token=` query parameter
     (needed because browsers cannot attach headers to <img> requests).
     """
-    ctx = resolve_company_flexibly(request, token_query=token, db=db)
-    analysis = get_isolated_analysis(analysis_id, ctx.company, db)
-    path = storage_service.abs_path_for(analysis.image_path)
-    if not path.is_file():
-        raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Image missing."})
-    return FileResponse(path, media_type=f"image/{path.suffix[1:]}")
+    return _serve_stored(request, token, db, analysis_id, preview=False)

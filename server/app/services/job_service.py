@@ -12,6 +12,7 @@ The worker entry point is `python -m app.worker`.
 """
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import timedelta
 
@@ -23,6 +24,17 @@ from app.database import utcnow
 from app.models import AnalysisJob
 
 ACTIVE_JOB_STATUSES = ("queued", "processing")
+
+
+def _worker_id() -> str:
+    return settings.WORKER_ID or f"worker-{os.getpid()}"
+
+
+def _backoff_seconds(attempts: int) -> float:
+    return min(
+        settings.JOB_BACKOFF_BASE_SECONDS * (2 ** max(attempts - 1, 0)),
+        settings.JOB_BACKOFF_MAX_SECONDS,
+    )
 
 
 def queue_depth(db: Session) -> dict:
@@ -39,9 +51,14 @@ def claim_next_job(db: Session) -> AnalysisJob | None:
     Uses a guarded UPDATE (status flips only while still 'queued'), so even if
     two workers raced, only one would win the claim.
     """
+    now = utcnow()
+    claimable = (
+        AnalysisJob.status == "queued",
+        (AnalysisJob.next_attempt_at.is_(None)) | (AnalysisJob.next_attempt_at <= now),
+    )
     job = db.scalar(
         select(AnalysisJob)
-        .where(AnalysisJob.status == "queued")
+        .where(*claimable)
         .order_by(AnalysisJob.queued_at.asc(), AnalysisJob.id.asc())
         .limit(1)
     )
@@ -59,7 +76,7 @@ def claim_next_job(db: Session) -> AnalysisJob | None:
         # Another company's job comes first instead.
         jobs = db.scalars(
             select(AnalysisJob)
-            .where(AnalysisJob.status == "queued")
+            .where(*claimable)
             .order_by(AnalysisJob.queued_at.asc(), AnalysisJob.id.asc())
         ).all()
         for candidate in jobs:
@@ -79,7 +96,15 @@ def claim_next_job(db: Session) -> AnalysisJob | None:
     result = db.execute(
         update(AnalysisJob)
         .where(AnalysisJob.id == job.id, AnalysisJob.status == "queued")
-        .values(status="processing", started_at=utcnow(), heartbeat_at=utcnow(), error=None)
+        .values(
+            status="processing",
+            started_at=utcnow(),
+            heartbeat_at=utcnow(),
+            error=None,
+            error_code=None,
+            next_attempt_at=None,
+            locked_by=_worker_id(),
+        )
     )
     db.commit()
     if result.rowcount == 0:  # raced with another worker
@@ -131,8 +156,11 @@ def _retry_stuck(db: Session, job: AnalysisJob) -> None:
             status="queued",
             current_stage=f"Recovering (was: {job.current_stage or 'processing'})",
             error=None,
+            error_code=None,
             progress=min(job.progress, 5),
             heartbeat_at=utcnow(),
+            next_attempt_at=None,
+            locked_by=None,
         )
     )
     if job.analysis:
@@ -153,8 +181,11 @@ def _fail_stuck(db: Session, job: AnalysisJob, *, reason: str) -> None:
             status="failed",
             current_stage="Failed",
             error=reason,
+            error_code="internal_error",
             completed_at=utcnow(),
             heartbeat_at=utcnow(),
+            next_attempt_at=None,
+            locked_by=None,
         )
     )
     if job.analysis:
@@ -180,20 +211,61 @@ def cancel_job(db: Session, company_id: uuid.UUID, job_id: uuid.UUID) -> bool | 
     return True
 
 
-def worker_loop_once() -> bool:
-    """One worker iteration: recover stale work, process one job if claimable.
+def retry_job(
+    db: Session, company_id: uuid.UUID, job_id: uuid.UUID
+) -> AnalysisJob | None:
+    """Requeue a terminally failed analysis for another attempt.
 
-    Returns True when a job was processed.
+    Returns None when the job does not belong to the company. Raises
+    ValueError when the job is not in a retryable state.
+    """
+    job = db.get(AnalysisJob, job_id)
+    if job is None or job.company_id != company_id:
+        return None
+    if job.status in ACTIVE_JOB_STATUSES:
+        return job
+    if job.status == "completed":
+        raise ValueError("A completed analysis cannot be retried.")
+    job.status = "queued"
+    job.attempts = 0
+    job.progress = 0
+    job.current_stage = "Re-queued for analysis"
+    job.error = None
+    job.error_code = None
+    job.next_attempt_at = None
+    job.started_at = None
+    job.completed_at = None
+    job.queued_at = utcnow()
+    job.locked_by = None
+    if job.analysis is not None:
+        job.analysis.status = "queued"
+        job.analysis.summary = None
+    db.commit()
+    db.refresh(job)
+    return job
+
+
+def worker_loop_once(*, include_analysis: bool = True) -> bool:
+    """One worker iteration: recover stale work, process one unit of work.
+
+    Analysis jobs are only claimed by workers that can read the shared upload
+    store (see `settings.worker_can_process_analysis`). Extraction runs only
+    need the database, so any worker can process them.
+
+    Returns True when a job or extraction run was processed.
     """
     from app.database import SessionLocal
-    from app.services import analysis_service
+    from app.services import analysis_service, extraction_service
 
+    job_id = None
     with SessionLocal() as db:
         recover_stale_jobs(db)
-        job = claim_next_job(db)
-        job_id = job.id if job else None
+        extraction_service.recover_stale_extractions(db)
+        if include_analysis:
+            job = claim_next_job(db)
+            job_id = job.id if job else None
 
     if job_id:
         analysis_service.run_pipeline(job_id)
         return True
-    return False
+    return extraction_service.worker_loop_once()

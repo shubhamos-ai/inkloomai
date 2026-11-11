@@ -358,6 +358,49 @@ def update_rules(
     return {"updated": updated, "skipped": skipped, "count": len(updated)}
 
 
+@router.delete("/rules/{rule_id}")
+def delete_rule(
+    rule_id: str,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """DELETE /brand-brain/rules/{rule_id} — delete a rule (history retained)."""
+    rule = _find_rule(db, company, rule_id)
+    if rule is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found", "message": "Rule not found for this company."},
+        )
+    brand_brain_service.delete_rule(db, company, rule.id)
+    db.commit()
+    return {"ok": True, "deleted": str(rule.id)}
+
+
+@router.get("/rules/{rule_id}/versions")
+def rule_versions(
+    rule_id: str,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """GET /brand-brain/rules/{rule_id}/versions — immutable revision history."""
+    rule = _find_rule(db, company, rule_id)
+    if rule is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found", "message": "Rule not found for this company."},
+        )
+    versions = brand_brain_service.versions_for(db, company, rule_id=rule.id)
+    return {
+        "rule_id": str(rule.id),
+        "code": rule.code,
+        "count": len(versions),
+        "versions": [
+            BrandRuleVersionOut.model_validate(v, from_attributes=True).model_dump(mode="json")
+            for v in versions
+        ],
+    }
+
+
 def rule_to_out_dict(rule) -> dict:
     return jsonable_encoder(BrandRuleOut.model_validate(rule, from_attributes=True))
 
@@ -408,13 +451,15 @@ def trigger_extraction(
     except ValueError as exc:
         raise HTTPException(status_code=422, detail={"error": "empty_guidelines", "message": str(exc)})
 
-    # If run in development or synchronous embedded worker, execute synchronously or claim immediately
-    if settings.RUN_EMBEDDED_WORKER or settings.DEBUG:
+    # When the API process drains the queue itself (local storage / DEBUG),
+    # execute the run inline so the UI can poll a result immediately. With a
+    # dedicated worker the run stays queued and the worker picks it up.
+    if settings.run_embedded_worker or settings.DEBUG:
         try:
-            extraction_service.run_extraction_pipeline(run.id)
+            extraction_service.run_extraction(run.id)
             db.refresh(run)
-        except Exception:
-            pass
+        except Exception:  # noqa: BLE001 — worker loop will retry
+            db.rollback()
 
     return {
         "ok": True,
@@ -465,6 +510,44 @@ def get_extraction_status(
         raise HTTPException(status_code=404, detail={"error": "not_found", "message": "Extraction run not found."})
 
     return extraction_service.serialize_run(run)
+
+
+@router.post("/extract/{run_id}/retry")
+def retry_extraction_run(
+    run_id: str,
+    db: Session = Depends(get_db),
+    company: Company = Depends(current_company),
+):
+    """POST /brand-brain/extract/{run_id}/retry — requeue a failed extraction."""
+    import uuid as _uuid
+
+    try:
+        rid = _uuid.UUID(run_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": "invalid_run_id", "message": "Invalid run ID."},
+        )
+    try:
+        run = extraction_service.retry_run(db, company, rid)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=409, detail={"error": "not_retryable", "message": str(exc)}
+        )
+    if run is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "not_found", "message": "Extraction run not found."},
+        )
+
+    if settings.run_embedded_worker or settings.DEBUG:
+        try:
+            extraction_service.run_extraction(run.id)
+            db.refresh(run)
+        except Exception:  # noqa: BLE001 — worker loop will retry
+            db.rollback()
+
+    return {"ok": True, "run": extraction_service.serialize_run(run)}
 
 
 @router.post("/extract/{run_id}/commit")

@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 
 from app.config import settings
-from app.engine.base import NotConfiguredError
+from app.engine.base import NotConfiguredError, ProviderError
 
 
 def is_configured() -> bool:
@@ -118,8 +118,9 @@ def analyze_image(image_path: str | Path, *, mock: bool = None) -> dict:
         '{"observations": [{"subject": str, "attribute": str, "value": str, "confidence": 0.0-1.0}]}'
     )
 
-    # Use Inkloom Vision backend (NVIDIA NIM in production) if configured, otherwise Ollama. A provider outage must
-    # degrade to clearly-labelled placeholder observations — never crash the job.
+    # Use the Inkloom Vision backend (NVIDIA NIM in production) if configured,
+    # otherwise Ollama. A provider outage is surfaced as a retryable error so
+    # the worker retries instead of fabricating observations.
     try:
         if settings.use_nvidia_nim:
             from app.services import nim_vision_service
@@ -133,10 +134,10 @@ def analyze_image(image_path: str | Path, *, mock: bool = None) -> dict:
             raw = ollama_service.generate(prompt=prompt, system=system_prompt, image_b64=b64, images=[b64])
             parsed = ollama_service.parse_json_loose(raw)
             engine_name = settings.OLLAMA_VISION_MODEL
-    except Exception as exc:  # noqa: BLE001 — provider hiccup => placeholder, job continues
-        placeholder = mock_observations()
-        placeholder["note"] = f"Vision provider unavailable ({type(exc).__name__})."
-        return placeholder
+    except Exception as exc:  # noqa: BLE001 — provider outage is retryable
+        raise ProviderError(
+            f"Vision provider request failed ({type(exc).__name__})."
+        ) from exc
 
     return {
         "engine": engine_name,

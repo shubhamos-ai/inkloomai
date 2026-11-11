@@ -53,7 +53,7 @@ def start_embedded_worker() -> None:
 
     Safe to call unconditionally from app startup.
     """
-    if not settings.RUN_EMBEDDED_WORKER:
+    if not settings.run_embedded_worker:
         return
     thread = threading.Thread(target=_loop, name="inkloom-embedded-worker", daemon=True)
     thread.start()

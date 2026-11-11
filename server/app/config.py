@@ -26,6 +26,31 @@ def _env_list(name: str, default: str = "") -> list[str]:
     return [item.strip() for item in raw.split(",") if item.strip()]
 
 
+def _normalize_database_url(url: str) -> str:
+    """Return a SQLAlchemy URL that matches the driver installed in this image.
+
+    Render (and Heroku) expose plain ``postgresql://`` / ``postgres://`` URLs.
+    SQLAlchemy 2.1 resolves that bare scheme to psycopg (v3), while this
+    project ships ``psycopg2-binary``. Pin the driver explicitly so the API,
+    Alembic and the worker all agree on one DBAPI.
+
+    A MongoDB URL is rejected with an actionable message instead of a cryptic
+    "Can't load plugin: sqlalchemy.dialects:mongodb.srv" import crash.
+    """
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg2://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg2://" + url[len("postgresql://"):]
+    if url.startswith(("mongodb://", "mongodb+srv://")):
+        raise ValueError(
+            "DATABASE_URL points at MongoDB, but Inkloom stores data in "
+            "PostgreSQL/SQLite through SQLAlchemy. Set DATABASE_URL to the "
+            "Render Postgres connection string (or a sqlite:// URL for local "
+            "development)."
+        )
+    return url
+
+
 class Settings:
     """Runtime settings. Values marked DEV/INSECURE must never reach production."""
 
@@ -36,7 +61,9 @@ class Settings:
     # ------------------------------------------------------------------
     # Database
     # ------------------------------------------------------------------
-    DATABASE_URL: str = os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'inkloom.db'}")
+    DATABASE_URL: str = _normalize_database_url(
+        os.getenv("DATABASE_URL", f"sqlite:///{BASE_DIR / 'data' / 'inkloom.db'}")
+    )
 
     # ------------------------------------------------------------------
     # Storage
@@ -149,9 +176,16 @@ class Settings:
     WORKER_ID: str = os.getenv("WORKER_ID", "")
     JOB_BACKOFF_BASE_SECONDS: float = float(os.getenv("JOB_BACKOFF_BASE_SECONDS", "10"))
     JOB_BACKOFF_MAX_SECONDS: float = float(os.getenv("JOB_BACKOFF_MAX_SECONDS", "300"))
-    # Run the analysis job loop inside the API process. Kept only for local
-    # single-process development; production uses the dedicated worker service.
-    RUN_EMBEDDED_WORKER: bool = os.getenv("RUN_EMBEDDED_WORKER", "false").lower() == "true"
+    # Run the job loop inside the API process.
+    # "auto" (default): enabled only when storage is local, because a separate
+    # Render worker cannot read a disk attached to the web service. With S3
+    # configured, set "false" and let the dedicated worker service drain queues.
+    RUN_EMBEDDED_WORKER: str = os.getenv("RUN_EMBEDDED_WORKER", "auto").lower()
+    # A standalone worker may only run analysis when it can read uploads.
+    # With local storage that is only true on the same machine/disk.
+    WORKER_ALLOW_LOCAL_ANALYSIS: bool = (
+        os.getenv("WORKER_ALLOW_LOCAL_ANALYSIS", "false").lower() == "true"
+    )
 
     @property
     def all_origins(self) -> list[str]:
@@ -191,13 +225,13 @@ class Settings:
 
     @property
     def use_mock(self) -> bool:
-        """Check if mock pipeline should be used."""
-        if self.PIPELINE_MODE == "mock":
-            return True
-        # Fall back to mock if no provider is configured
-        if not self.use_nvidia_nim and not self.use_ollama:
-            return True
-        return False
+        """True only when the mock pipeline is explicitly requested.
+
+        A missing AI provider is *not* silently downgraded to mock output in
+        production: the job fails with a configuration error instead, so a
+        report is never labelled real when no inference happened.
+        """
+        return self.PIPELINE_MODE == "mock"
 
     @property
     def use_s3(self) -> bool:
@@ -211,6 +245,21 @@ class Settings:
     @property
     def storage_backend_name(self) -> str:
         return "s3" if self.use_s3 else "local"
+
+    @property
+    def run_embedded_worker(self) -> bool:
+        """Whether the API process should drain queues itself."""
+        if self.RUN_EMBEDDED_WORKER in ("true", "1", "yes"):
+            return True
+        if self.RUN_EMBEDDED_WORKER in ("false", "0", "no"):
+            return False
+        # auto: embedded is the safe default while storage is a local disk.
+        return not self.use_s3
+
+    @property
+    def worker_can_process_analysis(self) -> bool:
+        """A worker can run vision jobs only if it shares the upload store."""
+        return self.use_s3 or self.WORKER_ALLOW_LOCAL_ANALYSIS
 
     @property
     def extraction_provider_name(self) -> str:

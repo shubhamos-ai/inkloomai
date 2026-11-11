@@ -38,9 +38,17 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.all_origins,
-    allow_credentials=False,  # Bearer tokens, not cookies — keep CORS strict
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Company-ID", "X-API-Key"],
+    # Required for HttpOnly session cookies. Origins stay an explicit allowlist
+    # (never "*"), so credentialed CORS remains safe.
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Company-ID",
+        "X-API-Key",
+        "X-CSRF-Token",
+    ],
     expose_headers=["X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After"],
 )
 # Gzip compresses report/history JSON payloads nicely.

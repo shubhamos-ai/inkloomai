@@ -151,7 +151,7 @@ def recover_stale_extractions(db: Session) -> dict:
             run.status = "queued"
             run.error = None
             run.error_code = None
-            run.current_stage = None  # type: ignore[attr-defined]
+            run.next_attempt_at = None
             run.heartbeat_at = utcnow()
             requeued += 1
         else:
@@ -418,3 +418,17 @@ def serialize_run(run: ExtractionRun) -> dict[str, Any]:
             run.next_attempt_at.isoformat() + "Z" if run.next_attempt_at else None
         ),
     }
+
+
+def worker_loop_once() -> bool:
+    """One extraction worker iteration. Returns True when a run was processed."""
+    from app.database import SessionLocal
+
+    with SessionLocal() as db:
+        run = claim_next_extraction(db)
+        run_id = run.id if run else None
+
+    if run_id is None:
+        return False
+    run_extraction(run_id)
+    return True

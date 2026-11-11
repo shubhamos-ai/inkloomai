@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from datetime import timedelta
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy import select
@@ -31,6 +32,14 @@ from app.services import storage_service
 from app.utils.validators import ImageValidationError, validate_image_upload
 
 ACTIVE_JOB_STATUSES = ("queued", "processing")
+
+
+class ProviderUnavailable(RuntimeError):
+    """Transient AI provider failure. The job is retried with backoff."""
+
+
+class ProviderMisconfigured(RuntimeError):
+    """No usable AI provider. Terminal until the deployment is fixed."""
 
 
 # ---------------------------------------------------------------------------
@@ -194,14 +203,17 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         _, rules = brand_brain_service.enabled_rules_as_dicts(db, company)
         use_mock = _use_mock_pipeline()
 
-        # Stage 1 — visual observations (engine may raise NotConfiguredError).
+        # Stage 1 — visual observations. A missing provider is a terminal
+        # configuration error; a provider outage is retryable.
         _set_stage(db, job.id, progress=30, stage="Analyzing visual composition")
         try:
             vision = vision_engine.analyze_image(
                 str(storage_service.abs_path_for(analysis.image_path)), mock=use_mock
             )
-        except vision_engine.NotConfiguredError:
-            vision = vision_engine.mock_observations()
+        except vision_engine.NotConfiguredError as exc:
+            raise ProviderMisconfigured(str(exc)) from exc
+        except vision_engine.ProviderError as exc:
+            raise ProviderUnavailable(str(exc)) from exc
 
         # Stage 2 — exact text extraction (OCR or fallback).
         _set_stage(db, job.id, progress=50, stage="Extracting text from the image")
@@ -210,6 +222,7 @@ def run_pipeline(job_id: uuid.UUID) -> None:
                 str(storage_service.abs_path_for(analysis.image_path)), mock=use_mock
             )
         except ocr_engine.NotConfiguredError:
+            # OCR is optional: the vision model transcribes visible text.
             ocr = ocr_engine.mock_ocr()
 
         # When no dedicated OCR engine exists, fall back to the text the vision
@@ -275,15 +288,36 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         job.completed_at = utcnow()
         job.heartbeat_at = utcnow()
         job.error = None
+        job.error_code = None
+        job.next_attempt_at = None
+        job.locked_by = None
         db.commit()
 
+    except ProviderMisconfigured as exc:
+        db.rollback()
+        _mark_failed(
+            job_id,
+            safe_message=str(exc),
+            error_code="configuration_error",
+            retryable=False,
+        )
+    except ProviderUnavailable as exc:
+        db.rollback()
+        _mark_failed(
+            job_id,
+            safe_message=str(exc),
+            error_code="provider_error",
+            retryable=True,
+        )
     except Exception as exc:  # noqa: BLE001 — worker must degrade gracefully
         import traceback
 
         db.rollback()
         _mark_failed(
             job_id,
-            safe_message=f"{type(exc).__name__}",
+            safe_message=f"Analysis failed ({type(exc).__name__}).",
+            error_code="internal_error",
+            retryable=True,
             debug="".join(traceback.format_exception(exc)) if settings.DEBUG else repr(exc),
         )
     finally:
@@ -338,26 +372,34 @@ def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, 
                 "ocr_text": ocr_text,
             },
         )
-    except Exception as exc:  # engine hiccup => honest inconclusive draft
+    except Exception as exc:  # noqa: BLE001 — surface a retryable failure
         if settings.DEBUG:
             import traceback
 
             print(
-                f"[analysis_service] _ai_compliance_report fallback: "
+                f"[analysis_service] AI compliance inference failed: "
                 + "".join(traceback.format_exception(exc))
             )
-        return compliance_engine.mock_report_draft(
-            analysis_id=analysis_id,
-            rules=rules,
-            vision={**vision, "note": f"AI inference failed safely: {type(exc).__name__}"},
-            ocr={},
-            ocr_text=ocr_text,
-            vision_observations=vision.get("observations", []),
-        )
+        # Never fabricate a report. The worker retries, then marks the job
+        # failed with an honest error the user can retry manually.
+        raise ProviderUnavailable(
+            f"AI compliance analysis failed ({type(exc).__name__})."
+        ) from exc
 
 
-def _mark_failed(job_id: uuid.UUID, *, safe_message: str, debug: str = "") -> None:
-    """Mark the job (and analysis) failed with a safe error message. Never raises."""
+def _mark_failed(
+    job_id: uuid.UUID,
+    *,
+    safe_message: str,
+    error_code: str = "internal_error",
+    retryable: bool = True,
+    debug: str = "",
+) -> None:
+    """Requeue with backoff or mark the job failed. Never raises.
+
+    Retryable failures are re-queued until MAX_JOB_ATTEMPTS is exhausted; only
+    then do the job and analysis become terminal `failed`.
+    """
     from app.database import SessionLocal
     from app.models import AnalysisJob
 
@@ -367,13 +409,29 @@ def _mark_failed(job_id: uuid.UUID, *, safe_message: str, debug: str = "") -> No
         if job is None:
             return
         analysis = job.analysis
-        job.status = "failed"
         job.error = safe_message
-        job.current_stage = "Failed"
-        job.completed_at = utcnow()
+        job.error_code = error_code
         job.heartbeat_at = utcnow()
-        analysis.status = "failed"
-        analysis.summary = safe_message
+        job.locked_by = None
+
+        if retryable and job.attempts < settings.MAX_JOB_ATTEMPTS:
+            delay = min(
+                settings.JOB_BACKOFF_BASE_SECONDS * (2 ** max(job.attempts - 1, 0)),
+                settings.JOB_BACKOFF_MAX_SECONDS,
+            )
+            job.status = "queued"
+            job.current_stage = "Waiting to retry"
+            job.next_attempt_at = utcnow() + timedelta(seconds=delay)
+            job.completed_at = None
+            analysis.status = "queued"
+            analysis.summary = safe_message
+        else:
+            job.status = "failed"
+            job.current_stage = "Failed"
+            job.next_attempt_at = None
+            job.completed_at = utcnow()
+            analysis.status = "failed"
+            analysis.summary = safe_message
         db.commit()
         if settings.DEBUG and debug:
             print(f"[analysis_service] pipeline failure for job {job_id}: {debug}")

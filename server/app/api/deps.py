@@ -13,6 +13,7 @@ verified sessions/tokens later touches only this file.
 """
 from __future__ import annotations
 
+import secrets
 from dataclasses import dataclass
 
 import uuid
@@ -84,20 +85,62 @@ def _dev_company_or_401(request: Request, db: Session, token: str) -> Company:
     return company
 
 
+UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+
+def _cookie_session_token(request: Request) -> str | None:
+    """Session token from the HttpOnly cookie (browser clients)."""
+    cookie_name = settings.SESSION_COOKIE_NAME
+    if not cookie_name:
+        return None
+    return (request.cookies.get(cookie_name) or "").strip() or None
+
+
+def _enforce_csrf(request: Request) -> None:
+    """Double-submit CSRF check for cookie-authenticated mutations.
+
+    Bearer-token clients (CLI, integrations) are exempt because browsers never
+    attach those headers automatically.
+    """
+    if request.method not in UNSAFE_METHODS:
+        return
+    header = (request.headers.get("x-csrf-token") or "").strip()
+    cookie = (request.cookies.get(settings.CSRF_COOKIE_NAME) or "").strip()
+    if not header or not cookie or not secrets.compare_digest(header, cookie):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "csrf_failed",
+                "message": "Missing or invalid CSRF token. Refresh the page and try again.",
+            },
+        )
+
+
 def resolve_context(
     request: Request, db: Session = Depends(get_db)
 ) -> AuthContext:
-    """Resolve a caller to a company. Raises 401 when nothing authenticates."""
+    """Resolve a caller to a company. Raises 401 when nothing authenticates.
+
+    Accepts either an `Authorization: Bearer` token (API clients and legacy
+    localStorage sessions) or the HttpOnly session cookie (browser sessions,
+    which additionally require the double-submit CSRF header on mutations).
+    """
     token = bearer_token(request)
-    if not token:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "error": "missing_auth",
-                "message": "Send 'Authorization: Bearer <token>'. Get one via POST /api/v1/onboarding.",
-            },
-        )
-    return _resolve_context_for_token(request, db, token)
+    if token:
+        return _resolve_context_for_token(request, db, token)
+
+    cookie_token = _cookie_session_token(request)
+    if cookie_token:
+        _enforce_csrf(request)
+        return _resolve_context_for_token(request, db, cookie_token)
+
+    raise HTTPException(
+        status_code=401,
+        detail={
+            "error": "missing_auth",
+            "message": "Sign in first (POST /api/v1/auth/login) or send 'Authorization: Bearer <token>'.",
+        },
+    )
 
 
 def _company_from_session(db: Session, request: Request, user) -> Company | None:
@@ -185,7 +228,7 @@ def resolve_company_flexibly(
     parameter — the query path is needed because browsers cannot send custom
     headers on plain image requests. Keep query-token usage app-internal.
     """
-    token = bearer_token(request) or token_query
+    token = bearer_token(request) or token_query or _cookie_session_token(request)
     if not token:
         raise HTTPException(
             status_code=401,

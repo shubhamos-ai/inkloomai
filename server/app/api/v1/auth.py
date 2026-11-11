@@ -6,10 +6,11 @@ tokens through resolve_context, which resolves the caller's company(s).
 """
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -35,7 +36,8 @@ from app.utils.security import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-SESSION_LIFETIME = timedelta(days=30)
+SESSION_LIFETIME = timedelta(days=settings.SESSION_LIFETIME_DAYS)
+CSRF_COOKIE_MAX_AGE = int(SESSION_LIFETIME.total_seconds())
 
 
 def _create_session(db: Session, user: User) -> str:
@@ -51,9 +53,51 @@ def _create_session(db: Session, user: User) -> str:
     return token
 
 
+def _cookie_kwargs() -> dict:
+    kwargs = {
+        "secure": settings.COOKIE_SECURE,
+        "samesite": settings.COOKIE_SAMESITE,
+        "path": "/",
+    }
+    if settings.COOKIE_DOMAIN:
+        kwargs["domain"] = settings.COOKIE_DOMAIN
+    return kwargs
+
+
+def _set_auth_cookies(response: Response, token: str) -> str:
+    """Set the HttpOnly session cookie + readable double-submit CSRF cookie."""
+    csrf = secrets.token_urlsafe(32)
+    kwargs = _cookie_kwargs()
+    response.set_cookie(
+        key=settings.SESSION_COOKIE_NAME,
+        value=token,
+        max_age=CSRF_COOKIE_MAX_AGE,
+        httponly=True,
+        **kwargs,
+    )
+    response.set_cookie(
+        key=settings.CSRF_COOKIE_NAME,
+        value=csrf,
+        max_age=CSRF_COOKIE_MAX_AGE,
+        httponly=False,
+        **kwargs,
+    )
+    return csrf
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    kwargs = _cookie_kwargs()
+    response.delete_cookie(settings.SESSION_COOKIE_NAME, **kwargs)
+    response.delete_cookie(settings.CSRF_COOKIE_NAME, **kwargs)
+
+
 @router.post("/register", response_model=AuthSessionResponse, status_code=201)
-def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> AuthSessionResponse:
-    """Register a new user account. Returns an opaque session token."""
+def register(
+    payload: RegisterRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> AuthSessionResponse:
+    """Register a new user account. Sets session cookies and returns the token."""
     existing = db.scalar(select(User).where(User.email == payload.email))
     if existing is not None:
         raise HTTPException(
@@ -74,6 +118,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> AuthSes
     db.refresh(user)
 
     token = _create_session(db, user)
+    _set_auth_cookies(response, token)
     return AuthSessionResponse(
         user_id=user.id, session_token=token, name=user.name, has_company=False,
         message="Account created. Next: add or choose your company.",
@@ -81,8 +126,12 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> AuthSes
 
 
 @router.post("/login", response_model=AuthSessionResponse)
-def login(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthSessionResponse:
-    """Email + password sign-in. Generic error, no user enumeration."""
+def login(
+    payload: LoginRequest,
+    response: Response,
+    db: Session = Depends(get_db),
+) -> AuthSessionResponse:
+    """Email + password sign-in. Sets session cookies, generic errors."""
     user = db.scalar(select(User).where(User.email == payload.email))
     if user is None or not user.password_hash or not verify_password(
         payload.password, user.password_hash
@@ -96,6 +145,7 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> AuthSessionRe
         )
 
     token = _create_session(db, user)
+    _set_auth_cookies(response, token)
     has_company = db.scalar(
         select(func.count()).select_from(Company).where(Company.owner_user_id == user.id)
     ) or 0
@@ -157,12 +207,17 @@ def update_me(
 
 
 @router.post("/logout")
-def logout(ctx: AuthContext = Depends(resolve_context), db: Session = Depends(get_db)):
-    """Invalidate the current session (requires the token to be valid)."""
+def logout(
+    response: Response,
+    ctx: AuthContext = Depends(resolve_context),
+    db: Session = Depends(get_db),
+):
+    """Invalidate the current session and clear the browser cookies."""
     token = ctx.raw_token
     if token:
         session = db.scalar(select(AuthSession).where(AuthSession.token_hash == hash_api_key(token)))
         if session:
             db.delete(session)
             db.commit()
+    _clear_auth_cookies(response)
     return {"ok": True}

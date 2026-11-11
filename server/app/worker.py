@@ -43,23 +43,31 @@ def main() -> None:
         flush=True,
     )
 
+    from app.services import extraction_service
+
     with SessionLocal() as db:
         recovered = job_service.recover_stale_jobs(db)
-        if recovered.get("stale_found"):
-            print(f"[inkloom-worker] startup recovery: {recovered}", flush=True)
-
-        from app.services import extraction_service
         recovered_ext = extraction_service.recover_stale_extractions(db)
-        if recovered_ext.get("stale_found"):
-            print(f"[inkloom-worker] startup extraction recovery: {recovered_ext}", flush=True)
+        if recovered.get("stale_found") or recovered_ext.get("stale_found"):
+            print(
+                f"[inkloom-worker] startup recovery: analysis={recovered} "
+                f"extraction={recovered_ext}",
+                flush=True,
+            )
 
-    from app.services import extraction_service
+    # A standalone worker can only run vision jobs when it shares the upload
+    # store with the API (S3-compatible storage). Extraction runs only need
+    # the database, so they are always processed.
+    include_analysis = settings.worker_can_process_analysis
+    print(
+        f"[inkloom-worker] analysis_jobs={'enabled' if include_analysis else 'disabled'} "
+        f"(storage={settings.storage_backend_name})",
+        flush=True,
+    )
 
     while not stop:
         try:
-            processed_analysis = job_service.worker_loop_once()
-            processed_extraction = extraction_service.worker_loop_once()
-            processed = processed_analysis or processed_extraction
+            processed = job_service.worker_loop_once(include_analysis=include_analysis)
         except Exception as exc:  # noqa: BLE001
             print(f"[inkloom-worker] loop error (continuing): {exc}", flush=True)
             processed = False
