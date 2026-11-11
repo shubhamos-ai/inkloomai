@@ -52,7 +52,7 @@ NEXT_PUBLIC_AI_API_URL=https://inkoom-model.shubhamos.com
 NEXT_PUBLIC_USE_MOCK=false
 ```
 
-> **Note on Fallback Resilience:** When `NEXT_PUBLIC_USE_MOCK=false`, the frontend sends live requests to your Cloudflare Tunnel. If the backend is temporarily offline or starting up, the frontend automatically falls back to local simulation so the user is never blocked, displaying a connection status pill in **Settings**.
+> **Note on Fallback Resilience:** When `NEXT_PUBLIC_USE_MOCK=false`, the frontend sends live requests to the configured backend. If the backend is temporarily offline or starting up, the UI shows a real connection state and retries; it does **not** silently replace live results with generated content. Mock output is only used when mock mode is explicitly enabled and is always labelled.
 
 ### 3. Running the Development Server
 
