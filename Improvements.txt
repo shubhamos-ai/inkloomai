@@ -88,3 +88,18 @@ Because free/starter tier cloud instances spin down during periods of inactivity
   - **Brand Brain Studio**: Interactive category tags, instant rule toggles, source quote callouts, and structured rule inspection drawers.
   - **Analysis Studio & Reports**: Full-screen split view featuring the uploaded creative, rule-by-rule violation breakdown with confidence scores, impact ratings, and actionable remediation recommendations.
 
+---
+
+### 5. LIVE NVIDIA NIM PIPELINE & DETAILED ANALYSIS REPORT ENHANCEMENTS
+
+- **Direct NVIDIA NIM Vision Integration (No Local Ollama Dependency)**:
+  - Configured for production cloud deployment utilizing the live NVIDIA API catalog (`meta/llama-3.2-90b-vision-instruct`).
+  - **Dynamic Image Preprocessing & Downscaling**: Added automated PIL preprocessing (`MAX_IMAGE_DIMENSION = 1024`, `MAX_IMAGE_B64_BYTES = 1.5MB`) to re-encode high-resolution advertisements to optimized JPEG format before dispatching to NIM. Eliminates HTTP read timeouts on large uploads like `ads.png`.
+  - Configurable `max_tokens` (defaulting to 4096) and timeout dynamically mapped from `EXTRACTION_TIMEOUT_SECONDS` preventing response truncation on large guideline documents.
+
+- **Detailed Analysis Report & History Display**:
+  - **Robust Handling for Inconclusive & Null Scores**: Gracefully handles `null` compliance scores and `inconclusive` statuses in `ScoreRing.tsx`, `AnalysisReport.tsx`, `HistoryList.tsx`, and `DashboardContent.tsx`. Displays clean `— / 100` indicators instead of erroneous 0% or NaN values.
+  - **AI Engine Observations Panel (`AIMetadataPanel`)**: Exposes rich backend metadata directly on the report screen, including model identifier, execution latency (`duration_ms`), extracted OCR text snippet, and the full table of visual observations (`subject`, `attribute`, `value`, `confidence`).
+  - **Verification with `ads.png`**: Verified live execution through the deployed FastAPI backend cluster using `ads.png` (Velora Skincare ad). Analysis completed in ~11s extracting 15 distinct vision observations, marketing claims, and headline OCR cleanly.
+
+
