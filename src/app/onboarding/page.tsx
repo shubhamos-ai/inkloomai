@@ -40,6 +40,15 @@ export default function OnboardingPage() {
   const [companies, setCompanies] = useState<UserCompanySummary[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(false);
   const [newCompanyName, setNewCompanyName] = useState('');
+  const [initialAuthMode, setInitialAuthMode] = useState<'login' | 'signup'>('signup');
+
+  // /login and /register deep-link into this same onboarding flow with the
+  // right auth tab preselected. Read the query after mount to avoid hydration
+  // mismatches between the server render and the browser URL.
+  useEffect(() => {
+    const mode = new URLSearchParams(window.location.search).get('mode');
+    if (mode === 'login' || mode === 'signup') setInitialAuthMode(mode);
+  }, []);
 
   // ── Auto-skip: already have a valid session + company → straight to dashboard.
   useEffect(() => {
@@ -136,19 +145,11 @@ export default function OnboardingPage() {
       }
     }
 
-    // If backend is unreachable or local demo fallback needed, grant a smooth mock-free session seamlessly
+    // Never fabricate a session when the backend is unreachable: that would be
+    // frontend-only auth and every later API call would fail anyway. Surface
+    // the real error so the user can retry or wait for the backend to wake.
     if (!result.ok) {
-      const fallbackUserId = `usr_${Math.random().toString(36).slice(2, 10)}`;
-      const fallbackToken = `il_sess_${Math.random().toString(36).slice(2, 16)}`;
-      const cleanName = email.split('@')[0] || 'User';
-      const syntheticSession: AuthSession = {
-        user_id: fallbackUserId,
-        session_token: fallbackToken,
-        name: cleanName,
-        has_company: false,
-        message: 'Signed in.',
-      };
-      result = { ok: true, session: syntheticSession };
+      return result.message;
     }
 
     applySession({ session: result.session });
@@ -321,7 +322,7 @@ export default function OnboardingPage() {
         >
           <AnimatePresence mode="wait">
             {step === 'auth' && (
-              <StepAuth key="auth" onSubmit={handleAuth} />
+              <StepAuth key="auth" onSubmit={handleAuth} initialMode={initialAuthMode} />
             )}
 
             {step === 'name' && (

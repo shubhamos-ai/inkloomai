@@ -13,6 +13,7 @@ import {
   User,
 } from 'lucide-react';
 import { getUserSession, clearUserSession } from '@/lib/session';
+import { logoutAccount } from '@/lib/api';
 
 interface NavItem {
   label: string;
@@ -43,7 +44,10 @@ export default function Sidebar({ currentPath }: SidebarProps) {
     return activePath === href || activePath.startsWith(href + '/');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Invalidate the server-side session and clear HttpOnly cookies; local
+    // state is cleared even if the backend is unreachable.
+    try { await logoutAccount(); } catch { /* best-effort */ }
     clearUserSession();
     router.push('/onboarding');
   };

@@ -72,6 +72,19 @@ export function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+/** Double-submit CSRF: the backend sets this readable cookie next to the
+ *  HttpOnly session cookie, and mutations must echo it in X-CSRF-Token. */
+const CSRF_COOKIE_NAME = 'inkloom_csrf';
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+export function getCsrfToken(): string {
+  if (typeof window === 'undefined') return '';
+  const match = document.cookie.match(
+    new RegExp(`(?:^|;\\s*)${CSRF_COOKIE_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=([^;]*)`)
+  );
+  return match ? decodeURIComponent(match[1]) : '';
+}
+
 export function hasApiKey(): boolean {
   return !!getApiKey();
 }
@@ -248,10 +261,24 @@ function humanStage(raw: string | undefined): string {
 
 async function fetchApi(path: string, init?: RequestInit): Promise<Response | null> {
   const { headers: initHeaders, ...rest } = init ?? {};
+  const method = (rest.method ?? 'GET').toUpperCase();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    ...getAuthHeaders(),
+    ...((initHeaders as Record<string, string> | undefined) ?? {}),
+  };
+  // Cookie sessions need the double-submit token on state-changing requests.
+  if (UNSAFE_METHODS.has(method) && !headers['X-CSRF-Token']) {
+    const csrf = getCsrfToken();
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+  }
   try {
     return await fetch(`${getApiBaseUrl()}${path}`, {
       ...rest,
-      headers: { Accept: 'application/json', ...getAuthHeaders(), ...(initHeaders ?? {}) },
+      // Send HttpOnly session cookies alongside bearer tokens so browser
+      // sessions work even after the localStorage token is cleared.
+      credentials: 'include',
+      headers,
     });
   } catch {
     return null;
@@ -411,12 +438,16 @@ export async function createCompanyForSession(data: {
 
 export async function checkApiHealth(): Promise<boolean> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000);
+  // Render free instances can take 30–60s to wake. Give the first ping enough
+  // room so a cold backend is not mistaken for an offline one.
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/v1/health`, {
       method: 'GET',
       headers: { Accept: 'application/json' },
+      credentials: 'include',
       signal: controller.signal,
+      cache: 'no-store',
     });
     return res.ok;
   } catch {

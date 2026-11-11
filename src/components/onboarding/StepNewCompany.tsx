@@ -1,7 +1,8 @@
 'use client';
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Building2, FileText, X, Loader2, AlignLeft } from 'lucide-react';
+import { Building2, FileText, X, Loader2, AlignLeft, Sparkles } from 'lucide-react';
+import { VELORA_DEMO_PRESET } from '@/lib/demoPresets';
 
 interface StepNewCompanyProps {
   onSubmit: (values: {
@@ -29,6 +30,15 @@ export default function StepNewCompany({ onSubmit, onBack }: StepNewCompanyProps
   const addFiles = (incoming: FileList | null) => {
     if (!incoming) return;
     setFiles((prev) => [...prev, ...Array.from(incoming)].slice(0, 10));
+  };
+
+  const applyDemoPreset = () => {
+    setCompanyName(VELORA_DEMO_PRESET.companyName);
+    setIndustry(VELORA_DEMO_PRESET.industry);
+    setRulesText(VELORA_DEMO_PRESET.rulesText);
+    setFiles([]);
+    setError(null);
+    setTouched(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -59,7 +69,21 @@ export default function StepNewCompany({ onSubmit, onBack }: StepNewCompanyProps
         <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-red-50 border border-red-100">
           <Building2 className="w-6 h-6" style={{ color: '#E50914' }} />
         </div>
-        <h1 className="text-neutral-900 text-3xl font-black mb-2 tracking-tight">Add your organisation</h1>
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <h1 className="text-neutral-900 text-3xl font-black tracking-tight">Add your organisation</h1>
+          <button
+            type="button"
+            onClick={applyDemoPreset}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-[#E0D8CB]
+                       bg-[#FAF8F5] px-3.5 py-1.5 text-xs font-bold text-neutral-700
+                       hover:border-[#E50914] hover:text-[#E50914] hover:bg-red-50/30
+                       transition-all active:scale-[0.98]"
+            title="Fill the form with the VELORA demo company and brand guidelines"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Use Demo
+          </button>
+        </div>
         <p className="text-neutral-500 text-sm mb-8">
           Name it, then provide guidelines for the AI Brand Brain to enforce.
         </p>

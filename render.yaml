@@ -31,9 +31,20 @@ services:
       - key: RATE_LIMIT_PER_MINUTE
         value: "120"
       # Render cannot share one persistent disk across services, so a standalone
-      # worker cannot read uploads. Run the job loop inside the API process.
+      # worker cannot read uploads unless storage is S3-backed. "auto" runs the
+      # loop in-process for local storage and leaves queue draining to the
+      # dedicated worker once STORAGE_BACKEND=s3 is configured.
       - key: RUN_EMBEDDED_WORKER
-        value: true
+        value: auto
+      - key: WORKER_ALLOW_LOCAL_ANALYSIS
+        value: "false"
+      # ── Cookie sessions / CSRF ───────────────────────────────────────────────
+      # Same-site Render subdomains work with "lax". Set "none" + COOKIE_SECURE
+      # "true" if the frontend is served from a different registrable domain.
+      - key: COOKIE_SAMESITE
+        value: lax
+      - key: SESSION_LIFETIME_DAYS
+        value: "30"
       # ── Object Storage (S3-compatible) ───────────────────────────────────────
       # Set STORAGE_BACKEND=s3 and fill in S3_* vars when using Cloudflare R2 /
       # AWS S3 / MinIO. Leave as "local" to use the mounted disk below.
@@ -78,6 +89,38 @@ services:
         value: https://inkloom-backend-yw07.onrender.com
       - key: NEXT_PUBLIC_USE_MOCK
         value: false
+
+# ── Optional: dedicated background worker ────────────────────────────────────
+# Only needed once STORAGE_BACKEND=s3 (so the worker can read the same uploads
+# as the web service). Background workers are a paid Render service type; the
+# free-plan deployment runs the queue in-process via RUN_EMBEDDED_WORKER=auto.
+#
+# - type: worker
+#   name: inkloom-worker
+#   runtime: python
+#   rootDir: server
+#   plan: starter
+#   buildCommand: pip install -r requirements.txt
+#   startCommand: python -m app.worker
+#   envVars:
+#     - key: DATABASE_URL
+#       fromDatabase:
+#         name: inkloom-db
+#         property: connectionString
+#     - key: STORAGE_BACKEND
+#       value: s3
+#     - key: S3_BUCKET
+#       sync: false
+#     - key: S3_ENDPOINT_URL
+#       sync: false
+#     - key: S3_ACCESS_KEY_ID
+#       sync: false
+#     - key: S3_SECRET_ACCESS_KEY
+#       sync: false
+#     - key: VISION_PROVIDER
+#       value: nvidia_nim
+#     - key: NVIDIA_API_KEY
+#       sync: false
 
 # ── Database (PostgreSQL) ────────────────────────────────────────────────────
 databases:

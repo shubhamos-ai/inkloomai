@@ -41,12 +41,12 @@ export default function BackendStatusBanner() {
 
             <div>
               <span className="font-bold text-neutral-900">
-                {isWaking ? 'AI Engine Cluster is waking up…' : 'AI Server Offline'}
+                {isWaking ? 'Connecting to the AI engine…' : 'AI engine unreachable'}
               </span>{' '}
               <span className="text-neutral-600">
                 {isWaking
-                  ? 'Render instances spin down during inactivity and take ~30s to boot. You can freely explore the site; advertisement scans unlock as soon as it is online.'
-                  : 'Cannot reach the backend cluster right now. You can browse the frontend, but scans and guideline edits are temporarily paused.'}
+                  ? 'The backend may be waking from inactivity (usually under 60 seconds). You can explore the site; scans unlock automatically once it responds.'
+                  : 'The backend did not answer after several retries. Check your connection or the service status, then try again.'}
               </span>
             </div>
           </div>

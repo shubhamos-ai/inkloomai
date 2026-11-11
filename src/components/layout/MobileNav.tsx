@@ -16,6 +16,7 @@ import {
   User,
 } from 'lucide-react';
 import { getUserSession, clearUserSession } from '@/lib/session';
+import { logoutAccount } from '@/lib/api';
 
 interface NavItem {
   label: string;
@@ -47,8 +48,9 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
     return activePath === href || activePath.startsWith(href + '/');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setDrawerOpen(false);
+    try { await logoutAccount(); } catch { /* best-effort */ }
     clearUserSession();
     router.push('/onboarding');
   };

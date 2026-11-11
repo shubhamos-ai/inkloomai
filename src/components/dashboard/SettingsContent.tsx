@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { getUserSession, saveUserSession, clearUserSession } from '@/lib/session';
 import { validateFullName, validateCompanyName, validateWebsite } from '@/lib/validation';
-import { getBrandBrain, checkApiHealth, getApiConfig, toggleMockMode } from '@/lib/api';
+import { getBrandBrain, checkApiHealth, getApiConfig, toggleMockMode, logoutAccount } from '@/lib/api';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { ToastContainer, useToast } from '@/components/ui/Toast';
 
@@ -141,7 +141,8 @@ export default function SettingsContent() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try { await logoutAccount(); } catch { /* best-effort */ }
     clearUserSession();
     router.replace('/onboarding');
   };
