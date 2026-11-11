@@ -243,7 +243,13 @@ def _call_model(source_text: str) -> tuple[str, str]:
         if provider == "nvidia_nim":
             from app.services import nim_vision_service
 
-            text = nim_vision_service.generate(prompt=user, system=system, model=model)
+            text = nim_vision_service.generate(
+                prompt=user,
+                system=system,
+                model=model,
+                max_tokens=4096,
+                timeout=settings.EXTRACTION_TIMEOUT_SECONDS,
+            )
             return text, model or nim_vision_service.get_vision_model()
         from app.services import ollama_service
 

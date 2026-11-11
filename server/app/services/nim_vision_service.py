@@ -110,6 +110,8 @@ def generate(
     fmt: str = "json",
     stream: bool = False,
     model: Optional[str] = None,
+    max_tokens: Optional[int] = None,
+    timeout: Optional[float] = None,
 ) -> str:
     """Generate response from NVIDIA NIM Vision API.
 
@@ -120,6 +122,9 @@ def generate(
         images: List of image paths to encode and send (optional)
         fmt: Response format (default: json)
         stream: Whether to stream the response (default: False)
+        model: Specific model tag to use (optional)
+        max_tokens: Maximum tokens in response (default: 4096 or custom)
+        timeout: HTTP request timeout in seconds (default: settings.EXTRACTION_TIMEOUT_SECONDS or 90.0)
 
     Returns:
         The generated text response as a string
@@ -174,10 +179,13 @@ def generate(
             ],
         })
 
+    # Default to 4096 tokens so large documents & rule extractions do not get truncated
+    effective_max_tokens = max_tokens if max_tokens is not None else 4096
+
     payload = {
         "model": model or get_vision_model(),
         "messages": messages,
-        "max_tokens": 2048,
+        "max_tokens": effective_max_tokens,
         "temperature": 0.1,
         "top_p": 0.7,
     }
@@ -191,7 +199,14 @@ def generate(
         "NVCF-Use-Async-Op": "false",
     }
 
-    with httpx.Client(timeout=90.0) as client:
+    # Respect configured extraction / API timeout
+    effective_timeout = (
+        timeout
+        if timeout is not None
+        else getattr(settings, "EXTRACTION_TIMEOUT_SECONDS", 120.0)
+    )
+
+    with httpx.Client(timeout=effective_timeout) as client:
         try:
             resp = client.post(
                 NVIDIA_NIM_CHAT_COMPLETIONS,
