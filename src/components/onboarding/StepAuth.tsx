@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -18,6 +18,12 @@ export default function StepAuth({ onSubmit, initialMode = 'signup' }: StepAuthP
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // /login and /register read the desired mode after mount, so react to the
+  // prop changing instead of only honouring it as the initial value.
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const passOk = password.length >= (mode === 'signup' ? 8 : 1);
