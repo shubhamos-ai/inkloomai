@@ -195,3 +195,10 @@ def test_extract_review_and_commit_flow(client, company_a, monkeypatch):
         f"/api/v1/brand-brain/rules/{rule_id}/versions", headers=headers_key(token)
     ).json()
     assert len(versions["versions"]) >= 1
+
+
+def test_brand_rule_source_type_fits_extraction_provenance():
+    from app.models import BrandRule
+
+    # `ai_extraction:<uuid>` is 50 chars; the column must fit the ORM's 80.
+    assert BrandRule.__table__.c.source_type.type.length >= 80

@@ -343,7 +343,7 @@ stored as a typed constant.
 | **Extraction** | NVIDIA NIM `nvidia/nemotron-3.5-lightning-30b-a3b` |
 | **Storage** | S3-compatible (`boto3`): AWS S3, Cloudflare R2, MinIO; local-disk fallback |
 | **Deployment** | Render (frontend, backend, PostgreSQL), custom domain + TLS |
-| **Testing** | Pytest (50 backend tests), TypeScript type-check, Next.js production build |
+| **Testing** | Pytest (51 backend tests), TypeScript type-check, Next.js production build |
 
 ---
 
@@ -548,7 +548,7 @@ Full request/response detail and the database schema are in
 
 - **Local:** SQLite at `server/data/inkloom.db` (WAL, foreign keys enabled).
 - **Production:** Render PostgreSQL.
-- **Migrations:** Alembic. Current head: **`b3f1a2c4d5e6`**.
+- **Migrations:** Alembic. Current head: **`c7d8e9f0a1b2`**.
 - The Render build command runs `alembic upgrade head` before the service starts.
 
 | Table | Purpose |
@@ -613,13 +613,13 @@ git push public main   # public — triggers Render
 ```bash
 cd server
 .venv/bin/python -m pytest -q
-# 50 passed
+# 51 passed
 ```
 
 Coverage includes health (fast + deep), auth, onboarding, Brand Brain, rule extraction
 (parsing, salvage, quote validation, category caps, enqueue → review → commit), analysis
 lifecycle, tenant isolation, history, storage pathing and error contracts. The Alembic
-chain is verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6`).
+chain is verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6 → c7d8e9f0a1b2`).
 
 ### Frontend
 
@@ -675,7 +675,7 @@ npm run build        # 12 static pages generated
 7. **No email verification or password reset yet.** Accounts are email + password only.
 8. **Extraction quality depends on the provider.** The staged human review step exists so a
    human can correct proposals before they become enforceable rules.
-9. **Automated load testing is still on the backlog.** The current suite is 50 backend
+9. **Automated load testing is still on the backlog.** The current suite is 51 backend
    tests plus hands-on end-to-end production verification; high-concurrency load testing is
    the next step.
 10. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
@@ -728,7 +728,7 @@ inkloomai/
 │   │   ├── worker.py                 # Durable queue worker
 │   │   └── main.py                   # App + lifespan
 │   ├── alembic/versions/             # Migration chain
-│   ├── tests/                        # 50 backend tests
+│   ├── tests/                        # 51 backend tests
 │   ├── requirements.txt
 │   └── .env.example
 ├── render.yaml                       # Render blueprint

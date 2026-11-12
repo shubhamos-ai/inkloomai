@@ -88,7 +88,8 @@ keep them honest in production.
 | `server/app/models/brand_rule.py` | Added `version`, `extraction_run_id` |
 | `server/app/models/analysis_job.py` | Added `error_code`, `next_attempt_at`, `locked_by` |
 | `server/app/models/__init__.py` | Register new models |
-| `server/alembic/versions/b3f1a2c4d5e6_rule_versioning_extraction_assets.py` | Round 3 migration (head) |
+| `server/alembic/versions/b3f1a2c4d5e6_rule_versioning_extraction_assets.py` | Round 3 migration |
+| `server/alembic/versions/c7d8e9f0a1b2_widen_brand_rule_source_type.py` | Widen `source_type` to match the ORM (head) |
 | `server/alembic/env.py` | Import new models for autogenerate |
 | `server/app/api/deps.py` | Bearer + cookie auth, CSRF enforcement, company ownership checks |
 | `server/app/api/v1/auth.py` | Register/login/logout cookies, `/me` PATCH |
@@ -254,7 +255,7 @@ may send `X-Company-ID`.
 
 - Local: SQLite at `server/data/inkloom.db` (WAL, foreign keys on).
 - Production: Render PostgreSQL.
-- Migrations: Alembic. Current head: `b3f1a2c4d5e6`.
+- Migrations: Alembic. Current head: `c7d8e9f0a1b2`.
 - Render build command runs `alembic upgrade head` before the service starts.
 
 ### Tables
@@ -345,13 +346,13 @@ Frontend:
 
 ```
 cd server && .venv/bin/python -m pytest -q
-50 passed, 3 warnings
+51 passed, 3 warnings
 ```
 
 - Covers health (fast + deep), auth, onboarding, brand brain, analysis lifecycle,
   tenant isolation, history, storage pathing and error contracts.
 - Alembic chain verified from an empty database:
-  `9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6`.
+  `9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6 → c7d8e9f0a1b2`.
 
 ### Frontend
 
@@ -478,7 +479,7 @@ npm run dev
 
 ### Pre-submission checklist
 
-- [x] Backend tests pass (`50 passed`).
+- [x] Backend tests pass (`51 passed`).
 - [x] Frontend typecheck and production build pass.
 - [x] Live health endpoint returns `200` with a connected database.
 - [x] CORS allows the production frontend origin.
