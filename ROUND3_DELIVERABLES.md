@@ -365,15 +365,15 @@ cd server && .venv/bin/python -m pytest -q
 | 58-rule audit retried until failure | One compliance request for 58 rules exceeded the completion budget and returned truncated JSON; `parse_json_loose` raised `ValueError`. | Rules are evaluated in batches of 20, output budget is explicit, truncated JSON is salvaged, and only the affected batch degrades to inconclusive. |
 
 **Live result after the fix:** a creative with deliberate prohibited claims was
-audited against all **58** committed VELORA rules in **101s** across **3 batches**:
-7 violations, 16 passed checks, 35 inconclusive. The report flagged
+audited against all **58** committed VELORA rules in **136s** across **3 batches**:
+6 violations, 30 passed checks, 22 inconclusive. The report flagged
 “CURES ACNE IN 3 DAYS” and “100% GUARANTEED RESULTS”.
 
 ### Frontend
 
 ```
 npx tsc --noEmit        # 0 errors
-npm run build           # 12 routes generated successfully
+npm run build           # 10 static routes generated successfully
 ```
 
 ### Live production verification (2026-11-11)

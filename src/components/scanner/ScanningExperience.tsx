@@ -252,6 +252,8 @@ export default function ScanningExperience({
 }: ScanningExperienceProps) {
   const [status, setStatus] = useState<AnalysisStatus>('queued');
   const [completedStages, setCompletedStages] = useState(0);
+  const [backendStage, setBackendStage] = useState('');
+  const [backendProgress, setBackendProgress] = useState(0);
   const [isError, setIsError] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
 
@@ -322,6 +324,8 @@ export default function ScanningExperience({
         if (!isActive) return;
 
         setStatus(result.status);
+        if (result.currentStage) setBackendStage(result.currentStage);
+        if (typeof result.progress === 'number') setBackendProgress(result.progress);
 
         const backendStages = STATUS_STAGE_MAP[result.status] ?? 0;
         setCompletedStages((prev) => Math.max(prev, backendStages));
@@ -351,8 +355,16 @@ export default function ScanningExperience({
   }, [jobId, handleComplete, handleFailed, stopPolling]);
 
   const stageStates = computeStageStates(completedStages);
-  const progress = Math.round((completedStages / STAGES.length) * 100);
+  const visualProgress = Math.round((completedStages / STAGES.length) * 100);
+  // A large rulebook takes several provider passes; show the backend's real
+  // progress so the bar does not sit at 50% for a couple of minutes.
+  const progress =
+    status === 'processing'
+      ? Math.max(visualProgress, Math.min(backendProgress, 95))
+      : visualProgress;
   const activeStage = STAGES[Math.min(completedStages, STAGES.length - 1)];
+  const statusLabel =
+    status === 'processing' && backendStage ? backendStage : getStatusLabel(status);
 
   return (
     <div className="w-full max-w-5xl mx-auto">
@@ -463,13 +475,13 @@ export default function ScanningExperience({
                   <div className="flex items-center gap-2 pt-1">
                     <Loader2 className="w-3.5 h-3.5 text-[#E50914] animate-spin flex-shrink-0" />
                     <motion.span
-                      key={status}
+                      key={statusLabel}
                       className="text-xs text-stone-600 font-medium"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {getStatusLabel(status)}
+                      {statusLabel}
                     </motion.span>
                   </div>
                 </motion.div>

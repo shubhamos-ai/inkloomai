@@ -87,8 +87,8 @@ Open **<https://inkloom-ai.shubhamos.com>** and follow this path:
 **Verified live on 12 Nov 2026:** a VELORA extraction run completed in **57 seconds** with
 **58 proposals across 7 categories**, and only **9** proposals rejected by the verbatim-quote
 check. All **58 reviewed proposals then committed successfully**, each with a version
-snapshot. A VELORA creative audit evaluated all 58 active rules in **101 seconds** across
-**3 batched passes**, producing **7 critical/major violations**, 16 passed checks and 35
+snapshot. A VELORA creative audit evaluated all 58 active rules in **136 seconds** across
+**3 batched passes**, producing **6 critical/major violations**, 30 passed checks and 22
 honest inconclusive checks — it correctly caught “CURES ACNE IN 3 DAYS” and
 “100% GUARANTEED RESULTS”.
 
@@ -273,7 +273,7 @@ Verified on **12 Nov 2026** against the deployed platform:
 | **Live extraction run** | Completed in **57s**: 58 proposals, 7 categories, 9 rejected, 0 provider errors |
 | **Review → commit** | All **58 reviewed proposals committed** (`HTTP 200`), 0 skipped; each rule stores `ai_extraction:<run_id>` provenance and a version snapshot |
 | **Rule version history** | `GET /brand-brain/rules/{id}/versions` returns the `extraction_committed` snapshot for every committed rule |
-| **Live creative audit (58 active rules)** | Completed in **101s** across **3 batched passes**: 7 violations, 16 passed checks, 35 inconclusive; flagged “CURES ACNE IN 3 DAYS” and “100% GUARANTEED RESULTS” |
+| **Live creative audit (58 active rules)** | Completed in **136s** across **3 batched passes**: 6 violations, 30 passed checks, 22 inconclusive; flagged “CURES ACNE IN 3 DAYS” and “100% GUARANTEED RESULTS” |
 | **Large-rulebook safety** | Rules are evaluated in batches of 20; truncated JSON is salvaged and a failed batch degrades only its own rules to inconclusive |
 | **Database schema** | Alembic head `c7d8e9f0a1b2` applied in production; `brand_rules.source_type` is `varchar(80)` |
 
@@ -636,7 +636,7 @@ chain is verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f
 
 ```bash
 npx tsc --noEmit     # 0 errors
-npm run build        # 12 static pages generated
+npm run build        # 10 static routes generated
 ```
 
 ### Manual E2E (production)
