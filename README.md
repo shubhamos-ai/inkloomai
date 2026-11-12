@@ -1,428 +1,680 @@
-# Inkloom AI (Inkoom AI) — Frontend & AI Backend Integration Guide
+# INKLOOM AI
 
-**Inkloom AI** is a premium, production-grade AI Advertising Compliance and Brand Governance SaaS platform. The application empowers marketing and compliance teams to enforce brand guidelines, detect visual and textual violations, verify advertising claims, and generate actionable remediation recommendations before campaigns go live.
+**AI-Powered Advertising Compliance & Brand Governance Platform**
+
+Inkloom AI turns unstructured company brand guidelines into traceable, versioned
+compliance rules, then audits advertising creatives against those rules before they are
+published. It is a multi-tenant SaaS product built for **CodeNexus India 2026 — Round 3:
+The Final Product** by **Team Tensor Titans**.
+
+<p>
+  <a href="https://inkloom-ai.shubhamos.com"><strong>Live Web App</strong></a> ·
+  <a href="https://inkloom-backend-yw07.onrender.com/api/v1/health"><strong>Live API Health</strong></a> ·
+  <a href="https://github.com/shubhamos-ai/inkloomai"><strong>GitHub Repository</strong></a>
+</p>
+
+| | |
+| --- | --- |
+| **Production web app** | <https://inkloom-ai.shubhamos.com> (verified `200`, custom domain on Render) |
+| **Render fallback URL** | <https://inkloom-frontend-rwy2.onrender.com> |
+| **Production API** | <https://inkloom-backend-yw07.onrender.com> |
+| **Repository** | <https://github.com/shubhamos-ai/inkloomai> |
+| **Team** | Shubham Chawhan (Team Leader — Full-Stack Development & Intelligence) · Shivam Panchal (Architecture Lead — AI Research & System Architecture) |
+| **Institution** | Madhuben and Bhanubhai Patel Institute of Technology (MBIT) |
 
 ---
 
-## 🚀 Deployment Architecture
+## Table of Contents
 
-```
-┌─────────────────────────────────┐                 ┌──────────────────────────────────────┐
-│   Vercel Production Frontend   │                 │   External AI Backend (Your Host)    │
-│   https://inkoom-ai.shubhamos.com│ ── (HTTPS) ───▶ │   https://inkoom-model.shubhamos.com │
-│   [Next.js 15 + TypeScript]     │                 │   [Cloudflare Tunnel + FastAPI]      │
-└─────────────────────────────────┘                 └──────────────────┬───────────────────┘
-                                                                       │
-                                                            ┌──────────▼──────────┐
-                                                            │   Ollama / LLM /    │
-                                                            │   Vision AI Engine  │
-                                                            └─────────────────────┘
-```
-
-- **Frontend URL:** `https://inkoom-ai.shubhamos.com`
-- **Backend Tunnel URL:** `https://inkoom-model.shubhamos.com`
-- **Frontend Stack:** Next.js 15 (App Router), React 18, TypeScript, Tailwind CSS, Lucide React, Framer Motion
+1. [The Problem](#the-problem)
+2. [The Journey](#the-journey)
+3. [Round 3 Commitments — Delivered](#round-3-commitments--delivered)
+4. [Bonus Production Upgrades](#bonus-production-upgrades)
+5. [System Architecture](#system-architecture)
+6. [Live Production Verification](#live-production-verification)
+7. [Use Demo — VELORA Preset](#use-demo--velora-preset)
+8. [Quick Start](#quick-start)
+9. [Environment Reference](#environment-reference)
+10. [API Reference](#api-reference)
+11. [Security & Multi-Tenancy](#security--multi-tenancy)
+12. [Database & Migrations](#database--migrations)
+13. [Deployment on Render](#deployment-on-render)
+14. [Testing](#testing)
+15. [Monetization & GTM Strategy](#monetization--gtm-strategy)
+16. [Roadmap](#roadmap)
+17. [Known Limitations](#known-limitations)
+18. [Repository Structure](#repository-structure)
+19. [Team](#team)
 
 ---
 
-## 🛠️ Quick Start
+## The Problem
 
-### 1. Installation
+Brand and advertising compliance is usually enforced by PDFs, spreadsheets and manual
+review. That creates three failures:
+
+- **Rules are unstructured** — brandbooks describe intent, not machine-checkable rules.
+- **Evidence is untraceable** — reviewers cannot show which policy clause a finding came from.
+- **Review is too late** — violations are found after a campaign is live.
+
+Inkloom AI converts the guidelines into **categorized, source-quoted, versioned rules**,
+then combines them with **multimodal vision inspection** to produce a scored, auditable
+report before publication.
+
+---
+
+## The Journey
+
+| Phase | What happened |
+| --- | --- |
+| **Round 1 — The Plan** | Conceptual architecture for a unified Brand Brain and a multi-modal pre-publication review workflow. |
+| **Round 2 — The Build** | Working prototype plus three committed production-grade upgrades for the final release. |
+| **Round 3 — Final Product** | Multi-tenant, queue-backed SaaS running Next.js 15, FastAPI, SQLAlchemy, S3-compatible storage and NVIDIA NIM Llama 3.2 90B Vision. |
+
+**Core engineering breakthrough:** a traceable LLM rule-extraction pipeline that turns raw
+PDF, DOCX and TXT guidelines into categorized, source-quoted compliance rules, then feeds
+them into vision-model inspection for brand-specific evaluations.
+
+---
+
+## Round 3 Commitments — Delivered
+
+### Commitment 01 — Traceable Brand-Rule Extraction & Versioning
+
+**Goal:** convert uploaded or pasted guidelines into structured, categorized, versioned
+rules while preserving the exact original wording as evidence.
+
+**Delivered:**
+
+- **Multi-format ingestion** — direct text, PDF, DOCX, TXT and Markdown, parsed server-side.
+- **Verbatim quote traceability** — every proposed rule must include a `source_text` that
+  appears character-for-character (whitespace-normalized) in the source document.
+  Proposals that fail this check are **rejected and reported**, never silently saved.
+- **Versioning & audit trail** — every rule create/update/delete writes an immutable
+  `BrandRuleVersion` snapshot. History is queryable per rule.
+- **Brand Brain Studio** — an interactive workspace to review AI proposals, edit them, and
+  commit only what a human approves.
+
+**Flow:** `POST /brand-brain/extract` → worker proposes rules → human reviews →
+`POST /brand-brain/extract/{run_id}/commit` → `BrandRule` rows + version snapshots.
+
+### Commitment 02 — Enterprise Multi-Tenancy & Strict Workspace Scoping
+
+**Goal:** real authentication, persistent sessions and isolated company workspaces.
+
+**Delivered:**
+
+- **Secure auth** — email + password accounts with bcrypt-hashed passwords and opaque
+  session tokens (`il_sess_…`) stored server-side only as SHA-256 hashes.
+- **Two auth transports** — `Authorization: Bearer <token>` for API/localStorage clients,
+  and an **HttpOnly session cookie + double-submit `X-CSRF-Token`** for browsers.
+- **Strict `company_id` scoping** — every brand rule, creative, job, report and extraction
+  run is scoped to one company. `X-Company-ID` is validated against ownership, so a
+  browser-supplied id is never proof of access.
+- **Endpoint guards** — tenant verification is enforced in the FastAPI dependency layer on
+  every protected read and write route.
+- **Real logout** — invalidates the server-side session and clears cookies from the
+  sidebar, mobile nav and settings.
+
+### Commitment 03 — Durable Object Storage & Asynchronous Worker Architecture
+
+**Goal:** remove temporary local files and blocking synchronous AI calls.
+
+**Delivered:**
+
+- **S3-compatible object storage** — AWS S3, Cloudflare R2 and MinIO via `boto3`, with
+  pre-signed GET URLs and a local-disk fallback for development.
+- **Decoupled async queue** — `analysis_jobs` is a durable database-backed queue. Uploads
+  return `202 Accepted` immediately; the worker performs vision inference out-of-band.
+- **Fault tolerance** — `queued → processing → completed / failed` states with leases,
+  attempt tracking, exponential backoff, stale-lock recovery and manual retry.
+- **Classified failures** — a missing provider is `ProviderMisconfigured`; an outage is
+  `ProviderUnavailable` and retried. A provider failure is **never** converted into a fake
+  completed report.
+
+---
+
+## Bonus Production Upgrades
+
+| # | Upgrade | What it does |
+| --- | --- | --- |
+| 01 | **Dual AI provider support** | NVIDIA NIM Llama 3.2 90B Vision is the production provider (served over an OpenAI-compatible API). Ollama is supported for local/offline development. |
+| 02 | **PIL image optimization** | Automatic resize, compression and JPEG conversion before inference to avoid large-upload timeouts. |
+| 03 | **Richer diagnostic reports** | Visual observations, OCR text, model metadata, latency and confidence scores. |
+| 04 | **Score guardrails** | Inconclusive AI output is handled gracefully so it never produces a false zero score or a broken report view. |
+| 05 | **Auto wake-up & health** | A fast `/health` endpoint plus frontend wake-pings handle Render cold starts without a false "offline" state. |
+| 06 | **Redesigned SaaS UI** | Responsive desktop/mobile navigation, skeleton loading states and interactive reports. |
+| 07 | **Production Render deployment** | Live custom domain with domain-locked CORS, SSL termination and environment-isolated secrets. |
+
+> **Accuracy note:** the deployed provider is NVIDIA NIM (OpenAI-compatible endpoint).
+> No OpenAI account is wired into the current build; "OpenAI-compatible" refers to the API
+> shape, not a second vendor.
+
+---
+
+## System Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 01 · Frontend Client                                                          │
+│ Next.js 15 (App Router) + React 18 + TypeScript + Tailwind + Framer Motion    │
+│ Auth · multi-tenant workspaces · Brand Brain Studio · interactive reports     │
+└───────────────────────────────────┬──────────────────────────────────────────┘
+                                    │ HTTPS · Bearer token or HttpOnly cookie + CSRF
+┌───────────────────────────────────▼──────────────────────────────────────────┐
+│ 02 · API & Orchestration                                                      │
+│ FastAPI + REST · tenant-scoped authorization · upload validation · health     │
+└───────┬───────────────────┬───────────────────────┬──────────────────────────┘
+        │                   │                       │
+┌───────▼─────────┐ ┌───────▼──────────────┐ ┌──────▼───────────────────────────┐
+│ 03 · Rule       │ │ 04 · Vision & OCR    │ │ 05 · Database & Queue            │
+│ Extraction      │ │ Pipeline             │ │ SQLAlchemy + Alembic             │
+│ LLM guideline   │ │ PIL optimization     │ │ PostgreSQL / SQLite              │
+│ → categorized,  │ │ NVIDIA NIM Llama 3.2 │ │ durable analysis_jobs queue      │
+│ source-quoted   │ │ 90B Vision (+OCR)    │ │ retries · backoff · leases       │
+│ versioned rules │ │ → rule evaluation    │ │ extraction_runs queue            │
+└─────────────────┘ └──────────────────────┘ └──────────────┬───────────────────┘
+                                                             │
+                                          ┌──────────────────▼───────────────────┐
+                                          │ 06 · Cloud & Object Storage          │
+                                          │ Render · S3 / Cloudflare R2 / MinIO  │
+                                          │ pre-signed URLs · local fallback     │
+                                          └──────────────────────────────────────┘
+```
+
+### Request lifecycle (analysis)
+
+1. `POST /analysis` validates the upload, stores it through `StorageService`, writes an
+   `Asset` row and enqueues an `AnalysisJob`. The request returns `202` immediately.
+2. A worker claims the job atomically (`processing`, `locked_by`, lease).
+3. The vision engine returns observations or raises a classified provider error.
+4. The compliance engine evaluates observations against the company's active `BrandRule`s.
+5. The report is persisted; the job becomes `completed`. Failures record `error_code`,
+   increment `attempts`, and schedule `next_attempt_at` with exponential backoff.
+6. The frontend polls `GET /analysis/{id}/status`, then loads the report and assets.
+
+### Why the queue lives in PostgreSQL
+
+Round 3 needed durable retries without adding Redis/RQ/Celery to a free-tier deployment.
+`analysis_jobs` already sits next to the data it protects, and SQL row locking is enough
+for the expected concurrency. The service interface (`claim_job`, `complete_job`,
+`retry_job`) keeps a future broker migration out of the API layer.
+
+---
+
+## Live Production Verification
+
+Verified on the deployed platform:
+
+| Check | Result |
+| --- | --- |
+| `GET https://inkloom-backend-yw07.onrender.com/api/v1/health` | `200` in ~0.3s · `database=connected` · `vision_status=configured` · `worker=embedded` |
+| Custom frontend domain | `https://inkloom-ai.shubhamos.com` → `200`, title `Inkloom AI — Advertising Compliance & Brand Governance` |
+| CORS preflight from the production frontend origin | `200` with the correct `access-control-allow-origin` |
+| Registration / login / logout | End-to-end against the live API |
+| **Use Demo** preset | Name, industry and 8,927-character guidelines filled exactly |
+| Workspace creation | `POST /onboarding` → `200`, `POST /brand-brain` → `200`, dashboard shows the new workspace |
+
+**Live benchmark case study (final validation):** a VELORA Skincare promotional creative
+completed end-to-end in roughly **11 seconds**, producing **15+ distinct visual
+observations**, full OCR ad copy, marketing claims, rule-by-rule severity classifications,
+confidence scores and corrective recommendations.
+
+---
+
+## Use Demo — VELORA Preset
+
+The onboarding "Add your organisation" step includes a **Use Demo** button for judges and
+reviewers. It fills:
+
+- **Organisation Name:** `VELORA Skincare Laboratories`
+- **Industry Sector:** `Skincare, dermatology-inspired cosmetics and personal care.`
+- **Brand Guidelines & Policies:** the full supplied VELORA company profile and advertising
+  compliance rules (8,927 characters).
+
+The preset lives in [`src/lib/demoPresets.ts`](src/lib/demoPresets.ts) so onboarding, docs
+and tests share one source of truth. Nothing is generated at runtime; the exact text is
+stored as a typed constant.
+
+---
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js 20+ and npm
+- Python 3.11+ (the project is tested on 3.12/3.14 locally)
+- Optional: PostgreSQL 15+, an S3-compatible bucket, an NVIDIA API key
+
+### 1. Frontend
 
 ```bash
-cd inkloom-ai
 npm install --legacy-peer-deps
-```
-
-### 2. Environment Configuration
-
-Copy `.env.example` to `.env.local`:
-
-```bash
 cp .env.example .env.local
+npm run dev          # http://localhost:3000
 ```
 
-`.env.local` contents:
+`.env.local`:
 
 ```env
-# AI Backend URL (FastAPI through Cloudflare Tunnel)
-NEXT_PUBLIC_AI_API_URL=https://inkoom-model.shubhamos.com
+# Public URL of the FastAPI backend (baked in at build time)
+NEXT_PUBLIC_AI_API_URL=http://localhost:8000
 
-# Set to true to force offline client-side mock data:
+# Must stay false in production; true forces clearly-labelled mock data
 NEXT_PUBLIC_USE_MOCK=false
 ```
 
-> **Note on Fallback Resilience:** When `NEXT_PUBLIC_USE_MOCK=false`, the frontend sends live requests to the configured backend. If the backend is temporarily offline or starting up, the UI shows a real connection state and retries; it does **not** silently replace live results with generated content. Mock output is only used when mock mode is explicitly enabled and is always labelled.
-
-### 3. Running the Development Server
+### 2. Backend
 
 ```bash
-npm run dev
+cd server
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+cp .env.example .env          # then edit DATABASE_URL / NVIDIA_API_KEY
+.venv/bin/python -m alembic upgrade head
+.venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+Local defaults use SQLite at `server/data/inkloom.db` and local-disk storage under
+`server/storage`.
 
-### 4. Production Build
+### 3. Production build
 
 ```bash
-npm run build
-npm run start
+npm run build && npm start
+cd server && .venv/bin/python -m pytest -q
 ```
 
----
-
-## 📡 API Integration Contract Specification
-
-All communication with the AI backend is centralised in [`src/lib/api.ts`](src/lib/api.ts).
-
-### 1. Health Check
-Checks backend and tunnel availability.
-
-- **Method:** `GET`
-- **Path:** `/api/v1/health`
-- **Response `200 OK`:**
-  ```json
-  {
-    "status": "ok",
-    "version": "1.0.0",
-    "ollama": "connected"
-  }
-  ```
+> **No silent mock fallback:** when `NEXT_PUBLIC_USE_MOCK=false`, an unreachable backend
+> surfaces a real connection state and retries. Mock output is only produced when mock mode
+> is explicitly enabled, and it is always labelled.
 
 ---
 
-### 2. User Onboarding
-Registers new user session and company profile.
+## Environment Reference
 
-- **Method:** `POST`
-- **Path:** `/api/v1/onboarding`
-- **Headers:** `Content-Type: application/json`
-- **Request Body:**
-  ```json
-  {
-    "name": "Shubham",
-    "company_name": "Acme Inc.",
-    "industry": "Technology",
-    "website": "https://example.com"
-  }
-  ```
-- **Response `200 OK`:**
-  ```json
-  {
-    "success": true,
-    "user_id": "usr_948201",
-    "message": "User onboarding profile saved successfully"
-  }
-  ```
+The full template is [`server/.env.example`](server/.env.example). The most important
+variables:
 
----
+### Backend
 
-### 3. Brand Brain Setup & Knowledge Ingestion
-Ingests brand guidelines text, advertising policies, and uploaded rule documents (`.txt`, `.pdf`, `.docx`).
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | `sqlite://./data/inkloom.db` | SQLAlchemy URL. `postgres://` / `postgresql://` are normalized to `psycopg2`; MongoDB URLs are rejected with a clear error. |
+| `DEBUG` | `true` | Local CORS, verbose errors, cookie `Secure` default. |
+| `PIPELINE_MODE` | `ai` | `ai` or an explicitly labelled `mock`. |
+| `VISION_PROVIDER` | `nvidia_nim` | `nvidia_nim`, `ollama`, or `mock`. |
+| `NVIDIA_API_KEY` | empty | NVIDIA NIM key (secret). |
+| `NVIDIA_VISION_MODEL` | `meta/llama-3.2-90b-vision-instruct` | Vision model tag. |
+| `OLLAMA_BASE_URL` / `OLLAMA_VISION_MODEL` | local | Local development provider. |
+| `EXTRACTION_PROVIDER` | `auto` | `auto`, `nvidia_nim`, or `ollama`. |
+| `EXTRACTION_MAX_RULES` | `80` | Proposal cap per extraction run. |
+| `EXTRACTION_MAX_CHARS` | `60000` | Guideline read cap. |
+| `EXTRACTION_TIMEOUT_SECONDS` | `120` | Extraction provider timeout. |
+| `STORAGE_BACKEND` | `auto` | `auto`, `s3`, or `local`. |
+| `STORAGE_DIR` | `server/storage` | Local upload root. |
+| `S3_BUCKET` / `S3_ENDPOINT_URL` / `S3_*` | empty | Enables S3-compatible durable storage. |
+| `S3_PRESIGN_EXPIRES_SECONDS` | `900` | Pre-signed URL lifetime. |
+| `RUN_EMBEDDED_WORKER` | `auto` | Runs the queue in-process when storage is local; dedicated worker when S3 is configured. |
+| `WORKER_ALLOW_LOCAL_ANALYSIS` | `false` | Allow a standalone worker with local-disk storage. |
+| `MAX_JOB_ATTEMPTS` | `3` | Retry cap. |
+| `JOB_BACKOFF_BASE_SECONDS` / `JOB_BACKOFF_MAX_SECONDS` | `10` / `300` | Exponential backoff bounds. |
+| `SESSION_LIFETIME_DAYS` | `30` | Session expiry. |
+| `SESSION_COOKIE_NAME` / `CSRF_COOKIE_NAME` | `inkloom_session` / `inkloom_csrf` | Cookie names. |
+| `COOKIE_SECURE` / `COOKIE_SAMESITE` / `COOKIE_DOMAIN` | auto / `lax` / empty | Cookie policy. |
+| `CORS_ORIGINS` / `CORS_EXTRA_ORIGINS` | production domains / localhost | Exact allowed origins. |
+| `RATE_LIMIT_PER_MINUTE` / `AUTH_RATE_LIMIT_PER_MINUTE` | `120` / `10` | Per-IP limits. |
 
-- **Method:** `POST`
-- **Path:** `/api/v1/brand-brain`
-- **Content-Type:** `multipart/form-data`
-- **Form Fields:**
-  - `company_name`: string (required)
-  - `industry`: string (optional)
-  - `website`: string (optional)
-  - `guidelines_text`: string (raw guidelines entered in editor)
-  - `files_meta`: JSON string of uploaded documents metadata
-  - `files`: File[] (binary attachments)
-- **Response `200 OK`:**
-  ```json
-  {
-    "job_id": "bb_job_1730825000",
-    "status": "completed",
-    "rules_parsed": 12,
-    "message": "Brand Brain knowledge base indexed successfully"
-  }
-  ```
+### Frontend
+
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_AI_API_URL` | Backend public URL, baked in at build time. |
+| `NEXT_PUBLIC_USE_MOCK` | Must be `false` in production. |
+
+> **Secrets:** never commit `NVIDIA_API_KEY`, `S3_SECRET_ACCESS_KEY`, database URLs or
+> session material. Render environment variables hold production secrets.
 
 ---
 
-### 4. Submit Advertisement for Analysis
-Queues an advertisement image for AI compliance scanning. Enforces **only one active analysis** per authenticated user/company.
+## API Reference
 
-- **Method:** `POST`
-- **Path:** `/api/v1/analysis`
-- **Content-Type:** `multipart/form-data`
-- **Form Fields:**
-  - `image`: File (JPG, JPEG, PNG, or WEBP image binary)
-  - `company_name`: string
-  - `user_name`: string
-- **Response `200 OK` or `202 Accepted`:**
-  ```json
-  {
-    "analysis_id": "analysis_001",
-    "status": "queued",
-    "message": "Advertisement queued for analysis"
-  }
-  ```
+Base URL: `https://inkloom-backend-yw07.onrender.com/api/v1`
 
----
+Authentication: `Authorization: Bearer <session_token>` **or** the HttpOnly session
+cookie. Cookie-authenticated mutations must send `X-CSRF-Token`. Company-scoped calls may
+send `X-Company-ID`.
 
-### 5. Polling Analysis Job Status
-Polled by [`ScanningExperience.tsx`](src/components/scanner/ScanningExperience.tsx) every ~1.5–2 seconds.
+### Health
 
-- **Method:** `GET`
-- **Path:** `/api/v1/analysis/{analysis_id}/status`
-- **Parameters:** `analysis_id` (string)
-- **Response `200 OK` (In Progress):**
-  ```json
-  {
-    "analysis_id": "analysis_001",
-    "status": "processing",
-    "progress": 65,
-    "stage": "Detecting brand violations",
-    "message": "Comparing extracted claims against Brand Brain regulations"
-  }
-  ```
-- **Response `200 OK` (Completed):**
-  ```json
-  {
-    "analysis_id": "analysis_001",
-    "status": "completed",
-    "progress": 100,
-    "stage": "Complete",
-    "result": {
-      "id": "analysis_001",
-      "advertisementName": "Summer Launch Banner",
-      "imageUrl": "https://storage.provider.com/ads/summer.jpg",
-      "companyName": "Acme Inc.",
-      "complianceScore": 74,
-      "complianceLevel": "needs_revision",
-      "status": "completed",
-      "analysedAt": "2026-11-05T16:30:00Z",
-      "summary": "Moderate compliance. Identified unapproved claim and CTA colour deviation.",
-      "violations": [],
-      "recommendations": [],
-      "passedChecks": []
-    }
-  }
-  ```
-- **Statuses Handled:** `queued`, `processing`, `completed`, `failed`, `cancelled`
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/health` | Fast: status, database, provider, storage, worker. |
+| `GET` | `/health?deep=true` | Adds live provider reachability probes. |
 
----
+Example fast response:
 
-### 6. Full Analysis Compliance Report
-Retrieves the complete structured report.
-
-- **Method:** `GET`
-- **Path:** `/api/v1/analysis/{analysis_id}`
-- **Response `200 OK`:**
-  ```json
-  {
-    "id": "analysis_001",
-    "advertisementName": "Summer Campaign Ad",
-    "imageUrl": "data:image/png;base64,...",
-    "companyName": "Acme Inc.",
-    "complianceScore": 74,
-    "complianceLevel": "needs_revision",
-    "status": "completed",
-    "analysedAt": "2026-11-05T16:30:00Z",
-    "summary": "Advertisement exhibits brand colour violations and unapproved performance claims.",
-    "violations": [
-      {
-        "id": "v_001",
-        "title": "Incorrect Primary Brand Colour",
-        "severity": "critical",
-        "explanation": "CTA button uses #E74C3C (red) instead of approved primary blue (#2563EB).",
-        "relevantRule": "Brand colours must strictly adhere to the defined primary palette.",
-        "ruleId": "BR-COL-001",
-        "evidence": "CTA button at bottom-center displays #E74C3C.",
-        "suggestedCorrection": "Update CTA background to approved primary blue (#2563EB).",
-        "boundingBox": {
-          "x": 0.1,
-          "y": 0.75,
-          "width": 0.8,
-          "height": 0.15,
-          "label": "Incorrect CTA colour"
-        }
-      }
-    ],
-    "recommendations": [
-      {
-        "id": "rec_001",
-        "what": "Replace CTA button colour with approved primary blue",
-        "why": "Colour consistency reinforces brand recognition across touchpoints.",
-        "how": "Change fill to #2563EB.",
-        "priority": "high"
-      }
-    ],
-    "passedChecks": [
-      "Brand typeface (Inter) used correctly",
-      "Image resolution meets minimum 300 DPI requirement",
-      "No prohibited competitor marks detected"
-    ]
-  }
-  ```
-
----
-
-### 7. Analysis History
-- **Method:** `GET`
-- **Path:** `/api/v1/analysis/history`
-- **Response `200 OK`:** Array of `AnalysisHistoryItem` records.
-
----
-
-### 8. Brand Brain Rules Management
-- **Method:** `GET` / `PUT`
-- **Paths:**
-  - `GET /api/v1/brand-brain`: Full Brand Brain summary
-  - `GET /api/v1/brand-brain/rules`: List of active rules
-  - `PUT /api/v1/brand-brain/rules`: Update rules list and raw guidelines text
-
----
-
-## 🔒 Security & CORS Configuration (FastAPI)
-
-To allow the Vercel frontend (`https://inkoom-ai.shubhamos.com`) to communicate through your Cloudflare Tunnel (`https://inkoom-model.shubhamos.com`), configure FastAPI's `CORSMiddleware`:
-
-```python
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI(title="Inkloom AI Model Backend")
-
-origins = [
-    "https://inkoom-ai.shubhamos.com",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/api/v1/health")
-async def health_check():
-    return {"status": "ok", "backend": "FastAPI + Ollama"}
-```
-
----
-
-## 🧪 Testing the Complete User Journey
-
-1. **First-time Onboarding (`/onboarding`):**
-   - **Step 1:** Enter your full name (validates min 2 characters).
-   - **Step 2:** Provide company name, industry, and optional website.
-   - **Step 3:** Paste company brand guidelines into the text editor, upload `.txt`/`.pdf`/`.docx` files, and check the authorization checkbox.
-   - **Step 4:** View the 5-stage animated building sequence with circular progress indicator.
-2. **Dashboard (`/dashboard`):**
-   - Review personalized greeting, 4 high-level stat cards, quick-analyse drawer, Brand Brain active status, and recent scans.
-3. **Advertisement Upload & Scanning (`/analysis`):**
-   - Drag and drop or browse for an advertisement creative (`JPG`, `PNG`, `WEBP`).
-   - Click **Analyse Advertisement**.
-   - Watch the animated scanning screen: subtle grid overlay, vertical laser scan line with glow, viewfinder corner brackets, and progressive stage indicators.
-4. **Analysis Compliance Report:**
-   - View circular compliance score ring (color-coded for Excellent, Needs Improvement, Needs Revision, or Non-Compliant).
-   - Inspect visual bounding boxes highlighting issues directly on the uploaded ad.
-   - Expand and collapse detailed violation cards with rule IDs, evidence, and remediation steps.
-   - Download the full text audit report via **Download Report**.
-5. **History (`/history`):**
-   - Search by ad name, filter by compliance tier, and sort by date or score.
-   - Click **View Report** to reopen any historical report.
-6. **Brand Brain (`/brand-brain`):**
-   - View categorized rules (Logo, Typography, Colour Palette, Messaging, Advertising Claims, Restricted Content, Legal Compliance).
-   - Add new rules with the modal dialog, toggle active states, or delete rules with confirmation.
-7. **Settings (`/settings`):**
-   - Test the live ping to `https://inkoom-model.shubhamos.com`.
-   - Toggle between **Real Backend** and **Mock Data** mode.
-   - Sign out cleanly to reset the workspace session.
-
----
-
-## 📁 Source Code Structure
-
-```
-inkloom-ai/
-├── src/
-│   ├── app/
-│   │   ├── analysis/page.tsx       # Single active analysis controller + persistent preview
-│   │   ├── brand-brain/page.tsx    # Brand Brain management page
-│   │   ├── dashboard/page.tsx      # Main executive dashboard
-│   │   ├── history/page.tsx        # Searchable analysis history & deep-link report view
-│   │   ├── onboarding/page.tsx     # 4-stage onboarding controller
-│   │   ├── settings/page.tsx       # Workspace & API connection settings
-│   │   ├── globals.css             # Tailwind base & custom design tokens
-│   │   ├── layout.tsx              # Root HTML & typography layout
-│   │   └── page.tsx                # Auto-redirect controller
-│   ├── components/
-│   │   ├── brand-brain/            # AddRuleModal, RuleCard, BrandBrainContent
-│   │   ├── dashboard/              # DashboardContent, StatCard, SettingsContent
-│   │   ├── history/                # HistoryList with search, filters, sort
-│   │   ├── layout/                 # Sidebar, MobileNav drawer, DashboardLayout
-│   │   ├── onboarding/             # StepPersonal, StepCompany, StepBrandBrain, StepBuilding
-│   │   ├── reports/                # AnalysisReport with bounding boxes, score ring & export
-│   │   ├── scanner/                # ScanningExperience, ScanningImage laser animation
-│   │   ├── ui/                     # ScoreRing, ConfirmDialog, Toast, EmptyState, Spinner
-│   │   └── upload/                 # AdvertisementUpload with drag-drop validation
-│   ├── lib/
-│   │   ├── api.ts                  # Central API service layer (v1 endpoints + resilience)
-│   │   ├── mock-data.ts            # Realistic demonstration datasets
-│   │   ├── session.ts              # Session persistence & active job tracker
-│   │   └── validation.ts           # Input, file type & size validators
-│   └── types/
-│       ├── analysis.ts             # Compliance score, violation, recommendation types
-│       ├── brand-rules.ts          # Rule categories and Brand Brain models
-│       ├── company.ts              # Company profile and dashboard stats
-│       └── user.ts                 # User profile and onboarding state
-├── public/                         # Static assets
-├── .env.example                    # Environment variable template
-├── .env.local                      # Local active configuration
-├── package.json                    # Project dependencies
-├── tailwind.config.js              # Theme configuration
-└── tsconfig.json                   # TypeScript configuration
-```
-
----
-
-## ⚡ Vercel Deployment Configuration (ercel.json)
-
-The project includes a ready-to-deploy [ercel.json](vercel.json) configuration:
-
-`json
+```json
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install --legacy-peer-deps",
-  "env": {
-    "NEXT_PUBLIC_AI_API_URL": "https://inkoom-model.shubhamos.com",
-    "NEXT_PUBLIC_USE_MOCK": "false"
-  },
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://inkoom-ai.shubhamos.com" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-API-Key" }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/proxy/v1/:path*",
-      "destination": "https://inkoom-model.shubhamos.com/api/v1/:path*"
-    }
-  ]
+  "status": "online",
+  "service": "Inkloom AI Backend",
+  "version": "1.0.0",
+  "database": "connected",
+  "vision_provider": "nvidia_nim",
+  "vision_status": "configured",
+  "pipeline_mode": "ai",
+  "storage_backend": "local",
+  "worker": "embedded",
+  "time": "2026-11-12T00:00:00Z"
 }
-`
+```
 
-### Deploying to Vercel
+### Auth
 
-`ash
-# Using Vercel CLI:
-npm i -g vercel
-vercel --prod
-`
-Or connect your GitHub repository directly to Vercel with root directory set to inkloom-ai.
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/auth/register` | `{email, password, name?}` → session + cookies. |
+| `POST` | `/auth/login` | `{email, password}` → session + cookies. |
+| `GET` | `/auth/me` | Current user + owned companies. |
+| `PATCH` | `/auth/me` | `{name}`. |
+| `POST` | `/auth/logout` | Invalidates the session and clears cookies. |
+
+### Onboarding
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/onboarding` | `{name, company_name, industry?, website?, email?}` → `user_id`, `company_id`, company `access_token`. |
+| `GET` | `/onboarding/check` | Whether the user already has a workspace. |
+
+### Brand Brain
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/brand-brain` | Brand brain summary + rules. |
+| `POST` | `/brand-brain` | Multimodal intake (text + PDF/DOCX/TXT/MD). |
+| `GET` | `/brand-brain/rules` | List active rules. |
+| `POST` | `/brand-brain/rules` | Create a rule (writes a version). |
+| `PUT` | `/brand-brain/rules` | Batch replace/update rules. |
+| `DELETE` | `/brand-brain/rules/{rule_id}` | Delete a rule (writes a version). |
+| `GET` | `/brand-brain/rules/{rule_id}/versions` | Rule audit trail. |
+| `GET` | `/brand-brain/versions` | Brand-brain version history. |
+| `POST` | `/brand-brain/extract` | Enqueue an AI extraction run. |
+| `GET` | `/brand-brain/extract/runs` | List extraction runs. |
+| `GET` | `/brand-brain/extract/latest` | Latest run. |
+| `GET` | `/brand-brain/extract/{run_id}` | Run detail + proposed rules. |
+| `POST` | `/brand-brain/extract/{run_id}/commit` | Persist reviewed rules. |
+| `POST` | `/brand-brain/extract/{run_id}/retry` | Retry a failed run. |
+
+### Analysis
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `POST` | `/analysis` | Multipart image in `file` **or** `image`; returns `202` immediately. |
+| `GET` | `/analysis/history` | Paginated history (`page`, `limit`, `status`). |
+| `GET` | `/analysis/{id}` | Full report. |
+| `GET` | `/analysis/{id}/status` | Queue/progress status. |
+| `GET` | `/analysis/{id}/image` | Original image (bearer or `?token=`). |
+| `GET` | `/analysis/{id}/preview` | Generated preview (bearer or `?token=`). |
+| `GET` | `/analysis/{id}/assets` | Asset metadata. |
+| `POST` | `/analysis/{id}/retry` | Manual retry after failure. |
+| `POST` | `/analysis/{id}/cancel` | Cancel a queued/running job. |
+
+### Dashboard
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| `GET` | `/dashboard` | Aggregate stats for the active company. |
+
+Full request/response detail and the database schema are in
+[`ROUND3_DELIVERABLES.md`](ROUND3_DELIVERABLES.md).
+
+---
+
+## Security & Multi-Tenancy
+
+- **Passwords:** bcrypt-hashed, never logged.
+- **Sessions:** opaque random tokens; the database stores only SHA-256 hashes with expiry.
+- **Cookies:** `HttpOnly` session cookie; `Secure` automatically when `DEBUG=false`;
+  `SameSite=lax` for same-site Render subdomains (use `none` + `Secure` across registrable
+  domains).
+- **CSRF:** double-submit token (`inkloom_csrf` cookie → `X-CSRF-Token` header) on all
+  unsafe methods.
+- **Tenant isolation:** every tenant-owned row carries `company_id`; ownership is checked
+  before any read or write.
+- **Rate limiting:** general and stricter auth-specific per-IP budgets.
+- **CORS:** explicit allow-list of production origins, credentials enabled, `PATCH` and
+  `X-CSRF-Token` allowed.
+- **Upload validation:** MIME/extension, decoded image validation, size and dimension
+  limits.
+
+---
+
+## Database & Migrations
+
+- **Local:** SQLite at `server/data/inkloom.db` (WAL, foreign keys enabled).
+- **Production:** Render PostgreSQL.
+- **Migrations:** Alembic. Current head: **`b3f1a2c4d5e6`**.
+- The Render build command runs `alembic upgrade head` before the service starts.
+
+| Table | Purpose |
+| --- | --- |
+| `users` | Accounts (email, hashed password, name). |
+| `auth_sessions` | Hashed session tokens with expiry. |
+| `companies` | Tenant workspaces, owner user. |
+| `brand_brains` | One per company; original guideline text and metadata. |
+| `brand_rules` | Active compliance rules (`version`, `extraction_run_id`). |
+| `brand_rule_versions` | Append-only snapshots of every rule change. |
+| `extraction_runs` | Staged AI extraction proposals and status. |
+| `analyses` | One row per compliance analysis. |
+| `analysis_jobs` | Durable queue: status, attempts, backoff, lease. |
+| `assets` | Uploaded files, previews, checksums, dimensions. |
+| `alembic_version` | Migration head. |
+
+**Invariants:** every tenant row is scoped by `company_id`; a rule change always writes a
+version; a job can only be claimed when `next_attempt_at <= now`; a failed provider call
+never produces a completed analysis.
+
+---
+
+## Deployment on Render
+
+### Current services
+
+| Service | ID | URL |
+| --- | --- | --- |
+| Backend | `srv-dbnngou417fc73e8hdqg` | `https://inkloom-backend-yw07.onrender.com` |
+| Frontend | `srv-dbnngou417fc73e8hdpg` | `https://inkloom-ai.shubhamos.com` · `https://inkloom-frontend-rwy2.onrender.com` |
+| Postgres | `dpg-dbpplegae00c73c8opr0-a` | internal to Render |
+
+- **Backend build:** `pip install -r requirements.txt && alembic upgrade head`
+- **Backend start:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Health check:** `/api/v1/health`
+- **Frontend build:** `npm install --legacy-peer-deps && npm run build`
+- **Frontend start:** `npm start`
+
+### Blueprint
+
+[`render.yaml`](render.yaml) declares both services and the database. It sets
+`RUN_EMBEDDED_WORKER=auto`, cookie policy, and an optional (commented) dedicated worker for
+when S3 storage is enabled.
+
+### Repository note
+
+Render auto-deploys from the **public** repository `shubhamos-ai/inkloomai`, while the
+local `origin` remote may point at the private mirror. Push to both (or re-link Render) so
+commits trigger deploys:
+
+```bash
+git push origin main   # private mirror
+git push public main   # public — triggers Render
+```
+
+### Why two Render services?
+
+Next.js needs a Node runtime and FastAPI needs Python; Render cannot run both native
+runtimes in one service. Two services also deploy, scale and roll back independently. A
+single Docker image is possible but adds build complexity and loses Next.js server
+features. See the appendix of [`ROUND3_DELIVERABLES.md`](ROUND3_DELIVERABLES.md).
+
+---
+
+## Testing
+
+### Backend
+
+```bash
+cd server
+.venv/bin/python -m pytest -q
+# 39 passed
+```
+
+Coverage includes health (fast + deep), auth, onboarding, Brand Brain, analysis lifecycle,
+tenant isolation, history, storage pathing and error contracts. The Alembic chain is
+verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6`).
+
+### Frontend
+
+```bash
+npx tsc --noEmit     # 0 errors
+npm run build        # 12 routes generated
+```
+
+### Manual E2E (production)
+
+1. Register at `/register` (use a normal email domain; `email-validator` rejects `.test`).
+2. Add an organisation → **Use Demo** → **Initialize Workspace**.
+3. Open **Brand Brain** → **Extract Rules with AI** → review → commit.
+4. Upload a creative on **Analyse** and follow `queued → processing → completed`.
+5. Sign out from the sidebar and sign back in at `/login`.
+
+---
+
+## Monetization & GTM Strategy
+
+> This section describes the product's go-to-market strategy. Billing/payment integration
+> is **not** wired into the current build.
+
+| Tier | Price | Audience |
+| --- | --- | --- |
+| **Free** | ₹0/mo | Early creators — limited monthly scans. |
+| **Starter** | ₹999/mo | Small business — one brand workspace, core rules. |
+| **Growth ★** | ₹3,999/mo | D2C brands — higher scan volume and team access. |
+| **Agency** | ₹9,999/mo | Ad agencies — multi-brand workspaces, approvals, white-label reports. |
+| **Enterprise** | Custom | Global orgs — dedicated infrastructure, high-volume API, compliance SLAs, audit logs. |
+
+**Additional revenue:** Razorpay and international gateways, discounted annual plans,
+on-demand AI analysis credit packs, and high-volume developer API licensing.
+
+---
+
+## Roadmap
+
+| Phase | Focus |
+| --- | --- |
+| **1 · Agency** | Agency workspaces, role-based team permissions, client dashboards, exportable white-label PDF audits. |
+| **2 · Remediation** | Generative remediation — auto-rewriting non-compliant copy, visual correction overlays, A/B comparison, bulk campaign scans. |
+| **3 · Ecosystem** | Public REST APIs and plugins embedding Inkloom AI into ad managers, CMS platforms and design tools. |
+| **4 · Global** | Multilingual compliance, expanding from Indian D2C/startups to international languages and regional ad standards. |
+
+> "Every creative checked, improved, and approved against a brand's true identity before it
+> ever reaches the customer."
+
+---
+
+## Known Limitations
+
+1. **Live storage is currently local, not S3.** S3-compatible storage and pre-signed URLs
+   are implemented and configurable, but the current free Render deployment has no S3
+   credentials or persistent disk, so uploads do not survive a redeploy. The PostgreSQL
+   data itself is durable. Set `STORAGE_BACKEND=s3` + `S3_*` to fix this.
+2. **The free Render Postgres expires on 2026-12-10.** Upgrade or migrate the data before
+   then.
+3. **Free instances spin down after inactivity.** The first request can take 30–60s; the UI
+   shows a "connecting" state and retries instead of a false outage.
+4. **Background workers are a paid Render service type.** The free deployment runs the
+   queue in-process via `RUN_EMBEDDED_WORKER=auto`; the dedicated worker block in
+   `render.yaml` is commented out.
+5. **The queue is SQL-backed, not a broker.** Intentional for the free tier; it scales to
+   modest concurrency, not high fan-out.
+6. **Cookie sessions are same-site by default.** `SameSite=lax` works for `*.onrender.com`
+   and the custom domain; a different registrable domain needs `COOKIE_SAMESITE=none` +
+   `COOKIE_SECURE=true`.
+7. **No email verification or password reset yet.** Accounts are email + password only.
+8. **Extraction quality depends on the provider.** The staged human review step exists so a
+   human can correct proposals before they become enforceable rules.
+9. **Automated load testing is still on the backlog.** The current suite is 39 backend
+   tests plus hands-on end-to-end production verification; high-concurrency load testing is
+   the next step.
+10. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
+    explicitly and is labelled. It is never a silent fallback.
+
+---
+
+## Repository Structure
+
+```
+inkloomai/
+├── src/                              # Next.js 15 frontend
+│   ├── app/
+│   │   ├── analysis/page.tsx         # Single active analysis controller
+│   │   ├── brand-brain/page.tsx      # Brand Brain Studio
+│   │   ├── dashboard/page.tsx        # Executive dashboard
+│   │   ├── history/page.tsx          # Searchable history & report deep links
+│   │   ├── login/page.tsx            # /login deep link
+│   │   ├── register/page.tsx         # /register deep link
+│   │   ├── onboarding/page.tsx       # 5-step onboarding controller
+│   │   ├── settings/page.tsx         # Workspace & connection settings
+│   │   ├── globals.css               # Tailwind base & design tokens
+│   │   ├── layout.tsx                # Root layout
+│   │   └── page.tsx                  # Redirect controller
+│   ├── components/
+│   │   ├── brand-brain/              # Rule cards, AddRuleModal, extraction review
+│   │   ├── dashboard/                # DashboardContent, StatCard, SettingsContent
+│   │   ├── history/                  # HistoryList (search, filters, sort)
+│   │   ├── layout/                   # Sidebar, MobileNav, DashboardLayout
+│   │   ├── onboarding/               # StepAuth, StepName, StepCompany, StepNewCompany, StepBuilding
+│   │   ├── reports/                  # AnalysisReport, score ring, export
+│   │   ├── scanner/                  # ScanningExperience
+│   │   ├── ui/                       # ScoreRing, ConfirmDialog, Toast, banners
+│   │   └── upload/                   # AdvertisementUpload
+│   ├── lib/
+│   │   ├── api.ts                    # Central API layer (auth, CSRF, retries)
+│   │   ├── demoPresets.ts            # VELORA "Use Demo" preset
+│   │   ├── mock-data.ts              # Explicit mock datasets
+│   │   ├── session.ts                # Session persistence
+│   │   └── validation.ts             # Input & file validators
+│   └── types/                        # analysis, brand-rules, company, user
+├── server/                           # FastAPI backend
+│   ├── app/
+│   │   ├── api/v1/                   # auth, onboarding, brand_brain, analysis, dashboard, health
+│   │   ├── engine/                   # vision_engine, extraction_engine, ocr_engine
+│   │   ├── models/                   # SQLAlchemy models
+│   │   ├── services/                 # analysis, job, extraction, storage, asset, brand brain
+│   │   ├── config.py                 # Settings + DB URL normalization
+│   │   ├── database.py               # Engine/session helpers
+│   │   ├── worker.py                 # Durable queue worker
+│   │   └── main.py                   # App + lifespan
+│   ├── alembic/versions/             # Migration chain
+│   ├── tests/                        # 39 backend tests
+│   ├── requirements.txt
+│   └── .env.example
+├── render.yaml                       # Render blueprint
+├── ROUND3_DELIVERABLES.md            # A–J deliverables
+├── Improvements.md                   # Round 3 improvement specification
+├── INKLOOM_AI_Round3_Final_Presentation.pptx.txt
+└── package.json
+```
+
+---
+
+## Team
+
+**Team Tensor Titans** — CodeNexus India 2026 Final Submission
+
+- **Shubham Chawhan** — Team Leader · Full-Stack Development & Intelligence Lead
+- **Shivam Panchal** — Architecture Lead · AI Research & System Architecture Lead
+- **Madhuben and Bhanubhai Patel Institute of Technology (MBIT)**
+
+**Links:** [Live App](https://inkloom-ai.shubhamos.com) ·
+[GitHub](https://github.com/shubhamos-ai/inkloomai) ·
+[Round 3 Deliverables](ROUND3_DELIVERABLES.md)
