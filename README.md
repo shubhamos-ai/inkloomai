@@ -310,6 +310,7 @@ variables:
 | `EXTRACTION_PROVIDER` | `auto` | `auto`, `nvidia_nim`, or `ollama`. |
 | `EXTRACTION_MODEL` | `nvidia/nemotron-3.5-lightning-30b-a3b` | Fast non-reasoning text model; hidden thinking is disabled automatically for reasoning-tuned tags. |
 | `EXTRACTION_MAX_RULES` | `80` | Proposal cap per extraction run. |
+| `EXTRACTION_MAX_RULES_PER_CATEGORY` | `12` | Diversity guard so one noisy section cannot consume the whole budget. |
 | `EXTRACTION_MAX_CHARS` | `60000` | Guideline read cap. |
 | `EXTRACTION_MAX_TOKENS` | `8192` | Completion budget; 80 rules need roughly 6–7k tokens. |
 | `EXTRACTION_TIMEOUT_SECONDS` | `180` | Extraction provider timeout (full guideline documents take 60–120s). |
@@ -527,7 +528,7 @@ features. See the appendix of [`ROUND3_DELIVERABLES.md`](ROUND3_DELIVERABLES.md)
 ```bash
 cd server
 .venv/bin/python -m pytest -q
-# 47 passed
+# 49 passed
 ```
 
 Coverage includes health (fast + deep), auth, onboarding, Brand Brain, analysis lifecycle,
@@ -604,7 +605,7 @@ on-demand AI analysis credit packs, and high-volume developer API licensing.
 7. **No email verification or password reset yet.** Accounts are email + password only.
 8. **Extraction quality depends on the provider.** The staged human review step exists so a
    human can correct proposals before they become enforceable rules.
-9. **Automated load testing is still on the backlog.** The current suite is 47 backend
+9. **Automated load testing is still on the backlog.** The current suite is 49 backend
    tests plus hands-on end-to-end production verification; high-concurrency load testing is
    the next step.
 10. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
@@ -657,7 +658,7 @@ inkloomai/
 │   │   ├── worker.py                 # Durable queue worker
 │   │   └── main.py                   # App + lifespan
 │   ├── alembic/versions/             # Migration chain
-│   ├── tests/                        # 47 backend tests
+│   ├── tests/                        # 49 backend tests
 │   ├── requirements.txt
 │   └── .env.example
 ├── render.yaml                       # Render blueprint

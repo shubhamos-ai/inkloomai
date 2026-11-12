@@ -105,7 +105,10 @@ def test_call_model_uses_extraction_budget_and_disables_thinking(monkeypatch):
     assert model == "nvidia/nemotron-3.5-lightning-30b-a3b"
     assert captured["max_tokens"] == 8192
     assert captured["timeout"] == 180.0
-    assert captured["extra_payload"] == {"chat_template_kwargs": {"enable_thinking": False}}
+    assert captured["extra_payload"] == {
+        "temperature": 0.0,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
 
 
 def test_call_model_leaves_thinking_alone_for_plain_models(monkeypatch):
@@ -120,4 +123,25 @@ def test_call_model_leaves_thinking_alone_for_plain_models(monkeypatch):
     monkeypatch.setattr(nim_vision_service, "generate", fake_generate)
 
     extraction_service._call_model(SOURCE)
-    assert captured["extra_payload"] is None
+    assert captured["extra_payload"] == {"temperature": 0.0}
+
+
+def test_quote_matches_tolerates_wrapping_quotes_and_trailing_period():
+    source = '- "Clear Acne Permanently."\n- "100% Guaranteed Results."'
+    assert extraction_engine._quote_matches('"Clear Acne Permanently"', extraction_engine._norm(source))
+    assert extraction_engine._quote_matches("Clear Acne Permanently", extraction_engine._norm(source))
+    assert not extraction_engine._quote_matches("Cures every skin disease", extraction_engine._norm(source))
+
+
+def test_validate_proposals_caps_each_category(monkeypatch):
+    monkeypatch.setattr(settings, "EXTRACTION_MAX_RULES_PER_CATEGORY", 2)
+    raw = {
+        "rules": [
+            {"category": "restricted_content", "requirement": f"Rule number {i}", "severity": "major",
+             "source_text": "No neon colours are allowed.", "confidence": 0.8}
+            for i in range(5)
+        ]
+    }
+    proposals, _rejected, warnings = extraction_engine.validate_proposals(raw, SOURCE)
+    assert len(proposals) == 2
+    assert any("per-category limit" in w for w in warnings)

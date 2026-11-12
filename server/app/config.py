@@ -169,6 +169,11 @@ class Settings:
         "EXTRACTION_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b"
     )
     EXTRACTION_MAX_RULES: int = int(os.getenv("EXTRACTION_MAX_RULES", "80"))
+    # Diversity guard: stop one noisy section (e.g. a long prohibited-claims
+    # list) from consuming the whole proposal budget.
+    EXTRACTION_MAX_RULES_PER_CATEGORY: int = int(
+        os.getenv("EXTRACTION_MAX_RULES_PER_CATEGORY", "12")
+    )
     EXTRACTION_MAX_CHARS: int = int(os.getenv("EXTRACTION_MAX_CHARS", "60000"))
     # 80 rules need roughly 6-7k completion tokens; 8192 avoids truncation.
     EXTRACTION_MAX_TOKENS: int = int(os.getenv("EXTRACTION_MAX_TOKENS", "8192"))

@@ -307,6 +307,7 @@ Full template: `server/.env.example`.
 | `EXTRACTION_PROVIDER` | `auto` | `auto` / `nvidia_nim` / `ollama` |
 | `EXTRACTION_MODEL` | `nvidia/nemotron-3.5-lightning-30b-a3b` | Fast non-reasoning text model; hidden thinking is disabled automatically for reasoning-tuned tags |
 | `EXTRACTION_MAX_RULES` | `80` | Proposal cap per run |
+| `EXTRACTION_MAX_RULES_PER_CATEGORY` | `12` | Per-category cap for balanced coverage |
 | `EXTRACTION_MAX_CHARS` | `60000` | Guideline read cap |
 | `EXTRACTION_MAX_TOKENS` | `8192` | Completion budget; 80 rules need ~6–7k tokens |
 | `EXTRACTION_TIMEOUT_SECONDS` | `180` | Extraction timeout (full guideline documents take 60–120s) |
@@ -344,7 +345,7 @@ Frontend:
 
 ```
 cd server && .venv/bin/python -m pytest -q
-47 passed, 3 warnings
+49 passed, 3 warnings
 ```
 
 - Covers health (fast + deep), auth, onboarding, brand brain, analysis lifecycle,
@@ -477,7 +478,7 @@ npm run dev
 
 ### Pre-submission checklist
 
-- [x] Backend tests pass (`47 passed`).
+- [x] Backend tests pass (`49 passed`).
 - [x] Frontend typecheck and production build pass.
 - [x] Live health endpoint returns `200` with a connected database.
 - [x] CORS allows the production frontend origin.

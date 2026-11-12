@@ -30,6 +30,28 @@ def _norm(value: str) -> str:
     return re.sub(r"\s+", " ", (value or "")).strip().lower()
 
 
+def _quote_matches(quote: str, source_norm: str) -> bool:
+    """True when `quote` appears in the source, tolerating quote/punctuation edges.
+
+    Models often quote a phrase without the source's surrounding quotation marks
+    or trailing period. Those are still verbatim evidence, so normalise the
+    edges before the containment check. The phrase itself must still be present.
+    """
+    candidates = {quote}
+    stripped = quote.strip()
+    for left, right in (('"', '"'), ("'", "'"), ("\u201c", "\u201d"), ("\u2018", "\u2019")):
+        if len(stripped) > 2 and stripped.startswith(left) and stripped.endswith(right):
+            candidates.add(stripped[1:-1].strip())
+    for candidate in list(candidates):
+        candidates.add(re.sub(r"[\s.,;:!?]+$", "", candidate).strip())
+        candidates.add(re.sub(r"^[\s.,;:!?]+", "", candidate).strip())
+    for candidate in candidates:
+        norm = _norm(candidate)
+        if norm and norm in source_norm:
+            return True
+    return False
+
+
 def build_prompt(source_text: str) -> tuple[str, str]:
     """(system, user) prompt for strict JSON rule extraction."""
     system = (
@@ -46,16 +68,23 @@ def build_prompt(source_text: str) -> tuple[str, str]:
         '"confidence":0.0}]}'
     )
     trimmed = source_text[: settings.EXTRACTION_MAX_CHARS]
+    per_category = settings.EXTRACTION_MAX_RULES_PER_CATEGORY
     user = (
         "Extract every explicit brand/advertising rule from the document below.\n"
         "Rules:\n"
         "1. Split compound requirements into one rule each.\n"
         "2. `source_text` MUST be copied character-for-character from the document "
-        "(a sentence or clause; do not paraphrase).\n"
+        "(a sentence or clause; do not paraphrase). Copy the quote exactly, including "
+        "any quotation marks or trailing punctuation that belong to it.\n"
         "3. If a statement is aspirational rather than testable, skip it.\n"
         "4. Use `critical` only for legal/prohibited-content requirements.\n"
-        f"5. Return at most {settings.EXTRACTION_MAX_RULES} rules.\n"
-        "6. If there are no explicit rules, return {\"rules\":[]}.\n\n"
+        f"5. Return at most {settings.EXTRACTION_MAX_RULES} rules total and at most "
+        f"{per_category} rules per category.\n"
+        "6. Cover every category that has explicit rules. Walk the document in this "
+        "order so one long section cannot consume the whole budget: logo, typography, "
+        "colour_palette, messaging, advertising_claims, restricted_content, "
+        "legal_compliance, general.\n"
+        "7. If there are no explicit rules, return {\"rules\":[]}.\n\n"
         "DOCUMENT:\n"
         f"{trimmed}"
     )
@@ -94,7 +123,10 @@ def validate_proposals(
 
     source_norm = _norm(source_text)
     seen: set[str] = set()
+    category_counts: dict[str, int] = {}
+    dropped_for_category = 0
     limit = max_rules or settings.EXTRACTION_MAX_RULES
+    per_category_limit = settings.EXTRACTION_MAX_RULES_PER_CATEGORY
 
     for index, item in enumerate(items):
         if not isinstance(item, dict):
@@ -120,7 +152,7 @@ def validate_proposals(
         if not quote:
             rejected.append({"index": index, "requirement": requirement, "reason": "missing source_text"})
             continue
-        if _norm(quote) not in source_norm:
+        if not _quote_matches(quote, source_norm):
             rejected.append(
                 {
                     "index": index,
@@ -136,10 +168,16 @@ def validate_proposals(
             continue
         seen.add(dedupe_key)
 
+        if category_counts.get(category, 0) >= per_category_limit:
+            # Keep scanning: a later category may still have valid rules.
+            dropped_for_category += 1
+            continue
+
         if len(proposals) >= limit:
             warnings.append(f"Rule limit of {limit} reached; remaining proposals were dropped.")
             break
 
+        category_counts[category] = category_counts.get(category, 0) + 1
         proposals.append(
             {
                 "proposal_id": f"prop_{len(proposals) + 1:03d}",
@@ -149,6 +187,12 @@ def validate_proposals(
                 "source_text": quote[:8000],
                 "confidence": _as_confidence(item.get("confidence")),
             }
+        )
+
+    if dropped_for_category:
+        warnings.append(
+            f"{dropped_for_category} proposal(s) exceeded the per-category limit of "
+            f"{per_category_limit} and were dropped to keep category coverage."
         )
 
     if not proposals:

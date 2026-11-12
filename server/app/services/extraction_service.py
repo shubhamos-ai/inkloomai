@@ -247,9 +247,12 @@ def _call_model(source_text: str) -> tuple[str, str]:
             # hidden reasoning and return empty content. Disable thinking so
             # the response is the JSON we asked for.
             resolved_model = model or nim_vision_service.get_vision_model()
-            extra_payload = None
+            # Deterministic extraction: no sampling, and no hidden reasoning
+            # for reasoning-tuned Nemotron models (they otherwise return empty
+            # content after burning the whole token budget).
+            extra_payload: dict = {"temperature": 0.0}
             if "nemotron" in resolved_model.lower() or "reasoning" in resolved_model.lower():
-                extra_payload = {"chat_template_kwargs": {"enable_thinking": False}}
+                extra_payload["chat_template_kwargs"] = {"enable_thinking": False}
 
             text = nim_vision_service.generate(
                 prompt=user,
