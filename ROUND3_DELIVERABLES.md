@@ -98,14 +98,16 @@ keep them honest in production.
 | `server/app/api/v1/brand_brain.py` | Extraction runs, retry, delete rule, versions |
 | `server/app/engine/vision_engine.py` | Raises `ProviderError` instead of placeholder output |
 | `server/app/engine/extraction_engine.py` | Structured rule extraction engine |
-| `server/app/services/analysis_service.py` | Retry-aware failures, asset recording, previews |
+| `server/app/services/analysis_service.py` | Retry-aware failures, asset recording, previews, batched compliance evaluation |
+| `server/app/services/json_utils.py` | Salvages complete objects from truncated model JSON |
+| `server/tests/test_compliance_batching.py` | Regression tests for batching, salvage, transient retries |
 | `server/app/services/job_service.py` | Lease/backoff/retry/recovery |
 | `server/app/services/storage_service.py` | Local + S3-compatible storage backends |
 | `server/app/services/asset_service.py` | Asset metadata and preview helpers |
 | `server/app/services/extraction_service.py` | Extraction run orchestration |
 | `server/app/services/brand_brain_service.py` | Rule CRUD, version snapshots, asset intake |
-| `server/app/services/nim_vision_service.py` | Optional model override |
-| `server/app/services/ollama_service.py` | Optional model override |
+| `server/app/services/nim_vision_service.py` | Optional model override, truncation salvage |
+| `server/app/services/ollama_service.py` | Optional model override, truncation salvage |
 | `server/app/worker.py` | Extraction recovery + configurable analysis processing |
 | `server/app/embedded_worker.py` | Respects `run_embedded_worker` |
 | `server/app/main.py` | Lifespan worker startup, validation error envelope |
@@ -346,13 +348,26 @@ Frontend:
 
 ```
 cd server && .venv/bin/python -m pytest -q
-58 passed, 3 warnings
+59 passed, 3 warnings
 ```
 
 - Covers health (fast + deep), auth, onboarding, brand brain, analysis lifecycle,
-  tenant isolation, history, storage pathing and error contracts.
+  tenant isolation, history, storage pathing, error contracts, large-rulebook
+  batching, truncated-JSON salvage and transient provider retries.
 - Alembic chain verified from an empty database:
   `9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6 → c7d8e9f0a1b2`.
+
+### Production regression fixes found by live verification
+
+| Symptom | Root cause | Fix |
+| --- | --- | --- |
+| Commit returned `500` | `brand_rules.source_type` was `varchar(30)` in the initial migration while the ORM declared `String(80)`; `ai_extraction:<uuid>` is 50 chars. SQLite does not enforce the limit, so tests passed. | Migration `c7d8e9f0a1b2` widens the column; production verified at `varchar(80)`. |
+| 58-rule audit retried until failure | One compliance request for 58 rules exceeded the completion budget and returned truncated JSON; `parse_json_loose` raised `ValueError`. | Rules are evaluated in batches of 20, output budget is explicit, truncated JSON is salvaged, and only the affected batch degrades to inconclusive. |
+
+**Live result after the fix:** a creative with deliberate prohibited claims was
+audited against all **58** committed VELORA rules in **101s** across **3 batches**:
+7 violations, 16 passed checks, 35 inconclusive. The report flagged
+“CURES ACNE IN 3 DAYS” and “100% GUARANTEED RESULTS”.
 
 ### Frontend
 
@@ -479,7 +494,7 @@ npm run dev
 
 ### Pre-submission checklist
 
-- [x] Backend tests pass (`58 passed`).
+- [x] Backend tests pass (`59 passed`).
 - [x] Frontend typecheck and production build pass.
 - [x] Live health endpoint returns `200` with a connected database.
 - [x] CORS allows the production frontend origin.

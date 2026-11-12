@@ -9,7 +9,7 @@ Built for **CodeNexus India 2026 · Round 3: The Final Product** by **Team Tenso
 
 [![Live App](https://img.shields.io/badge/Live%20App-inkloom--ai.shubhamos.com-6D28D9?style=for-the-badge)](https://inkloom-ai.shubhamos.com)
 [![API](https://img.shields.io/badge/API-Online-16A34A?style=for-the-badge)](https://inkloom-backend-yw07.onrender.com/api/v1/health)
-[![Tests](https://img.shields.io/badge/Backend%20Tests-58%20passing-brightgreen?style=for-the-badge)](#testing)
+[![Tests](https://img.shields.io/badge/Backend%20Tests-59%20passing-brightgreen?style=for-the-badge)](#testing)
 [![GitHub](https://img.shields.io/badge/GitHub-shubhamos--ai%2Finkloomai-181717?style=for-the-badge&logo=github)](https://github.com/shubhamos-ai/inkloomai)
 
 `Next.js 15` · `React 18` · `TypeScript` · `Tailwind` · `Framer Motion` · `FastAPI` ·
@@ -86,8 +86,11 @@ Open **<https://inkloom-ai.shubhamos.com>** and follow this path:
 
 **Verified live on 12 Nov 2026:** a VELORA extraction run completed in **57 seconds** with
 **58 proposals across 7 categories**, and only **9** proposals rejected by the verbatim-quote
-check. A separate VELORA creative audit completed end-to-end in roughly **11 seconds** with
-**15+ visual observations**, OCR ad copy, claim checks and corrective recommendations.
+check. All **58 reviewed proposals then committed successfully**, each with a version
+snapshot. A VELORA creative audit evaluated all 58 active rules in **101 seconds** across
+**3 batched passes**, producing **7 critical/major violations**, 16 passed checks and 35
+honest inconclusive checks — it correctly caught “CURES ACNE IN 3 DAYS” and
+“100% GUARANTEED RESULTS”.
 
 > **Tip for judges:** if the page is cold, wait for the “connecting” banner to clear. The
 > first request wakes the free Render instance.
@@ -270,7 +273,8 @@ Verified on **12 Nov 2026** against the deployed platform:
 | **Live extraction run** | Completed in **57s**: 58 proposals, 7 categories, 9 rejected, 0 provider errors |
 | **Review → commit** | All **58 reviewed proposals committed** (`HTTP 200`), 0 skipped; each rule stores `ai_extraction:<run_id>` provenance and a version snapshot |
 | **Rule version history** | `GET /brand-brain/rules/{id}/versions` returns the `extraction_committed` snapshot for every committed rule |
-| **Live creative audit** | Completed in ~**11s**: 15+ visual observations, OCR copy, claim checks, rule severities, confidence, recommendations |
+| **Live creative audit (58 active rules)** | Completed in **101s** across **3 batched passes**: 7 violations, 16 passed checks, 35 inconclusive; flagged “CURES ACNE IN 3 DAYS” and “100% GUARANTEED RESULTS” |
+| **Large-rulebook safety** | Rules are evaluated in batches of 20; truncated JSON is salvaged and a failed batch degrades only its own rules to inconclusive |
 | **Database schema** | Alembic head `c7d8e9f0a1b2` applied in production; `brand_rules.source_type` is `varchar(80)` |
 
 ### Verify it yourself
@@ -346,7 +350,7 @@ stored as a typed constant.
 | **Extraction** | NVIDIA NIM `nvidia/nemotron-3.5-lightning-30b-a3b` |
 | **Storage** | S3-compatible (`boto3`): AWS S3, Cloudflare R2, MinIO; local-disk fallback |
 | **Deployment** | Render (frontend, backend, PostgreSQL), custom domain + TLS |
-| **Testing** | Pytest (58 backend tests), TypeScript type-check, Next.js production build |
+| **Testing** | Pytest (59 backend tests), TypeScript type-check, Next.js production build |
 
 ---
 
@@ -619,12 +623,13 @@ git push public main   # public — triggers Render
 ```bash
 cd server
 .venv/bin/python -m pytest -q
-# 58 passed
+# 59 passed
 ```
 
 Coverage includes health (fast + deep), auth, onboarding, Brand Brain, rule extraction
 (parsing, salvage, quote validation, category caps, enqueue → review → commit), analysis
-lifecycle, tenant isolation, history, storage pathing and error contracts. The Alembic
+lifecycle, large-rulebook batching, truncated-JSON salvage, transient provider retries,
+tenant isolation, history, storage pathing and error contracts. The Alembic
 chain is verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6 → c7d8e9f0a1b2`).
 
 ### Frontend
@@ -665,7 +670,9 @@ npm run build        # 12 static pages generated
 1. **Live storage is currently local, not S3.** S3-compatible storage and pre-signed URLs
    are implemented and configurable, but the current free Render deployment has no S3
    credentials or persistent disk, so uploads do not survive a redeploy. The PostgreSQL
-   data itself is durable. Set `STORAGE_BACKEND=s3` + `S3_*` to fix this.
+   data itself is durable. A retry of an analysis uploaded before a redeploy fails with a
+   clear “missing image” error — re-upload the creative. Set `STORAGE_BACKEND=s3` + `S3_*`
+   to fix this.
 2. **The free Render Postgres expires on 2026-12-10.** Upgrade or migrate the data before
    then.
 3. **Free instances spin down after inactivity.** The first request can take 30–60s; the UI
@@ -681,10 +688,13 @@ npm run build        # 12 static pages generated
 7. **No email verification or password reset yet.** Accounts are email + password only.
 8. **Extraction quality depends on the provider.** The staged human review step exists so a
    human can correct proposals before they become enforceable rules.
-9. **Automated load testing is still on the backlog.** The current suite is 58 backend
-   tests plus hands-on end-to-end production verification; high-concurrency load testing is
-   the next step.
-10. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
+9. **Audit duration grows with the rulebook.** 58 rules are evaluated in 3 provider passes
+   (~100s on the free tier). Larger rulebooks take proportionally longer; the UI polls the
+   queue status throughout.
+10. **Automated load testing is still on the backlog.** The current suite is 59 backend
+    tests plus hands-on end-to-end production verification; high-concurrency load testing is
+    the next step.
+11. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
     explicitly and is labelled. It is never a silent fallback.
 
 ---
@@ -734,7 +744,7 @@ inkloomai/
 │   │   ├── worker.py                 # Durable queue worker
 │   │   └── main.py                   # App + lifespan
 │   ├── alembic/versions/             # Migration chain
-│   ├── tests/                        # 58 backend tests
+│   ├── tests/                        # 59 backend tests
 │   ├── requirements.txt
 │   └── .env.example
 ├── render.yaml                       # Render blueprint

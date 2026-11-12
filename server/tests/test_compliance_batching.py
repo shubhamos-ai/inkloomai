@@ -138,7 +138,50 @@ def test_failed_batch_degrades_to_inconclusive_not_whole_audit(monkeypatch):
     assert len(report["inconclusive_checks"]) == 20
 
 
+def test_transient_provider_error_retries_the_same_batch(monkeypatch):
+    monkeypatch.setattr(analysis_service.time, "sleep", lambda _seconds: None)
+    calls = {"count": 0}
+
+    def flaky(*, prompt: str, system: str | None = None, **kwargs) -> str:
+        calls["count"] += 1
+        if calls["count"] == 1:
+            raise RuntimeError("simulated 429")
+        return json.dumps(
+            {
+                "summary": "recovered",
+                "checks": [
+                    {
+                        "rule_id": "BR001",
+                        "category": "general",
+                        "state": "passed",
+                        "detail": "ok",
+                        "confidence": 0.9,
+                    }
+                ],
+                "violations": [],
+                "recommendations": [],
+            }
+        )
+
+    monkeypatch.setattr(ollama_service, "generate", flaky)
+    monkeypatch.setattr(
+        ollama_service, "parse_json_loose", nim_vision_service.parse_json_loose
+    )
+
+    report = analysis_service._ai_compliance_report(
+        analysis_id="analysis-transient",
+        rules=[_rule(1)],
+        vision={"observations": []},
+        ocr_text="",
+    )
+
+    assert calls["count"] == 2
+    assert len(report["passed_checks"]) == 1
+
+
 def test_provider_outage_remains_retryable(monkeypatch):
+    monkeypatch.setattr(analysis_service.time, "sleep", lambda _seconds: None)
+
     def boom(*args, **kwargs):
         raise RuntimeError("provider unavailable")
 

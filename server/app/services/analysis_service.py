@@ -378,12 +378,13 @@ def _ai_compliance_report(
     summaries: list[str] = []
     failed_batches = 0
 
-    try:
-        for index, batch in enumerate(batches, start=1):
-            if heartbeat:
-                heartbeat(index - 1, len(batches))
+    def _run_batch(system: str, user: str, batch: list[dict]) -> dict:
+        """Call the provider for one batch with one transient-error retry.
 
-            system, user = compliance_engine.build_prompt(batch, vision, ocr_text)
+        A single 429/5xx used to restart the whole audit (vision included).
+        Retrying just the failed batch keeps a transient hiccup cheap.
+        """
+        for attempt in range(2):
             try:
                 raw_text = vision_service.generate(
                     prompt=user,
@@ -391,20 +392,39 @@ def _ai_compliance_report(
                     **generate_kwargs,
                 )
                 raw = vision_service.parse_json_loose(raw_text)
+            except ValueError:
+                raise
+            except RuntimeError:
+                if attempt == 0:
+                    time.sleep(2)
+                    continue
+                raise
 
-                # Some runs of the SLM answer with empty findings lists; retry
-                # once. If still empty, the validator marks every rule in this
-                # batch inconclusive honestly.
-                findings_empty = isinstance(raw, dict) and not (
-                    raw.get("violations") or raw.get("checks")
+            # Some runs of the SLM answer with empty findings lists; retry
+            # once. If still empty, the validator marks every rule in this
+            # batch inconclusive honestly.
+            findings_empty = isinstance(raw, dict) and not (
+                raw.get("violations") or raw.get("checks")
+            )
+            if findings_empty and batch:
+                raw_text = vision_service.generate(
+                    prompt=user,
+                    system=system,
+                    **generate_kwargs,
                 )
-                if findings_empty and batch:
-                    raw_text = vision_service.generate(
-                        prompt=user,
-                        system=system,
-                        **generate_kwargs,
-                    )
-                    raw = vision_service.parse_json_loose(raw_text)
+                raw = vision_service.parse_json_loose(raw_text)
+            return raw
+
+        raise RuntimeError("Compliance batch failed without a response.")
+
+    try:
+        for index, batch in enumerate(batches, start=1):
+            if heartbeat:
+                heartbeat(index - 1, len(batches))
+
+            system, user = compliance_engine.build_prompt(batch, vision, ocr_text)
+            try:
+                raw = _run_batch(system, user, batch)
             except ValueError:
                 # Truncated or unparseable batch: leave its rules inconclusive
                 # rather than retrying the entire audit forever.
