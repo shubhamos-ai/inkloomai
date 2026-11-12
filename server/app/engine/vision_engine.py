@@ -12,7 +12,6 @@ deterministic placeholder so the whole pipeline can be exercised end-to-end.
 from __future__ import annotations
 
 import base64
-import mimetypes
 import os
 from pathlib import Path
 
@@ -94,9 +93,13 @@ def analyze_image(image_path: str | Path, *, mock: bool = None) -> dict:
     if not path.is_file():
         raise NotConfiguredError(f"Vision engine received a missing image path.")
 
-    mime = mimetypes.guess_type(str(path))[0] or "image/png"
-    with open(path, "rb") as fh:
-        b64 = base64.b64encode(fh.read()).decode("ascii")
+    # Auto-resize image for NIM to prevent HTTP read timeouts on large images
+    if settings.use_nvidia_nim:
+        from app.services import nim_vision_service
+        b64 = nim_vision_service.encode_image(str(path))
+    else:
+        with open(path, "rb") as fh:
+            b64 = base64.b64encode(fh.read()).decode("ascii")
 
     system_prompt = (
         "You are the Inkloom Vision Engine, an expert multimodal brand-governance system. "

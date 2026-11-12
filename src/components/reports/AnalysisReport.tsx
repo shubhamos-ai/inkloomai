@@ -183,12 +183,14 @@ function ViolationCard({ violation, index }: { violation: Violation; index: numb
 // ─── Recommendation Card ──────────────────────────────────────────────────────
 
 function RecommendationCard({ rec, index }: { rec: AIRecommendation; index: number }) {
+  const hasDetails = Boolean(rec.why || rec.how);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.07, duration: 0.35 }}
-      className="rounded-2xl border border-slate-200 bg-white overflow-hidden"
+      className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm"
     >
       <div className="px-5 pt-5 pb-4 border-b border-slate-100">
         <div className="flex items-center gap-2 mb-1">
@@ -198,19 +200,25 @@ function RecommendationCard({ rec, index }: { rec: AIRecommendation; index: numb
             {rec.priority} priority
           </span>
         </div>
-        <h4 className="font-semibold text-slate-900 text-sm mt-1">{rec.what}</h4>
+        <h4 className="font-semibold text-slate-900 text-sm mt-1 leading-relaxed">{rec.what}</h4>
       </div>
 
-      <div className="px-5 py-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
-          <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">Why</p>
-          <p className="text-sm text-blue-900 leading-relaxed">{rec.why}</p>
+      {hasDetails && (
+        <div className="px-5 py-4 grid gap-3 sm:grid-cols-2">
+          {rec.why && (
+            <div className="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3">
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-1">Why</p>
+              <p className="text-sm text-blue-900 leading-relaxed">{rec.why}</p>
+            </div>
+          )}
+          {rec.how && (
+            <div className="rounded-xl bg-green-50 border border-green-100 px-4 py-3">
+              <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-1">How to fix</p>
+              <p className="text-sm text-green-900 leading-relaxed">{rec.how}</p>
+            </div>
+          )}
         </div>
-        <div className="rounded-xl bg-green-50 border border-green-100 px-4 py-3">
-          <p className="text-xs font-semibold text-green-700 uppercase tracking-wider mb-1">How to fix</p>
-          <p className="text-sm text-green-900 leading-relaxed">{rec.how}</p>
-        </div>
-      </div>
+      )}
     </motion.div>
   );
 }
@@ -363,7 +371,7 @@ function PassedChecks({ checks }: { checks: string[] }) {
 // ─── AI Metadata Panel ────────────────────────────────────────────────────────
 
 function AIMetadataPanel({ meta }: { meta: AnalysisMetadata }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const hasOcr = meta.ocr_text && meta.ocr_text.trim() !== '' && meta.ocr_text !== 'none';
   const hasObs = Array.isArray(meta.vision_observations) && meta.vision_observations.length > 0;
 
@@ -762,6 +770,32 @@ export default function AnalysisReport({ result, onBack, onAnalyseAgain }: Analy
       <motion.div variants={sectionVariants}>
         <VisualEvidence result={result} />
       </motion.div>
+
+      {/* ── Inconclusive / Zero Rules Guidance Banner ─────────────────────── */}
+      {result.complianceLevel === 'inconclusive' && result.violations.length === 0 && (
+        <motion.div
+          variants={sectionVariants}
+          className="rounded-2xl border border-amber-200 bg-amber-50/70 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <h3 className="font-semibold text-amber-900 text-sm">No Active Brand Governance Rules Configured</h3>
+            </div>
+            <p className="text-xs text-amber-800 leading-relaxed max-w-2xl">
+              NVIDIA NIM extracted visual facts and text, but no company-specific brand rules were provided to check against.
+              Set up guidelines in Brand Brain to receive automated policy scoring, rule-by-rule violation checks, and suggested fixes.
+            </p>
+          </div>
+          <button
+            onClick={() => router.push('/brand-brain')}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-semibold hover:bg-amber-700 transition whitespace-nowrap shadow-sm"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            Configure Brand Brain
+          </button>
+        </motion.div>
+      )}
 
       {/* ── Detailed Violations ──────────────────────────────────────────── */}
       {result.violations.length > 0 && (

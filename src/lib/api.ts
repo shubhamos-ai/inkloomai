@@ -857,7 +857,17 @@ export async function getAnalysisResult(
     return null; // network unavailable — no fake substitute
   }
   if (res.status === 409) {
-    // Still running — report the live status so callers can poll instead.
+    // If /{analysis_id} reports 409, check status endpoint in case it just transitioned
+    const statusRes = await fetchApi(`/api/v1/analysis/${analysisId}/status`);
+    if (statusRes?.ok) {
+      const statusData = await statusRes.json();
+      if (statusData.status === 'completed' && statusData.result) {
+        const adapted = adaptReport(statusData.result);
+        adapted.companyName = companyName;
+        return adapted;
+      }
+    }
+
     const body = await res.json().catch(() => null);
     const detail = body?.detail ?? {};
     return {
@@ -865,7 +875,7 @@ export async function getAnalysisResult(
       advertisementName: 'Advertisement',
       imageUrl: authorizedUrl(`/api/v1/analysis/${analysisId}/image`),
       companyName,
-      complianceScore: 0,
+      complianceScore: null,
       complianceLevel: 'needs_revision',
       status: 'processing',
       analysedAt: new Date().toISOString(),
@@ -877,7 +887,19 @@ export async function getAnalysisResult(
         : 'Analysis still running.',
     };
   }
-  if (!res.ok) return null;
+  if (!res.ok) {
+    // Fallback: check status endpoint directly if main report route returns non-200
+    const statusRes = await fetchApi(`/api/v1/analysis/${analysisId}/status`);
+    if (statusRes?.ok) {
+      const statusData = await statusRes.json();
+      if (statusData.status === 'completed' && statusData.result) {
+        const adapted = adaptReport(statusData.result);
+        adapted.companyName = companyName;
+        return adapted;
+      }
+    }
+    return null;
+  }
 
   const raw = await res.json();
   const adapted = adaptReport(raw);
