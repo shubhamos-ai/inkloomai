@@ -528,12 +528,13 @@ features. See the appendix of [`ROUND3_DELIVERABLES.md`](ROUND3_DELIVERABLES.md)
 ```bash
 cd server
 .venv/bin/python -m pytest -q
-# 49 passed
+# 50 passed
 ```
 
-Coverage includes health (fast + deep), auth, onboarding, Brand Brain, analysis lifecycle,
-tenant isolation, history, storage pathing and error contracts. The Alembic chain is
-verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6`).
+Coverage includes health (fast + deep), auth, onboarding, Brand Brain, rule extraction
+(parsing, salvage, quote validation, category caps, enqueue → review → commit), analysis
+lifecycle, tenant isolation, history, storage pathing and error contracts. The Alembic
+chain is verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f1a2c4d5e6`).
 
 ### Frontend
 
@@ -605,7 +606,7 @@ on-demand AI analysis credit packs, and high-volume developer API licensing.
 7. **No email verification or password reset yet.** Accounts are email + password only.
 8. **Extraction quality depends on the provider.** The staged human review step exists so a
    human can correct proposals before they become enforceable rules.
-9. **Automated load testing is still on the backlog.** The current suite is 49 backend
+9. **Automated load testing is still on the backlog.** The current suite is 50 backend
    tests plus hands-on end-to-end production verification; high-concurrency load testing is
    the next step.
 10. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
@@ -658,7 +659,7 @@ inkloomai/
 │   │   ├── worker.py                 # Durable queue worker
 │   │   └── main.py                   # App + lifespan
 │   ├── alembic/versions/             # Migration chain
-│   ├── tests/                        # 49 backend tests
+│   ├── tests/                        # 50 backend tests
 │   ├── requirements.txt
 │   └── .env.example
 ├── render.yaml                       # Render blueprint

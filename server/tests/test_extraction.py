@@ -145,3 +145,53 @@ def test_validate_proposals_caps_each_category(monkeypatch):
     proposals, _rejected, warnings = extraction_engine.validate_proposals(raw, SOURCE)
     assert len(proposals) == 2
     assert any("per-category limit" in w for w in warnings)
+
+
+CANNED_OUTPUT = (
+    '{"rules":['
+    '{"category":"logo","requirement":"Never rotate the logo","severity":"major",'
+    '"source_text":"The logo must never be rotated.","confidence":0.9},'
+    '{"category":"colour_palette","requirement":"Use Warm Ivory","severity":"minor",'
+    '"source_text":"Warm Ivory #F8F5EF","confidence":0.8}]}'
+)
+
+
+def test_extract_review_and_commit_flow(client, company_a, monkeypatch):
+    from tests.conftest import headers_key
+
+    token = company_a["token"]
+    intake = client.post(
+        "/api/v1/brand-brain",
+        data={"rules_text": SOURCE},
+        headers=headers_key(token),
+    )
+    assert intake.status_code == 200, intake.text
+
+    monkeypatch.setattr(
+        extraction_service,
+        "_call_model",
+        lambda _source: (CANNED_OUTPUT, "test-model"),
+    )
+
+    extracted = client.post("/api/v1/brand-brain/extract", headers=headers_key(token))
+    assert extracted.status_code == 200, extracted.text
+    run = extracted.json()["run"]
+    assert run["status"] == "completed"
+    assert len(run["proposed_rules"]) == 2
+
+    committed = client.post(
+        f"/api/v1/brand-brain/extract/{run['id']}/commit",
+        json={"rules": run["proposed_rules"]},
+        headers=headers_key(token),
+    )
+    assert committed.status_code == 200, committed.text
+    assert committed.json()["committed_count"] == 2
+
+    rules = client.get("/api/v1/brand-brain/rules", headers=headers_key(token)).json()
+    assert rules["count"] == 2
+
+    rule_id = rules["rules"][0]["id"]
+    versions = client.get(
+        f"/api/v1/brand-brain/rules/{rule_id}/versions", headers=headers_key(token)
+    ).json()
+    assert len(versions["versions"]) >= 1
