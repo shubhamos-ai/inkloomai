@@ -1,79 +1,111 @@
 # INKLOOM AI
 
-**AI-Powered Advertising Compliance & Brand Governance Platform**
+### AI-Powered Advertising Compliance & Brand Governance Platform
 
-Inkloom AI turns unstructured company brand guidelines into traceable, versioned
-compliance rules, then audits advertising creatives against those rules before they are
-published. It is a multi-tenant SaaS product built for **CodeNexus India 2026 — Round 3:
-The Final Product** by **Team Tensor Titans**.
+> **Inkloom AI turns a company's unstructured brand guidelines into traceable, versioned
+> compliance rules — then audits ad creatives against those rules before they go live.**
 
-<p>
-  <a href="https://inkloom-ai.shubhamos.com"><strong>Live Web App</strong></a> ·
-  <a href="https://inkloom-backend-yw07.onrender.com/api/v1/health"><strong>Live API Health</strong></a> ·
-  <a href="https://github.com/shubhamos-ai/inkloomai"><strong>GitHub Repository</strong></a>
-</p>
+Built for **CodeNexus India 2026 · Round 3: The Final Product** by **Team Tensor Titans**.
+
+[![Live App](https://img.shields.io/badge/Live%20App-inkloom--ai.shubhamos.com-6D28D9?style=for-the-badge)](https://inkloom-ai.shubhamos.com)
+[![API](https://img.shields.io/badge/API-Online-16A34A?style=for-the-badge)](https://inkloom-backend-yw07.onrender.com/api/v1/health)
+[![Tests](https://img.shields.io/badge/Backend%20Tests-50%20passing-brightgreen?style=for-the-badge)](#testing)
+[![GitHub](https://img.shields.io/badge/GitHub-shubhamos--ai%2Finkloomai-181717?style=for-the-badge&logo=github)](https://github.com/shubhamos-ai/inkloomai)
+
+`Next.js 15` · `React 18` · `TypeScript` · `Tailwind` · `Framer Motion` · `FastAPI` ·
+`SQLAlchemy` · `Alembic` · `PostgreSQL` · `NVIDIA NIM` · `S3-compatible storage` · `Render`
+
+---
+
+## At a Glance
 
 | | |
 | --- | --- |
-| **Production web app** | <https://inkloom-ai.shubhamos.com> (verified `200`, custom domain on Render) |
-| **Render fallback URL** | <https://inkloom-frontend-rwy2.onrender.com> |
-| **Production API** | <https://inkloom-backend-yw07.onrender.com> |
+| **What it is** | A multi-tenant SaaS that converts brandbooks into machine-checkable rules and audits ad creatives before publication. |
+| **Who it is for** | D2C brands, ad agencies, marketing teams and compliance reviewers. |
+| **Core breakthrough** | A traceable LLM rule-extraction pipeline: every rule keeps the **exact source quote** it came from, and every change is versioned. |
+| **AI stack** | NVIDIA NIM **Llama 3.2 90B Vision** for creative inspection; **Nemotron 3.5 Lightning 30B** for fast, structured rule extraction. |
+| **Live status** | Frontend, API and PostgreSQL are deployed on Render. Storage is local on the free tier; S3-compatible storage is implemented and configurable. |
+| **Team** | Shubham Chawhan (Team Leader) · Shivam Panchal (Architecture Lead) — MBIT |
 | **Repository** | <https://github.com/shubhamos-ai/inkloomai> |
-| **Team** | Shubham Chawhan (Team Leader — Full-Stack Development & Intelligence) · Shivam Panchal (Architecture Lead — AI Research & System Architecture) |
-| **Institution** | Madhuben and Bhanubhai Patel Institute of Technology (MBIT) |
+
+### Production links
+
+| Surface | URL | Status |
+| --- | --- | --- |
+| **Web app (custom domain)** | <https://inkloom-ai.shubhamos.com> | `200`, verified Render custom domain |
+| **Web app (Render fallback)** | <https://inkloom-frontend-rwy2.onrender.com> | `200` |
+| **API health** | <https://inkloom-backend-yw07.onrender.com/api/v1/health> | `200`, `database=connected` |
+| **Repository** | <https://github.com/shubhamos-ai/inkloomai> | public |
+
+> **Free-tier note:** Render free web services sleep after inactivity. The first request can
+> take 30–60 seconds; the UI shows a “connecting” state and retries instead of claiming the
+> backend is offline.
 
 ---
 
-## Table of Contents
+## The 30-Second Pitch
 
-1. [The Problem](#the-problem)
-2. [The Journey](#the-journey)
-3. [Round 3 Commitments — Delivered](#round-3-commitments--delivered)
-4. [Bonus Production Upgrades](#bonus-production-upgrades)
-5. [System Architecture](#system-architecture)
-6. [Live Production Verification](#live-production-verification)
-7. [Use Demo — VELORA Preset](#use-demo--velora-preset)
-8. [Quick Start](#quick-start)
-9. [Environment Reference](#environment-reference)
-10. [API Reference](#api-reference)
-11. [Security & Multi-Tenancy](#security--multi-tenancy)
-12. [Database & Migrations](#database--migrations)
-13. [Deployment on Render](#deployment-on-render)
-14. [Testing](#testing)
-15. [Monetization & GTM Strategy](#monetization--gtm-strategy)
-16. [Roadmap](#roadmap)
-17. [Known Limitations](#known-limitations)
-18. [Repository Structure](#repository-structure)
-19. [Team](#team)
+Brand compliance today lives in PDFs, spreadsheets and manual review. That fails in three
+ways:
 
----
+1. **Rules are unstructured** — brandbooks describe intent, not testable rules.
+2. **Evidence is untraceable** — a reviewer cannot show which clause a finding came from.
+3. **Review is too late** — violations are found after the campaign is live.
 
-## The Problem
+Inkloom AI fixes the whole loop:
 
-Brand and advertising compliance is usually enforced by PDFs, spreadsheets and manual
-review. That creates three failures:
-
-- **Rules are unstructured** — brandbooks describe intent, not machine-checkable rules.
-- **Evidence is untraceable** — reviewers cannot show which policy clause a finding came from.
-- **Review is too late** — violations are found after a campaign is live.
-
-Inkloom AI converts the guidelines into **categorized, source-quoted, versioned rules**,
-then combines them with **multimodal vision inspection** to produce a scored, auditable
-report before publication.
-
----
-
-## The Journey
-
-| Phase | What happened |
+| Step | What happens |
 | --- | --- |
-| **Round 1 — The Plan** | Conceptual architecture for a unified Brand Brain and a multi-modal pre-publication review workflow. |
-| **Round 2 — The Build** | Working prototype plus three committed production-grade upgrades for the final release. |
-| **Round 3 — Final Product** | Multi-tenant, queue-backed SaaS running Next.js 15, FastAPI, SQLAlchemy, S3-compatible storage and NVIDIA NIM Llama 3.2 90B Vision. |
+| **1 · Ingest** | Paste guidelines or upload PDF / DOCX / TXT / Markdown. |
+| **2 · Extract** | An LLM proposes categorized rules, each with a verbatim `source_text` quote. |
+| **3 · Review** | A human edits and approves proposals in **Brand Brain Studio** — nothing is auto-saved. |
+| **4 · Version** | Committed rules become `BrandRule` rows with an immutable version history. |
+| **5 · Audit** | A vision model inspects the creative, OCRs the copy and evaluates it rule by rule. |
+| **6 · Report** | A scored, auditable report shows violations, evidence, severity, confidence and fixes. |
 
-**Core engineering breakthrough:** a traceable LLM rule-extraction pipeline that turns raw
-PDF, DOCX and TXT guidelines into categorized, source-quoted compliance rules, then feeds
-them into vision-model inspection for brand-specific evaluations.
+**The result:** every creative is checked against the brand's *actual* rules, with a quote
+trail back to the source document.
+
+---
+
+## Judge's 60-Second Demo
+
+Open **<https://inkloom-ai.shubhamos.com>** and follow this path:
+
+| # | Action | What to look for |
+| --- | --- | --- |
+| 1 | **Create account** (`/register`) or **sign in** (`/login`) | Real auth; no mock session. |
+| 2 | **Add your organisation** → click **Use Demo** | Prefills `VELORA Skincare Laboratories`, the skincare industry and the full **8,927-character** VELORA guidelines. |
+| 3 | **Initialize Workspace** | Dashboard for the new tenant workspace. |
+| 4 | Open **Brand Brain** → **Extract Rules with AI** | Proposals arrive with category, severity, confidence and the exact source quote. Expect **~1–2 minutes** on the free tier. |
+| 5 | Review and **commit** the rules you approve | Only approved rules are saved; every save writes a version snapshot. |
+| 6 | Open **Analyse** → upload a creative | Job returns `202` immediately, then `queued → processing → completed`. |
+| 7 | Open the report | Score, violations, OCR text, visual observations, model metadata and corrective actions. |
+| 8 | Try **History**, **Settings**, then **Sign out** and sign back in | Tenant-scoped data, real session invalidation. |
+
+**Verified live on 12 Nov 2026:** a VELORA extraction run completed in **57 seconds** with
+**58 proposals across 7 categories**, and only **9** proposals rejected by the verbatim-quote
+check. A separate VELORA creative audit completed end-to-end in roughly **11 seconds** with
+**15+ visual observations**, OCR ad copy, claim checks and corrective recommendations.
+
+> **Tip for judges:** if the page is cold, wait for the “connecting” banner to clear. The
+> first request wakes the free Render instance.
+
+---
+
+## What Makes It Different
+
+| Capability | Typical manual review | Inkloom AI |
+| --- | --- | --- |
+| **Rule source** | PDFs and tribal knowledge | Categorized rules extracted from the actual brandbook |
+| **Evidence** | “I think this is off-brand” | Every rule stores a verbatim `source_text` quote |
+| **Traceability** | None | Immutable `BrandRuleVersion` history per rule |
+| **AI safety** | Trust the model | Human review gate; non-verbatim proposals are rejected and reported |
+| **Audit speed** | Hours per creative | Async vision audit in seconds to a couple of minutes |
+| **Tenant isolation** | Shared spreadsheets | `company_id` scoping enforced in the API dependency layer |
+| **Failure handling** | Silent retries or fake results | Classified provider errors, backoff, attempts, manual retry |
+| **Audit output** | Checklist | Scored report with OCR, visual evidence, severity and fixes |
 
 ---
 
@@ -88,15 +120,23 @@ rules while preserving the exact original wording as evidence.
 
 - **Multi-format ingestion** — direct text, PDF, DOCX, TXT and Markdown, parsed server-side.
 - **Verbatim quote traceability** — every proposed rule must include a `source_text` that
-  appears character-for-character (whitespace-normalized) in the source document.
-  Proposals that fail this check are **rejected and reported**, never silently saved.
+  appears in the source document (whitespace-normalized; wrapping quotes and trailing
+  punctuation tolerated). Proposals that fail are **rejected and reported**, never silently
+  saved.
+- **Balanced extraction** — the prompt walks categories in order, with a per-category cap
+  (`EXTRACTION_MAX_RULES_PER_CATEGORY=12`) so one long prohibited-claims list cannot consume
+  the whole budget.
+- **Truncation recovery** — if the provider stops mid-JSON, complete rule objects are
+  salvaged instead of failing the whole run.
 - **Versioning & audit trail** — every rule create/update/delete writes an immutable
   `BrandRuleVersion` snapshot. History is queryable per rule.
-- **Brand Brain Studio** — an interactive workspace to review AI proposals, edit them, and
-  commit only what a human approves.
+- **Brand Brain Studio** — review AI proposals, edit them, and commit only what a human
+  approves.
 
-**Flow:** `POST /brand-brain/extract` → worker proposes rules → human reviews →
+**Flow:** `POST /brand-brain/extract` → provider proposes rules → human reviews →
 `POST /brand-brain/extract/{run_id}/commit` → `BrandRule` rows + version snapshots.
+
+**Try it:** Brand Brain → **Extract Rules with AI** → review → commit.
 
 ### Commitment 02 — Enterprise Multi-Tenancy & Strict Workspace Scoping
 
@@ -116,6 +156,9 @@ rules while preserving the exact original wording as evidence.
 - **Real logout** — invalidates the server-side session and clears cookies from the
   sidebar, mobile nav and settings.
 
+**Try it:** create a second workspace, switch between them, and confirm rules and reports
+never leak across tenants.
+
 ### Commitment 03 — Durable Object Storage & Asynchronous Worker Architecture
 
 **Goal:** remove temporary local files and blocking synchronous AI calls.
@@ -132,54 +175,45 @@ rules while preserving the exact original wording as evidence.
   `ProviderUnavailable` and retried. A provider failure is **never** converted into a fake
   completed report.
 
+**Try it:** upload a creative and watch `GET /analysis/{id}/status` move through the states;
+the report appears when the worker finishes.
+
 ---
 
 ## Bonus Production Upgrades
 
 | # | Upgrade | What it does |
 | --- | --- | --- |
-| 01 | **Dual AI provider support** | NVIDIA NIM Llama 3.2 90B Vision is the production provider (served over an OpenAI-compatible API). Ollama is supported for local/offline development. |
+| 01 | **Dual AI provider support** | NVIDIA NIM is the production provider (OpenAI-compatible API). Ollama is supported for local/offline development. |
 | 02 | **PIL image optimization** | Automatic resize, compression and JPEG conversion before inference to avoid large-upload timeouts. |
 | 03 | **Richer diagnostic reports** | Visual observations, OCR text, model metadata, latency and confidence scores. |
 | 04 | **Score guardrails** | Inconclusive AI output is handled gracefully so it never produces a false zero score or a broken report view. |
-| 05 | **Auto wake-up & health** | A fast `/health` endpoint plus frontend wake-pings handle Render cold starts without a false "offline" state. |
+| 05 | **Auto wake-up & health** | A fast `/health` endpoint plus frontend wake-pings handle Render cold starts without a false “offline” state. |
 | 06 | **Redesigned SaaS UI** | Responsive desktop/mobile navigation, skeleton loading states and interactive reports. |
 | 07 | **Production Render deployment** | Live custom domain with domain-locked CORS, SSL termination and environment-isolated secrets. |
 
 > **Accuracy note:** the deployed provider is NVIDIA NIM (OpenAI-compatible endpoint).
-> No OpenAI account is wired into the current build; "OpenAI-compatible" refers to the API
+> No OpenAI account is wired into the current build; “OpenAI-compatible” refers to the API
 > shape, not a second vendor.
 
 ---
 
 ## System Architecture
 
-```
-┌──────────────────────────────────────────────────────────────────────────────┐
-│ 01 · Frontend Client                                                          │
-│ Next.js 15 (App Router) + React 18 + TypeScript + Tailwind + Framer Motion    │
-│ Auth · multi-tenant workspaces · Brand Brain Studio · interactive reports     │
-└───────────────────────────────────┬──────────────────────────────────────────┘
-                                    │ HTTPS · Bearer token or HttpOnly cookie + CSRF
-┌───────────────────────────────────▼──────────────────────────────────────────┐
-│ 02 · API & Orchestration                                                      │
-│ FastAPI + REST · tenant-scoped authorization · upload validation · health     │
-└───────┬───────────────────┬───────────────────────┬──────────────────────────┘
-        │                   │                       │
-┌───────▼─────────┐ ┌───────▼──────────────┐ ┌──────▼───────────────────────────┐
-│ 03 · Rule       │ │ 04 · Vision & OCR    │ │ 05 · Database & Queue            │
-│ Extraction      │ │ Pipeline             │ │ SQLAlchemy + Alembic             │
-│ LLM guideline   │ │ PIL optimization     │ │ PostgreSQL / SQLite              │
-│ → categorized,  │ │ NVIDIA NIM Llama 3.2 │ │ durable analysis_jobs queue      │
-│ source-quoted   │ │ 90B Vision (+OCR)    │ │ retries · backoff · leases       │
-│ versioned rules │ │ → rule evaluation    │ │ extraction_runs queue            │
-└─────────────────┘ └──────────────────────┘ └──────────────┬───────────────────┘
-                                                             │
-                                          ┌──────────────────▼───────────────────┐
-                                          │ 06 · Cloud & Object Storage          │
-                                          │ Render · S3 / Cloudflare R2 / MinIO  │
-                                          │ pre-signed URLs · local fallback     │
-                                          └──────────────────────────────────────┘
+```mermaid
+flowchart LR
+  U[Judge / brand team] --> FE["Next.js 15 frontend<br/>App Router · TypeScript · Tailwind"]
+  FE -->|"HTTPS + auth"| API["FastAPI API<br/>tenant-scoped auth · validation"]
+  API --> DB[("PostgreSQL<br/>SQLAlchemy + Alembic")]
+  API --> Q[("analysis_jobs<br/>durable SQL queue")]
+  API --> EX["Rule extraction<br/>NVIDIA NIM Nemotron 30B"]
+  API --> ST["S3-compatible storage<br/>local fallback"]
+  Q --> W["Worker<br/>embedded or dedicated"]
+  W --> VIS["Vision + OCR<br/>NVIDIA NIM Llama 3.2 90B"]
+  W --> DB
+  W --> ST
+  EX --> DB
+  VIS --> DB
 ```
 
 ### Request lifecycle (analysis)
@@ -193,6 +227,16 @@ rules while preserving the exact original wording as evidence.
    increment `attempts`, and schedule `next_attempt_at` with exponential backoff.
 6. The frontend polls `GET /analysis/{id}/status`, then loads the report and assets.
 
+### Extraction lifecycle (Brand Brain)
+
+1. `POST /brand-brain/extract` snapshots the company's current guideline text into an
+   `ExtractionRun`.
+2. The text model returns strict JSON rules, each with a verbatim quote.
+3. The validator rejects invented quotes, duplicates and category overflow; the run stores
+   proposals **and** rejection reasons.
+4. A human edits/approves proposals and calls `POST /brand-brain/extract/{run_id}/commit`.
+5. Only approved rules become `BrandRule` rows; each write creates a `BrandRuleVersion`.
+
 ### Why the queue lives in PostgreSQL
 
 Round 3 needed durable retries without adding Redis/RQ/Celery to a free-tier deployment.
@@ -200,41 +244,106 @@ Round 3 needed durable retries without adding Redis/RQ/Celery to a free-tier dep
 for the expected concurrency. The service interface (`claim_job`, `complete_job`,
 `retry_job`) keeps a future broker migration out of the API layer.
 
+### Why two Render services?
+
+Next.js needs a Node runtime and FastAPI needs Python; Render cannot run both native
+runtimes in one service. Two services also deploy, scale and roll back independently. A
+single Docker image is possible but adds build complexity and loses Next.js server
+features. Render also cannot share a persistent disk across services, so a standalone worker
+needs S3-compatible storage. See the appendix of
+[`ROUND3_DELIVERABLES.md`](ROUND3_DELIVERABLES.md).
+
 ---
 
 ## Live Production Verification
 
-Verified on the deployed platform:
+Verified on **12 Nov 2026** against the deployed platform:
 
 | Check | Result |
 | --- | --- |
-| `GET https://inkloom-backend-yw07.onrender.com/api/v1/health` | `200` in ~0.3s · `database=connected` · `vision_status=configured` · `worker=embedded` |
+| `GET /api/v1/health` | `200` in ~0.3s · `database=connected` · `vision_status=configured` · `worker=embedded` |
 | Custom frontend domain | `https://inkloom-ai.shubhamos.com` → `200`, title `Inkloom AI — Advertising Compliance & Brand Governance` |
 | CORS preflight from the production frontend origin | `200` with the correct `access-control-allow-origin` |
 | Registration / login / logout | End-to-end against the live API |
 | **Use Demo** preset | Name, industry and 8,927-character guidelines filled exactly |
 | Workspace creation | `POST /onboarding` → `200`, `POST /brand-brain` → `200`, dashboard shows the new workspace |
+| **Live extraction run** | Completed in **57s**: 58 proposals, 7 categories, 9 rejected, 0 provider errors |
+| **Live creative audit** | Completed in ~**11s**: 15+ visual observations, OCR copy, claim checks, rule severities, confidence, recommendations |
 
-**Live benchmark case study (final validation):** a VELORA Skincare promotional creative
-completed end-to-end in roughly **11 seconds**, producing **15+ distinct visual
-observations**, full OCR ad copy, marketing claims, rule-by-rule severity classifications,
-confidence scores and corrective recommendations.
+### Verify it yourself
+
+```bash
+# 1. API is awake and connected to PostgreSQL
+curl -sS https://inkloom-backend-yw07.onrender.com/api/v1/health
+
+# 2. Custom-domain frontend responds
+curl -sSI https://inkloom-ai.shubhamos.com | head -5
+
+# 3. The public repository is reachable
+curl -sSI https://github.com/shubhamos-ai/inkloomai | head -3
+```
+
+Expected health payload (abridged):
+
+```json
+{
+  "status": "online",
+  "service": "Inkloom AI",
+  "version": "1.0.0",
+  "database": "connected",
+  "vision_provider": "nvidia_nim",
+  "vision_status": "configured",
+  "pipeline_mode": "ai",
+  "storage_backend": "local",
+  "worker": "embedded"
+}
+```
+
+---
+
+## Feature Tour
+
+| Area | Route | What a judge can inspect |
+| --- | --- | --- |
+| **Onboarding** | `/onboarding` | Auth, organisation details, **Use Demo**, workspace build. |
+| **Dashboard** | `/dashboard` | Workspace stats, recent audits, compliance posture. |
+| **Brand Brain Studio** | `/brand-brain` | Guideline intake, AI extraction, review/commit, rule CRUD, version history. |
+| **Analyse** | `/analysis` | Upload, live queue status, scanning experience, scored report. |
+| **History** | `/history` | Searchable, filterable audit history with report deep links. |
+| **Settings** | `/settings` | Workspace, connection state, session and logout controls. |
+| **Auth deep links** | `/login`, `/register` | Thin entry points into the onboarding auth flow. |
 
 ---
 
 ## Use Demo — VELORA Preset
 
-The onboarding "Add your organisation" step includes a **Use Demo** button for judges and
+The onboarding “Add your organisation” step includes a **Use Demo** button for judges and
 reviewers. It fills:
 
 - **Organisation Name:** `VELORA Skincare Laboratories`
 - **Industry Sector:** `Skincare, dermatology-inspired cosmetics and personal care.`
 - **Brand Guidelines & Policies:** the full supplied VELORA company profile and advertising
-  compliance rules (8,927 characters).
+  compliance rules (**8,927 characters**).
 
 The preset lives in [`src/lib/demoPresets.ts`](src/lib/demoPresets.ts) so onboarding, docs
 and tests share one source of truth. Nothing is generated at runtime; the exact text is
 stored as a typed constant.
+
+---
+
+## Technology
+
+| Layer | Choices |
+| --- | --- |
+| **Frontend** | Next.js 15 (App Router), React 18, TypeScript, Tailwind CSS, Framer Motion |
+| **Backend** | FastAPI, Pydantic, SQLAlchemy 2, Alembic |
+| **Database** | PostgreSQL in production, SQLite locally |
+| **Queue** | Durable SQL-backed `analysis_jobs` table with leases, attempts and backoff |
+| **Vision** | NVIDIA NIM `meta/llama-3.2-90b-vision-instruct` (+ OCR engine) |
+| **Extraction** | NVIDIA NIM `nvidia/nemotron-3.5-lightning-30b-a3b` |
+| **Storage** | S3-compatible (`boto3`): AWS S3, Cloudflare R2, MinIO; local-disk fallback |
+| **Deployment** | Render (frontend, backend, PostgreSQL), custom domain + TLS |
+| **Testing** | Pytest (50 backend tests), TypeScript type-check, Next.js production build |
 
 ---
 
@@ -354,23 +463,6 @@ send `X-Company-ID`.
 | --- | --- | --- |
 | `GET` | `/health` | Fast: status, database, provider, storage, worker. |
 | `GET` | `/health?deep=true` | Adds live provider reachability probes. |
-
-Example fast response:
-
-```json
-{
-  "status": "online",
-  "service": "Inkloom AI Backend",
-  "version": "1.0.0",
-  "database": "connected",
-  "vision_provider": "nvidia_nim",
-  "vision_status": "configured",
-  "pipeline_mode": "ai",
-  "storage_backend": "local",
-  "worker": "embedded",
-  "time": "2026-11-12T00:00:00Z"
-}
-```
 
 ### Auth
 
@@ -512,13 +604,6 @@ git push origin main   # private mirror
 git push public main   # public — triggers Render
 ```
 
-### Why two Render services?
-
-Next.js needs a Node runtime and FastAPI needs Python; Render cannot run both native
-runtimes in one service. Two services also deploy, scale and roll back independently. A
-single Docker image is possible but adds build complexity and loses Next.js server
-features. See the appendix of [`ROUND3_DELIVERABLES.md`](ROUND3_DELIVERABLES.md).
-
 ---
 
 ## Testing
@@ -540,7 +625,7 @@ chain is verified from an empty database (`9620a1694b6c → a77fc3c33808 → b3f
 
 ```bash
 npx tsc --noEmit     # 0 errors
-npm run build        # 12 routes generated
+npm run build        # 12 static pages generated
 ```
 
 ### Manual E2E (production)
@@ -553,35 +638,19 @@ npm run build        # 12 routes generated
 
 ---
 
-## Monetization & GTM Strategy
+## Project Status
 
-> This section describes the product's go-to-market strategy. Billing/payment integration
-> is **not** wired into the current build.
-
-| Tier | Price | Audience |
-| --- | --- | --- |
-| **Free** | ₹0/mo | Early creators — limited monthly scans. |
-| **Starter** | ₹999/mo | Small business — one brand workspace, core rules. |
-| **Growth ★** | ₹3,999/mo | D2C brands — higher scan volume and team access. |
-| **Agency** | ₹9,999/mo | Ad agencies — multi-brand workspaces, approvals, white-label reports. |
-| **Enterprise** | Custom | Global orgs — dedicated infrastructure, high-volume API, compliance SLAs, audit logs. |
-
-**Additional revenue:** Razorpay and international gateways, discounted annual plans,
-on-demand AI analysis credit packs, and high-volume developer API licensing.
-
----
-
-## Roadmap
-
-| Phase | Focus |
+| Area | Status |
 | --- | --- |
-| **1 · Agency** | Agency workspaces, role-based team permissions, client dashboards, exportable white-label PDF audits. |
-| **2 · Remediation** | Generative remediation — auto-rewriting non-compliant copy, visual correction overlays, A/B comparison, bulk campaign scans. |
-| **3 · Ecosystem** | Public REST APIs and plugins embedding Inkloom AI into ad managers, CMS platforms and design tools. |
-| **4 · Global** | Multilingual compliance, expanding from Indian D2C/startups to international languages and regional ad standards. |
-
-> "Every creative checked, improved, and approved against a brand's true identity before it
-> ever reaches the customer."
+| Frontend + backend + PostgreSQL deployed | ✅ Live on Render |
+| Custom domain + TLS | ✅ `inkloom-ai.shubhamos.com` verified |
+| Auth, multi-tenancy, cookie/CSRF sessions | ✅ Implemented and tested |
+| Traceable rule extraction + versioning | ✅ Implemented, live run verified |
+| Durable queue + retries + backoff | ✅ Implemented |
+| S3-compatible storage | ✅ Implemented; ⚠️ live free tier uses local disk |
+| Billing / subscriptions | 🗺️ Strategy only, not wired |
+| Email verification / password reset | 🗺️ Backlog |
+| High-concurrency load testing | 🗺️ Backlog |
 
 ---
 
@@ -594,7 +663,7 @@ on-demand AI analysis credit packs, and high-volume developer API licensing.
 2. **The free Render Postgres expires on 2026-12-10.** Upgrade or migrate the data before
    then.
 3. **Free instances spin down after inactivity.** The first request can take 30–60s; the UI
-   shows a "connecting" state and retries instead of a false outage.
+   shows a “connecting” state and retries instead of a false outage.
 4. **Background workers are a paid Render service type.** The free deployment runs the
    queue in-process via `RUN_EMBEDDED_WORKER=auto`; the dedicated worker block in
    `render.yaml` is commented out.
@@ -671,6 +740,67 @@ inkloomai/
 
 ---
 
+## Monetization & GTM Strategy
+
+> This section describes the product's go-to-market strategy. Billing/payment integration
+> is **not** wired into the current build.
+
+| Tier | Price | Audience |
+| --- | --- | --- |
+| **Free** | ₹0/mo | Early creators — limited monthly scans. |
+| **Starter** | ₹999/mo | Small business — one brand workspace, core rules. |
+| **Growth ★** | ₹3,999/mo | D2C brands — higher scan volume and team access. |
+| **Agency** | ₹9,999/mo | Ad agencies — multi-brand workspaces, approvals, white-label reports. |
+| **Enterprise** | Custom | Global orgs — dedicated infrastructure, high-volume API, compliance SLAs, audit logs. |
+
+**Additional revenue:** Razorpay and international gateways, discounted annual plans,
+on-demand AI analysis credit packs, and high-volume developer API licensing.
+
+---
+
+## Roadmap
+
+| Phase | Focus |
+| --- | --- |
+| **1 · Agency** | Agency workspaces, role-based team permissions, client dashboards, exportable white-label PDF audits. |
+| **2 · Remediation** | Generative remediation — auto-rewriting non-compliant copy, visual correction overlays, A/B comparison, bulk campaign scans. |
+| **3 · Ecosystem** | Public REST APIs and plugins embedding Inkloom AI into ad managers, CMS platforms and design tools. |
+| **4 · Global** | Multilingual compliance, expanding from Indian D2C/startups to international languages and regional ad standards. |
+
+> “Every creative checked, improved, and approved against a brand's true identity before it
+> ever reaches the customer.”
+
+---
+
+## FAQ for Judges
+
+**Does the AI invent rules?**
+No. Each proposal must include a `source_text` quote that exists in the document. Anything
+else is rejected and shown as a rejection reason — never silently saved.
+
+**What if the model is wrong?**
+Extraction is staged. A human reviews, edits and commits proposals. Only approved rules
+become enforceable.
+
+**Is this really multi-tenant?**
+Yes. Every tenant-owned row carries `company_id`; the API validates ownership before any
+read or write, including browser-supplied `X-Company-ID` headers.
+
+**What happens if the AI provider fails?**
+The job is marked retryable with an error code, attempts and exponential backoff. It is
+never converted into a fake completed report.
+
+**Why not MongoDB / Redis?**
+The product's data is relational and the queue is small; PostgreSQL + SQLAlchemy + Alembic
+keeps transactions, migrations and the queue in one place. MongoDB URLs are explicitly
+rejected with a clear error rather than silently failing.
+
+**Do I need to install anything to evaluate it?**
+No. Use the live app and the **Use Demo** button. Everything else in this README is for
+reproducing the deployment locally.
+
+---
+
 ## Team
 
 **Team Tensor Titans** — CodeNexus India 2026 Final Submission
@@ -680,5 +810,6 @@ inkloomai/
 - **Madhuben and Bhanubhai Patel Institute of Technology (MBIT)**
 
 **Links:** [Live App](https://inkloom-ai.shubhamos.com) ·
+[API Health](https://inkloom-backend-yw07.onrender.com/api/v1/health) ·
 [GitHub](https://github.com/shubhamos-ai/inkloomai) ·
 [Round 3 Deliverables](ROUND3_DELIVERABLES.md)
