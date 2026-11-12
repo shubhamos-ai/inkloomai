@@ -181,6 +181,16 @@ class Settings:
     EXTRACTION_TIMEOUT_SECONDS: float = float(os.getenv("EXTRACTION_TIMEOUT_SECONDS", "180"))
 
     # ------------------------------------------------------------------
+    # Compliance audit (vision + rule evaluation)
+    # ------------------------------------------------------------------
+    # Evaluate a large rulebook in chunks. One request for 58+ rules overflows
+    # the completion budget and returns truncated JSON, which used to fail the
+    # whole audit. Batching keeps every request comfortably inside the budget.
+    COMPLIANCE_BATCH_SIZE: int = int(os.getenv("COMPLIANCE_BATCH_SIZE", "20"))
+    COMPLIANCE_MAX_TOKENS: int = int(os.getenv("COMPLIANCE_MAX_TOKENS", "4096"))
+    COMPLIANCE_TIMEOUT_SECONDS: float = float(os.getenv("COMPLIANCE_TIMEOUT_SECONDS", "180"))
+
+    # ------------------------------------------------------------------
     # Worker / job queue
     # ------------------------------------------------------------------
     WORKER_POLL_INTERVAL_SECONDS: float = float(os.getenv("WORKER_POLL_INTERVAL_SECONDS", "1.0"))

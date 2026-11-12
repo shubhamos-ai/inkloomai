@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import time
 import uuid
+from collections.abc import Callable
 from datetime import timedelta
 
 from fastapi import HTTPException, UploadFile
@@ -249,8 +250,18 @@ def run_pipeline(job_id: uuid.UUID) -> None:
                 vision_observations=vision.get("observations", []),
             )
         else:
+            def _compliance_progress(done: int, total: int) -> None:
+                stage = "Checking brand policies"
+                if total > 1:
+                    stage = f"Checking brand policies ({done}/{total} batches)"
+                _set_stage(db, job.id, progress=75, stage=stage)
+
             report = _ai_compliance_report(
-                analysis_id=str(analysis.id), rules=rules, vision=vision, ocr_text=ocr_text
+                analysis_id=str(analysis.id),
+                rules=rules,
+                vision=vision,
+                ocr_text=ocr_text,
+                heartbeat=_compliance_progress,
             )
 
         # Stage 4 — deterministic scoring (the LLM never picks the score).
@@ -324,8 +335,22 @@ def run_pipeline(job_id: uuid.UUID) -> None:
         db.close()
 
 
-def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, ocr_text: str) -> dict:
-    """Real inference path — uses NVIDIA NIM or Ollama based on configuration."""
+def _ai_compliance_report(
+    *,
+    analysis_id: str,
+    rules: list[dict],
+    vision: dict,
+    ocr_text: str,
+    heartbeat: Callable[[int, int], None] | None = None,
+) -> dict:
+    """Real inference path — uses NVIDIA NIM or Ollama based on configuration.
+
+    A large rulebook is evaluated in batches. Sending 50+ rules in one request
+    overflows the provider's completion budget and returns truncated JSON; each
+    batch stays comfortably inside it. A malformed batch degrades to
+    inconclusive for its rules instead of failing the whole audit, while a real
+    provider outage still raises a retryable error.
+    """
     from app.services import ollama_service
 
     # Use the appropriate service based on configuration
@@ -338,21 +363,85 @@ def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, 
     if vision.get("image_b64"):
         vision_kwargs["images"] = [vision["image_b64"]]
 
-    try:
-        system, user = compliance_engine.build_prompt(rules, vision, ocr_text)
-        raw_text = vision_service.generate(
-            prompt=user,
-            system=system,
-            **vision_kwargs,
-        )
-        raw = vision_service.parse_json_loose(raw_text)
+    # NIM accepts an explicit budget/timeout; the Ollama client does not.
+    generate_kwargs = dict(vision_kwargs)
+    if settings.use_nvidia_nim:
+        generate_kwargs["max_tokens"] = settings.COMPLIANCE_MAX_TOKENS
+        generate_kwargs["timeout"] = settings.COMPLIANCE_TIMEOUT_SECONDS
 
-        # Some runs of the SLM answer with empty findings lists; retry once.
-        # If still empty, validate_ai_output marks every rule inconclusive honestly.
-        findings_empty = isinstance(raw, dict) and not (raw.get("violations") or raw.get("checks"))
-        if findings_empty and rules:
-            raw_text = vision_service.generate(prompt=user, system=system, **vision_kwargs)
-            raw = vision_service.parse_json_loose(raw_text)
+    batch_size = max(1, int(settings.COMPLIANCE_BATCH_SIZE))
+    batches = [rules[i : i + batch_size] for i in range(0, len(rules), batch_size)] or [[]]
+
+    merged_checks: list[dict] = []
+    merged_violations: list[dict] = []
+    merged_recommendations: list[str] = []
+    summaries: list[str] = []
+    failed_batches = 0
+
+    try:
+        for index, batch in enumerate(batches, start=1):
+            if heartbeat:
+                heartbeat(index - 1, len(batches))
+
+            system, user = compliance_engine.build_prompt(batch, vision, ocr_text)
+            try:
+                raw_text = vision_service.generate(
+                    prompt=user,
+                    system=system,
+                    **generate_kwargs,
+                )
+                raw = vision_service.parse_json_loose(raw_text)
+
+                # Some runs of the SLM answer with empty findings lists; retry
+                # once. If still empty, the validator marks every rule in this
+                # batch inconclusive honestly.
+                findings_empty = isinstance(raw, dict) and not (
+                    raw.get("violations") or raw.get("checks")
+                )
+                if findings_empty and batch:
+                    raw_text = vision_service.generate(
+                        prompt=user,
+                        system=system,
+                        **generate_kwargs,
+                    )
+                    raw = vision_service.parse_json_loose(raw_text)
+            except ValueError:
+                # Truncated or unparseable batch: leave its rules inconclusive
+                # rather than retrying the entire audit forever.
+                failed_batches += 1
+                continue
+
+            if not isinstance(raw, dict):
+                failed_batches += 1
+                continue
+
+            summary = str(raw.get("summary") or "").strip()
+            if summary:
+                summaries.append(summary)
+            merged_checks.extend(
+                c for c in (raw.get("checks") or []) if isinstance(c, dict)
+            )
+            merged_violations.extend(
+                v for v in (raw.get("violations") or []) if isinstance(v, dict)
+            )
+            merged_recommendations.extend(
+                str(x) for x in (raw.get("recommendations") or []) if x
+            )
+
+            if heartbeat:
+                heartbeat(index, len(batches))
+
+        if failed_batches == len(batches) and rules:
+            raise ProviderUnavailable(
+                "AI compliance analysis returned no usable output for any rule batch."
+            )
+
+        merged = {
+            "summary": " ".join(dict.fromkeys(summaries))[:2000],
+            "checks": merged_checks,
+            "violations": merged_violations,
+            "recommendations": list(dict.fromkeys(merged_recommendations))[:20],
+        }
 
         # Determine engine name for metadata
         if settings.use_nvidia_nim:
@@ -363,15 +452,19 @@ def _ai_compliance_report(*, analysis_id: str, rules: list[dict], vision: dict, 
             engine_name = settings.OLLAMA_VISION_MODEL
 
         return compliance_engine.validate_ai_output(
-            raw=raw,
+            raw=merged,
             analysis_id=analysis_id,
             rules=rules,
             metadata_extra={
                 "model": engine_name,
                 "vision_observations": vision.get("observations", []),
                 "ocr_text": ocr_text,
+                "compliance_batches": len(batches),
+                "compliance_failed_batches": failed_batches,
             },
         )
+    except ProviderUnavailable:
+        raise
     except Exception as exc:  # noqa: BLE001 — surface a retryable failure
         if settings.DEBUG:
             import traceback

@@ -48,6 +48,8 @@ class ReportMetadata(BaseModel):
     ocr_source: Optional[str] = None
     duration_ms: Optional[int] = None
     brand_rules_count: Optional[int] = None
+    compliance_batches: Optional[int] = None
+    compliance_failed_batches: Optional[int] = None
     notes: str = ""
 
 

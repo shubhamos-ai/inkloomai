@@ -346,7 +346,7 @@ Frontend:
 
 ```
 cd server && .venv/bin/python -m pytest -q
-51 passed, 3 warnings
+58 passed, 3 warnings
 ```
 
 - Covers health (fast + deep), auth, onboarding, brand brain, analysis lifecycle,
@@ -479,7 +479,7 @@ npm run dev
 
 ### Pre-submission checklist
 
-- [x] Backend tests pass (`51 passed`).
+- [x] Backend tests pass (`58 passed`).
 - [x] Frontend typecheck and production build pass.
 - [x] Live health endpoint returns `200` with a connected database.
 - [x] CORS allows the production frontend origin.

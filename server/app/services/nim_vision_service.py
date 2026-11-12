@@ -355,4 +355,11 @@ def parse_json_loose(raw: str) -> dict | list:
         except Exception:
             pass
 
+    # Truncated output (hit the completion budget): keep every complete object.
+    from app.services.json_utils import salvage_partial_json
+
+    salvaged = salvage_partial_json(raw)
+    if salvaged is not None:
+        return salvaged
+
     raise ValueError("Model response is not valid JSON")

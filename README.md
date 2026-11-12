@@ -9,7 +9,7 @@ Built for **CodeNexus India 2026 · Round 3: The Final Product** by **Team Tenso
 
 [![Live App](https://img.shields.io/badge/Live%20App-inkloom--ai.shubhamos.com-6D28D9?style=for-the-badge)](https://inkloom-ai.shubhamos.com)
 [![API](https://img.shields.io/badge/API-Online-16A34A?style=for-the-badge)](https://inkloom-backend-yw07.onrender.com/api/v1/health)
-[![Tests](https://img.shields.io/badge/Backend%20Tests-50%20passing-brightgreen?style=for-the-badge)](#testing)
+[![Tests](https://img.shields.io/badge/Backend%20Tests-58%20passing-brightgreen?style=for-the-badge)](#testing)
 [![GitHub](https://img.shields.io/badge/GitHub-shubhamos--ai%2Finkloomai-181717?style=for-the-badge&logo=github)](https://github.com/shubhamos-ai/inkloomai)
 
 `Next.js 15` · `React 18` · `TypeScript` · `Tailwind` · `Framer Motion` · `FastAPI` ·
@@ -268,7 +268,10 @@ Verified on **12 Nov 2026** against the deployed platform:
 | **Use Demo** preset | Name, industry and 8,927-character guidelines filled exactly |
 | Workspace creation | `POST /onboarding` → `200`, `POST /brand-brain` → `200`, dashboard shows the new workspace |
 | **Live extraction run** | Completed in **57s**: 58 proposals, 7 categories, 9 rejected, 0 provider errors |
+| **Review → commit** | All **58 reviewed proposals committed** (`HTTP 200`), 0 skipped; each rule stores `ai_extraction:<run_id>` provenance and a version snapshot |
+| **Rule version history** | `GET /brand-brain/rules/{id}/versions` returns the `extraction_committed` snapshot for every committed rule |
 | **Live creative audit** | Completed in ~**11s**: 15+ visual observations, OCR copy, claim checks, rule severities, confidence, recommendations |
+| **Database schema** | Alembic head `c7d8e9f0a1b2` applied in production; `brand_rules.source_type` is `varchar(80)` |
 
 ### Verify it yourself
 
@@ -343,7 +346,7 @@ stored as a typed constant.
 | **Extraction** | NVIDIA NIM `nvidia/nemotron-3.5-lightning-30b-a3b` |
 | **Storage** | S3-compatible (`boto3`): AWS S3, Cloudflare R2, MinIO; local-disk fallback |
 | **Deployment** | Render (frontend, backend, PostgreSQL), custom domain + TLS |
-| **Testing** | Pytest (51 backend tests), TypeScript type-check, Next.js production build |
+| **Testing** | Pytest (58 backend tests), TypeScript type-check, Next.js production build |
 
 ---
 
@@ -423,6 +426,9 @@ variables:
 | `EXTRACTION_MAX_CHARS` | `60000` | Guideline read cap. |
 | `EXTRACTION_MAX_TOKENS` | `8192` | Completion budget; 80 rules need roughly 6–7k tokens. |
 | `EXTRACTION_TIMEOUT_SECONDS` | `180` | Extraction provider timeout (full guideline documents take 60–120s). |
+| `COMPLIANCE_BATCH_SIZE` | `20` | Rules evaluated per audit request; large rulebooks are chunked so JSON cannot truncate. |
+| `COMPLIANCE_MAX_TOKENS` | `4096` | Completion budget per compliance batch. |
+| `COMPLIANCE_TIMEOUT_SECONDS` | `180` | Per-batch vision compliance timeout. |
 | `STORAGE_BACKEND` | `auto` | `auto`, `s3`, or `local`. |
 | `STORAGE_DIR` | `server/storage` | Local upload root. |
 | `S3_BUCKET` / `S3_ENDPOINT_URL` / `S3_*` | empty | Enables S3-compatible durable storage. |
@@ -613,7 +619,7 @@ git push public main   # public — triggers Render
 ```bash
 cd server
 .venv/bin/python -m pytest -q
-# 51 passed
+# 58 passed
 ```
 
 Coverage includes health (fast + deep), auth, onboarding, Brand Brain, rule extraction
@@ -675,7 +681,7 @@ npm run build        # 12 static pages generated
 7. **No email verification or password reset yet.** Accounts are email + password only.
 8. **Extraction quality depends on the provider.** The staged human review step exists so a
    human can correct proposals before they become enforceable rules.
-9. **Automated load testing is still on the backlog.** The current suite is 51 backend
+9. **Automated load testing is still on the backlog.** The current suite is 58 backend
    tests plus hands-on end-to-end production verification; high-concurrency load testing is
    the next step.
 10. **`mock` pipeline mode still exists** for infrastructure tests, but it must be set
@@ -728,7 +734,7 @@ inkloomai/
 │   │   ├── worker.py                 # Durable queue worker
 │   │   └── main.py                   # App + lifespan
 │   ├── alembic/versions/             # Migration chain
-│   ├── tests/                        # 51 backend tests
+│   ├── tests/                        # 58 backend tests
 │   ├── requirements.txt
 │   └── .env.example
 ├── render.yaml                       # Render blueprint
