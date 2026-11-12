@@ -243,14 +243,23 @@ def _call_model(source_text: str) -> tuple[str, str]:
         if provider == "nvidia_nim":
             from app.services import nim_vision_service
 
+            # Reasoning-tuned Nemotron models spend the whole token budget on
+            # hidden reasoning and return empty content. Disable thinking so
+            # the response is the JSON we asked for.
+            resolved_model = model or nim_vision_service.get_vision_model()
+            extra_payload = None
+            if "nemotron" in resolved_model.lower() or "reasoning" in resolved_model.lower():
+                extra_payload = {"chat_template_kwargs": {"enable_thinking": False}}
+
             text = nim_vision_service.generate(
                 prompt=user,
                 system=system,
                 model=model,
-                max_tokens=4096,
+                max_tokens=settings.EXTRACTION_MAX_TOKENS,
                 timeout=settings.EXTRACTION_TIMEOUT_SECONDS,
+                extra_payload=extra_payload,
             )
-            return text, model or nim_vision_service.get_vision_model()
+            return text, resolved_model
         from app.services import ollama_service
 
         text = ollama_service.generate(prompt=user, system=system, model=model)

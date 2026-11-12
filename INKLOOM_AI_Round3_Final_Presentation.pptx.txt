@@ -1,0 +1,233 @@
+CODENEXUS INDIA 2026 — ROUND 3: THE FINAL PRODUCT
+INKLOOM AI
+AI-Powered Advertising Compliance & Brand Governance Platform
+Transforming unstructured company brand guidelines into traceable compliance intelligence to audit advertising creatives before publication.
+TEAM TENSOR TITANS
+TEAM LEADER
+Shubham Chawhan
+Full-Stack Development & Intelligence Lead
+ARCHITECTURE LEAD
+Shivam Panchal
+AI Research & System Architecture Lead
+Madhuben and Bhanubhai Patel Institute of Technology (MBIT)
+Production Web App: https://inkloom-ai.shubhamos.com
+GitHub Repository: https://github.com/shubhamos-ai/inkloomai.git
+LIVE PRODUCTION DEPLOYMENT VERIFIED
+Next.js 15 · FastAPI · S3 · Llama 3.2 90B Vision
+Welcome to Team Tensor Titans' Round 3 Final Product presentation for CodeNexus India 2026. INKLOOM AI is now a fully deployed, multi-tenant SaaS platform that converts company brand guidelines into traceable compliance rules and audits ad creatives before launch. Sources: INKLOOM AI.pptx (Slide 1) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com, https://github.com/shubhamos-ai/inkloomai.git).
+
+THE JOURNEY
+Solving the Hardest Problem in Brand Governance
+From Round 1 architectural blueprint to a live, multi-tenant Round 3 SaaS production system.
+01
+ROUND 1 · THE PLAN
+Conceptual Architecture
+Conceptualized a unified Brand Brain and multi-modal pre-publication review workflow to catch compliance errors before launch.
+02
+ROUND 2 · THE BUILD
+Prototype & Commitments
+Built the initial working prototype and committed to 3 major production-grade architectural upgrades for the final release.
+03
+ROUND 3 · FINAL PRODUCT
+Production-Deployed SaaS
+Delivered a multi-tenant, queue-backed SaaS platform running Next.js 15, FastAPI, SQLAlchemy, S3 storage, and NVIDIA NIM Llama 3.2 90B Vision.
+CORE ENGINEERING BREAKTHROUGH
+Bridging Unstructured Brand Guidelines with Visual AI Analysis
+Built a traceable LLM rule-extraction pipeline that converts raw PDFs, DOCX, and TXT files into categorized, source-quoted compliance rules, combining them with vision-model inspection for brand-specific evaluations.
+Across three hackathon rounds, we progressed from an architectural concept to an initial prototype and finally to a resilient multi-tenant production SaaS platform. Our core breakthrough bridges raw PDF/DOCX brand guidelines with multi-modal vision inspection. Sources: INKLOOM AI.pptx (Slides 3–4) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+COMMITTED IMPROVEMENT 01 — DELIVERED
+From Passive Documents to Versioned, Source-Linked Rules
+Traceable brand-rule extraction pipeline paired with the interactive Brand Brain Studio workspace.
+THE ROUND 2 COMMITMENT
+Traceable Rule Extraction Goal
+Build an AI-powered brand-rule extraction system converting uploaded or pasted company guidelines into structured, categorized, and versioned rules while preserving exact original wording for traceable evidence.
+Key Engineering Challenge:
+Eliminate hallucinated compliance flags by anchoring every extracted rule to its verbatim policy clause and revision history.
+DELIVERED & VERIFIABLE IN PRODUCTION
+01
+Multi-Format Ingestion
+Supports PDF, DOCX, TXT, and direct text input via an LLM-powered extraction engine.
+02
+Verbatim Quote Traceability
+Automatically categorizes and normalizes rules while preserving verbatim source quotes from original guidelines.
+03
+Versioning & Audit Trail
+Tracks rule revisions and historical changes across compliance updates for enterprise governance.
+04
+Brand Brain Studio
+Dedicated interactive workspace where users review, manage, edit, and activate extracted compliance rules.
+Our first Round 2 commitment was transforming static policy documents into traceable, versioned rules. In Round 3, we delivered the multi-format ingestion engine and interactive Brand Brain Studio with verbatim source quotes. Sources: INKLOOM AI.pptx (Slide 3) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+COMMITTED IMPROVEMENT 02 — DELIVERED
+Enterprise Multi-Tenancy & Strict Workspace Scoping
+Complete authentication, hashed session management, and tenant-isolated data boundaries.
+THE ROUND 2 COMMITMENT
+Workspace Privacy & Auth
+Replace basic access with complete user authentication, persistent sessions, and isolated company workspaces so each organization's guidelines, creatives, and reports remain strictly private.
+DELIVERED & VERIFIABLE IN PRODUCT
+01
+Secure Auth & Hashed Sessions: Full user sign-up, sign-in, and session management backed by hashed tokens.
+02
+Strict company_id Scoping: Every brand rule, creative, job, and report is strictly scoped to its company_id.
+03
+Backend API Authorization: Enforces tenant-level access controls directly at the FastAPI endpoint layer.
+BADGE 01 · AUTH
+Hashed Session Tokens
+Zero plaintext session exposure across client-server requests.
+BADGE 02 · ISOLATION
+Strict company_id Scoping
+Complete relational separation of guidelines, jobs, and reports.
+BADGE 03 · ENFORCEMENT
+FastAPI Endpoint Guards
+Server-side tenant verification on every read and write route.
+Our second Round 2 commitment focused on enterprise security and strict workspace isolation. Every brand rule, creative asset, analysis job, and report is now scoped by company_id and enforced at the FastAPI endpoint layer. Sources: INKLOOM AI.pptx (Slides 7, 9) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+COMMITTED IMPROVEMENT 03 — DELIVERED
+Resilient Object Storage & Asynchronous Worker Architecture
+Durable cloud object persistence paired with non-blocking background job execution and retries.
+THE ROUND 2 COMMITMENT
+Durable Storage & Async Queue
+Eliminate temporary file storage and fragile synchronous request execution by introducing S3-compatible durable storage and a dedicated queue-backed worker with automatic retries.
+DELIVERED & VERIFIABLE IN PRODUCTION
+01
+Durable S3-Compatible Object Storage — Full support for AWS S3, Cloudflare R2, and MinIO (with local mounted fallback) and secure retrieval via pre-signed URLs.
+02
+Decoupled Async Job Queue — Separates long-running AI vision processing from the HTTP request cycle so uploads return immediately.
+03
+Fault-Tolerant Execution — Implements queued, processing, completed, and failed job states with automatic retries, exponential backoff, failure tracking, and concurrency controls.
+ASYNC JOB LIFECYCLE PIPELINE · AUTOMATIC RETRIES, EXPONENTIAL BACKOFF & WORKER CONCURRENCY CONTROLS
+STATE 01 · QUEUED
+Job Persisted & Enqueued
+STATE 02 · PROCESSING
+Vision + Rule Audit Active
+STATE 03 · COMPLETED
+Report & Score Stored
+STATE 04 · FAILED / RETRY
+Backoff & Failure Log
+Our third Round 2 commitment eliminated local ephemeral files and blocking HTTP vision calls. We built durable S3-compatible object storage with pre-signed URLs and a fault-tolerant asynchronous worker queue. Sources: INKLOOM AI.pptx (Slide 5) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+BONUS UPGRADES DELIVERED
+7 Additional Production Enhancements Built for Round 3
+Engineering improvements shipped beyond our Round 2 commitments to ensure production reliability.
+01
+Dual AI Intelligence
+Paired NVIDIA NIM Llama 3.2 90B Vision with OpenAI for deeper visual, OCR, and claim analysis.
+02
+PIL Image Optimization
+Automatic resizing, compression, and JPEG conversion to eliminate large-upload timeouts.
+03
+Richer Diagnostic Reports
+Added 15+ granular visual observations, OCR text, model metadata, latency, and confidence scores.
+04
+Zero-Crash Score Guardrails
+Graceful handling of inconclusive AI outputs to prevent false zero scores or broken report views.
+05
+Auto Wake-Up & Health
+Proactive server health checks and recovery controls to handle cloud spin-downs seamlessly.
+06
+Redesigned SaaS UI
+Upgraded responsive desktop/mobile navigation, skeleton loading states, and interactive reports.
+07
+Production Render Deployment
+Live custom domain (https://inkloom-ai.shubhamos.com) configured with strict domain-locked CORS policies, SSL termination, and environment-isolated credentials.
+Beyond the three committed architectural milestones, we engineered seven additional production upgrades for Round 3, including dual NVIDIA NIM Llama 3.2 90B Vision + OpenAI intelligence, PIL image optimization, and full Render cloud deployment. Sources: INKLOOM AI.pptx & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+SYSTEM ARCHITECTURE
+End-to-End Multi-Modal Compliance Stack
+Six decoupled production tiers linking multi-tenant client workspaces to vision inference and durable cloud storage.
+02
+API & Orchestration
+Python FastAPI + REST APIs
+Tenant-scoped authorization, document parsing, async job scheduling, health monitoring.
+03
+Rule Extraction Engine
+LLM Guideline Pipeline
+Converts PDF, DOCX, and TXT guidelines into categorized, versioned, source-quoted rules.
+04
+Vision & OCR Pipeline
+PIL + Llama 3.2 90B + OpenAI
+Image optimization, OCR text extraction, visual product/claim detection, rule evaluation.
+05
+Database & Queue
+SQLAlchemy ORM + Async Queue
+Relational persistence, job status tracking, exponential backoff retries, concurrency control.
+06
+Cloud & Object Storage
+Render + S3 / Cloudflare R2 / MinIO
+Persistent creative storage, pre-signed URL asset delivery, custom domain SSL.
+01
+Frontend Client
+Next.js 15 + React + Tailwind
+Auth, multi-tenant workspaces, Brand Brain Studio, interactive compliance reports.
+Here is the complete 6-tier production stack powering INKLOOM AI in Round 3, spanning Next.js 15 on the client, FastAPI orchestration, the LLM rule extraction pipeline, PIL + NVIDIA NIM Llama 3.2 90B Vision + OpenAI, SQLAlchemy async queues, and S3 storage. Sources: INKLOOM AI.pptx (Slide 5) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+LIVE PRODUCTION VERIFICATION
+Real-World Validation, Issues Fixed & Transparent Limitations
+Verified end-to-end execution on the live production system combined with candid engineering retrospective.
+LIVE BENCHMARK CASE STUDY
+~11 sec
+End-to-End Live Latency
+15+
+Visual Observations
+Test Asset: VELORA Skincare promotional advertisement creative.
+Analytical Depth: Extracted 15 distinct visual observations, full OCR ad copy, marketing claims, rule-by-rule severity classifications, confidence scores, and corrective recommendations.
+Verified Live on Production:
+https://inkloom-ai.shubhamos.com
+ISSUES IDENTIFIED & FIXED IN TESTING
+1. Large-Upload Timeouts Resolved: Eliminated payload timeouts via automatic PIL resizing and JPEG optimization.
+2. Cold-Starts & Score Parsing Fixed: Resolved inconclusive AI responses and cloud cold-starts with defensive score parsing and automatic backend wake-up pings.
+TRANSPARENT KNOWN LIMITATIONS
+1. Automated Test Coverage Backlog: Testing has been primarily hands-on manual E2E verification; automated unit/integration suites and high-concurrency load testing are next on our backlog.
+2. Human Reviewer Sign-Off: Complex scientific or legal claims still benefit from final human reviewer sign-off.
+We validated the deployed production platform at inkloom-ai.shubhamos.com using a live VELORA Skincare promotional ad creative. The pipeline completed end-to-end analysis in roughly 11 seconds and extracted 15 distinct visual observations alongside full OCR and rule verdicts. Sources: INKLOOM AI.pptx (Slide 8) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+MONETIZATION & GTM STRATEGY
+Scaling INKLOOM AI into a Global Brand Intelligence Business
+Multi-tier SaaS subscriptions backed by Razorpay and international gateways, plus usage-based API revenue.
+FREE TIER
+₹0/mo
+Early Creators
+Limited monthly ad scans for individual creators and early startups evaluating Brand Brain rules.
+STARTER
+₹999/mo
+Small Business
+Designed for small businesses managing a single brand workspace and core guideline rules.
+GROWTH ★
+₹3,999/mo
+D2C Brands
+Built for growing D2C and e-commerce brands needing higher scan volumes and team access.
+AGENCY
+₹9,999/mo
+Ad Agencies
+Multi-brand client workspaces, approval workflows, and white-label compliance reports.
+ENTERPRISE
+Custom
+Global Orgs
+Dedicated infrastructure, high-volume API access, custom compliance SLAs, and audit logs.
+ADDITIONAL REVENUE STREAMS
+Payment Gateways & Expansion Revenue: Integrated for Razorpay & international gateways, reinforced by discounted annual plans, on-demand AI analysis credit packs, and high-volume developer API licensing.
+INKLOOM AI is designed for immediate SaaS commercialization across India and global markets via Razorpay and international payment gateways, combining a 5-tier recurring subscription matrix with usage-based AI credits and developer API licensing. Sources: CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).
+
+WHERE IT GOES NEXT
+The Future of Autonomous Brand Protection
+Four-phase strategic roadmap scaling from agency workspaces to autonomous global compliance.
+01
+PHASE 1 · AGENCY
+Agency Workspaces
+Role-based team permissions, client dashboards, and exportable white-label PDF compliance audits.
+02
+PHASE 2 · REMEDIATION
+Generative Remediation
+Auto-rewriting non-compliant copy, visual correction overlays, A/B comparison, and bulk campaign scans.
+03
+PHASE 3 · ECOSYSTEM
+Developer Integrations
+Public REST APIs and plugins embedding INKLOOM AI into ad managers, CMS platforms, and design tools.
+04
+PHASE 4 · GLOBAL
+Multilingual Compliance
+Expansion from Indian D2C and startup markets to international languages and regional ad standards.
+“Every creative checked, improved, and approved against a brand's true identity before it ever reaches the customer.”
+Team Tensor Titans — Shubham Chawhan & Shivam Panchal | Madhuben and Bhanubhai Patel Institute of Technology (MBIT) | CodeNexus India 2026 Final Submission
+This closing slide outlines our post-hackathon trajectory as we evolve from a standalone compliance auditor into an embedded ecosystem layer across ad managers, design suites, and international regulatory jurisdictions. Sources: INKLOOM AI.pptx (Slide 10) & CodeNexus India 2026 Round 3 Specification (https://inkloom-ai.shubhamos.com).

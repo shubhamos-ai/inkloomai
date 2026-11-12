@@ -305,10 +305,11 @@ Full template: `server/.env.example`.
 | `OLLAMA_BASE_URL` / `OLLAMA_VISION_MODEL` | local | Local dev provider |
 | `PIPELINE_MODE` | `ai` | `ai` or explicitly labelled `mock` |
 | `EXTRACTION_PROVIDER` | `auto` | `auto` / `nvidia_nim` / `ollama` |
-| `EXTRACTION_MODEL` | empty | Provider default |
+| `EXTRACTION_MODEL` | `nvidia/nemotron-3.5-lightning-30b-a3b` | Fast non-reasoning text model; hidden thinking is disabled automatically for reasoning-tuned tags |
 | `EXTRACTION_MAX_RULES` | `80` | Proposal cap per run |
 | `EXTRACTION_MAX_CHARS` | `60000` | Guideline read cap |
-| `EXTRACTION_TIMEOUT_SECONDS` | `120` | Extraction timeout |
+| `EXTRACTION_MAX_TOKENS` | `8192` | Completion budget; 80 rules need ~6–7k tokens |
+| `EXTRACTION_TIMEOUT_SECONDS` | `180` | Extraction timeout (full guideline documents take 60–120s) |
 | `RUN_EMBEDDED_WORKER` | `auto` | Embedded queue loop |
 | `WORKER_ALLOW_LOCAL_ANALYSIS` | `false` | Standalone worker with local disk |
 | `WORKER_POLL_INTERVAL_SECONDS` | `1.0` | Claim poll interval |
@@ -343,7 +344,7 @@ Frontend:
 
 ```
 cd server && .venv/bin/python -m pytest -q
-39 passed, 3 warnings
+47 passed, 3 warnings
 ```
 
 - Covers health (fast + deep), auth, onboarding, brand brain, analysis lifecycle,
@@ -476,7 +477,7 @@ npm run dev
 
 ### Pre-submission checklist
 
-- [x] Backend tests pass (`39 passed`).
+- [x] Backend tests pass (`47 passed`).
 - [x] Frontend typecheck and production build pass.
 - [x] Live health endpoint returns `200` with a connected database.
 - [x] CORS allows the production frontend origin.

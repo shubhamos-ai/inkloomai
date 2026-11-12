@@ -27,6 +27,9 @@ def _setup_env() -> None:
     os.environ["STORAGE_DIR"] = str(_TMP / "storage")
     os.environ["DEV_AUTH_TOKEN"] = "test-dev-token-12345"
     os.environ["PIPELINE_MODE"] = "mock"
+    # Tests drive the queue explicitly via worker_loop_once/run_queue_until.
+    # Disabling the in-process daemon prevents it from racing those calls.
+    os.environ["RUN_EMBEDDED_WORKER"] = "false"
     os.environ["RATE_LIMIT_PER_MINUTE"] = "100000"
     os.environ["STALE_JOB_AFTER_SECONDS"] = "60"
     os.environ["MAX_JOB_ATTEMPTS"] = "3"

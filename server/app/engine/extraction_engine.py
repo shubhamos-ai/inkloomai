@@ -157,8 +157,57 @@ def validate_proposals(
     return proposals, rejected, warnings
 
 
+def _salvage_rule_objects(raw: str) -> Any | None:
+    """Recover complete rule objects from a truncated JSON response.
+
+    Providers stop at `max_tokens`, which can cut the response mid-string
+    inside the `"rules": [...]` array. The objects that finished before the
+    cut are still valid and useful, so parse each balanced top-level object
+    individually and drop only the incomplete tail.
+    """
+    marker = re.search(r'"(?:rules|proposed_rules)"\s*:\s*\[', raw)
+    if not marker:
+        return None
+
+    objects: list[Any] = []
+    depth = 0
+    in_string = False
+    escaped = False
+    start = -1
+
+    for index in range(marker.end(), len(raw)):
+        char = raw[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char == "{":
+            if depth == 0:
+                start = index
+            depth += 1
+        elif char == "}":
+            if depth > 0:
+                depth -= 1
+                if depth == 0 and start >= 0:
+                    try:
+                        objects.append(json.loads(raw[start : index + 1]))
+                    except Exception:
+                        pass
+                    start = -1
+
+    if not objects:
+        return None
+    return {"rules": objects}
+
+
 def parse_model_output(raw_text: str) -> Any:
-    """Parse JSON tolerantly (raw, fenced, or first object)."""
+    """Parse JSON tolerantly (raw, fenced, first object, truncated array)."""
     raw = (raw_text or "").strip()
     if not raw:
         raise ValueError("Empty model response")
@@ -174,5 +223,11 @@ def parse_model_output(raw_text: str) -> Any:
             continue
     start, end = raw.find("{"), raw.rfind("}") + 1
     if start >= 0 and end > start:
-        return json.loads(raw[start:end])
+        try:
+            return json.loads(raw[start:end])
+        except Exception:
+            pass
+    salvaged = _salvage_rule_objects(raw)
+    if salvaged is not None:
+        return salvaged
     raise ValueError("Model response is not valid JSON")

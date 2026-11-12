@@ -189,6 +189,7 @@ def generate(
     model: Optional[str] = None,
     max_tokens: Optional[int] = None,
     timeout: Optional[float] = None,
+    extra_payload: Optional[dict] = None,
 ) -> str:
     """Generate response from NVIDIA NIM Vision API.
 
@@ -202,6 +203,8 @@ def generate(
         model: Specific model tag to use (optional)
         max_tokens: Maximum tokens in response (default: 4096 or custom)
         timeout: HTTP request timeout in seconds (default: settings.EXTRACTION_TIMEOUT_SECONDS or 90.0)
+        extra_payload: Provider-specific fields merged into the request body
+            (for example chat_template_kwargs to disable hidden reasoning).
 
     Returns:
         The generated text response as a string
@@ -267,6 +270,9 @@ def generate(
         "top_p": 0.7,
     }
 
+    if extra_payload:
+        payload.update(extra_payload)
+
     if stream:
         payload["stream"] = True
 
@@ -299,10 +305,21 @@ def generate(
         # Extract the generated text
         if "choices" in data and len(data["choices"]) > 0:
             choice = data["choices"][0]
-            if "message" in choice:
-                return choice["message"].get("content", "")
-            elif "delta" in choice:
-                return choice["delta"].get("content", "")
+            message = choice.get("message") or choice.get("delta") or {}
+            content = message.get("content")
+            if content is None:
+                # Reasoning models put their scratchpad in reasoning_content
+                # and can leave content empty when the token budget runs out.
+                reasoning = message.get("reasoning_content") or ""
+                finish = choice.get("finish_reason")
+                raise RuntimeError(
+                    "NVIDIA NIM returned no answer content"
+                    + (f" (finish_reason={finish})" if finish else "")
+                    + (f"; {len(reasoning)} chars were spent on hidden reasoning"
+                       if reasoning else "")
+                    + ". Disable thinking or raise EXTRACTION_MAX_TOKENS."
+                )
+            return content
 
         raise RuntimeError("Unexpected response format from NVIDIA NIM API")
 

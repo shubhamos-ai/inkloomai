@@ -136,7 +136,7 @@ class Settings:
     # ------------------------------------------------------------------
     # NVIDIA NIM (production - deployable on Render.com)
     # Get your API key from: https://build.nvidia.com/meta/llama-3.2-11b-vision-instruct
-    # Example: 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
+    # Example: nvapi-<your-key> (never commit a real key)
     # ------------------------------------------------------------------
     NVIDIA_API_KEY: str = os.getenv("NVIDIA_API_KEY", "")
     # Vision model served via https://integrate.api.nvidia.com/v1 (OpenAI-compatible).
@@ -162,10 +162,18 @@ class Settings:
     # ------------------------------------------------------------------
     # "auto" -> NVIDIA NIM when configured, then Ollama, else not configured.
     EXTRACTION_PROVIDER: str = os.getenv("EXTRACTION_PROVIDER", "auto")
-    EXTRACTION_MODEL: str = os.getenv("EXTRACTION_MODEL", "")  # blank = provider default
+    # Rule extraction is a text task; a fast non-reasoning instruct model is
+    # both quicker and cheaper than the 90B vision model. Override with any
+    # chat-completions model tag the provider serves.
+    EXTRACTION_MODEL: str = os.getenv(
+        "EXTRACTION_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b"
+    )
     EXTRACTION_MAX_RULES: int = int(os.getenv("EXTRACTION_MAX_RULES", "80"))
     EXTRACTION_MAX_CHARS: int = int(os.getenv("EXTRACTION_MAX_CHARS", "60000"))
-    EXTRACTION_TIMEOUT_SECONDS: float = float(os.getenv("EXTRACTION_TIMEOUT_SECONDS", "120"))
+    # 80 rules need roughly 6-7k completion tokens; 8192 avoids truncation.
+    EXTRACTION_MAX_TOKENS: int = int(os.getenv("EXTRACTION_MAX_TOKENS", "8192"))
+    # Per-request provider timeout. Long guideline documents take 60-120s.
+    EXTRACTION_TIMEOUT_SECONDS: float = float(os.getenv("EXTRACTION_TIMEOUT_SECONDS", "180"))
 
     # ------------------------------------------------------------------
     # Worker / job queue
