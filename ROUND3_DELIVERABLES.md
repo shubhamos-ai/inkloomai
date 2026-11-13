@@ -376,6 +376,18 @@ npx tsc --noEmit        # 0 errors
 npm run build           # 10 static routes generated successfully
 ```
 
+### Browser smoke test (production build)
+
+All nine routes (`/`, `/login`, `/register`, `/onboarding`, `/dashboard`,
+`/brand-brain`, `/analysis`, `/history`, `/settings`) load with **0 console
+errors** in Playwright. Two UI defects found during that pass were fixed:
+
+- The dashboard showed a hardcoded **10 active rules** and stamped “last modified”
+  to now; it now reads the live Brand Brain (`58` rules, `v2`, real timestamp).
+- Sidebar/MobileNav and the dashboard/analysis pages read `localStorage` during
+  render, producing React hydration error `#418` on prerendered pages; those reads
+  now happen after mount.
+
 ### Live production verification (2026-11-11)
 
 | Check | Result |

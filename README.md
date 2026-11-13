@@ -276,6 +276,8 @@ Verified on **12 Nov 2026** against the deployed platform:
 | **Live creative audit (58 active rules)** | Completed in **136s** across **3 batched passes**: 6 violations, 30 passed checks, 22 inconclusive; flagged “CURES ACNE IN 3 DAYS” and “100% GUARANTEED RESULTS” |
 | **Large-rulebook safety** | Rules are evaluated in batches of 20; truncated JSON is salvaged and a failed batch degrades only its own rules to inconclusive |
 | **Database schema** | Alembic head `c7d8e9f0a1b2` applied in production; `brand_rules.source_type` is `varchar(80)` |
+| **Dashboard / Settings** | Read the live Brand Brain: **58 active rules**, version `v2`, real last-modified date |
+| **Browser smoke test** | All 9 routes load with **0 console errors** (Playwright, production build) |
 
 ### Verify it yourself
 
