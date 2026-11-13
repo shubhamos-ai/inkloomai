@@ -129,13 +129,6 @@ export default function DashboardContent({ session }: DashboardContentProps) {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  // The greeting depends on the visitor's clock, so render it after mount to
-  // avoid a server/client hydration mismatch on this prerendered page.
-  const [greeting, setGreeting] = useState('Welcome');
-
-  useEffect(() => {
-    setGreeting(getGreeting());
-  }, []);
 
   /* Fetch stats + real Brand Brain metadata (never invent rule counts) */
   useEffect(() => {
@@ -212,7 +205,7 @@ export default function DashboardContent({ session }: DashboardContentProps) {
       >
         <div>
           <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
-            {greeting}, {getFirstName(session.fullName)}.
+            {getGreeting()}, {getFirstName(session.fullName)}.
           </h1>
           <p className="mt-1 text-sm text-neutral-500">
             {session.companyName} workspace is active and brand rules are enforced.
