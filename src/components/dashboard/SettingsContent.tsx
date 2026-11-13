@@ -45,6 +45,7 @@ export default function SettingsContent() {
   // Brand Brain summary state
   const [ruleCount, setRuleCount] = useState<number>(0);
   const [brandBrainVersion, setBrandBrainVersion] = useState<string>('1.0.0');
+  const [brainLoading, setBrainLoading] = useState(true);
 
   // Backend connection status
   const [backendHealth, setBackendHealth] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -65,13 +66,16 @@ export default function SettingsContent() {
       });
     }
 
-    // Load Brand Brain info
-    getBrandBrain().then((brain) => {
-      if (brain) {
-        setRuleCount(brain.totalRules);
-        setBrandBrainVersion(brain.version);
-      }
-    });
+    // Load Brand Brain info. Show a placeholder until it resolves so a cold
+    // backend never looks like a workspace with zero rules.
+    getBrandBrain()
+      .then((brain) => {
+        if (brain) {
+          setRuleCount(brain.totalRules);
+          setBrandBrainVersion(brain.version);
+        }
+      })
+      .finally(() => setBrainLoading(false));
 
     // Check backend health & config
     const config = getApiConfig();
@@ -361,11 +365,15 @@ export default function SettingsContent() {
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
           <div className="bg-[#FAF8F5] rounded-lg p-3 text-center border border-[#F0EBE1]">
             <span className="text-xs text-neutral-500 block">Active Rules</span>
-            <span className="text-xl font-bold text-neutral-900 mt-1 block">{ruleCount}</span>
+            <span className="text-xl font-bold text-neutral-900 mt-1 block">
+              {brainLoading ? '—' : ruleCount}
+            </span>
           </div>
           <div className="bg-[#FAF8F5] rounded-lg p-3 text-center border border-[#F0EBE1]">
             <span className="text-xs text-neutral-500 block">Version</span>
-            <span className="text-xl font-bold text-neutral-900 mt-1 block">v{brandBrainVersion}</span>
+            <span className="text-xl font-bold text-neutral-900 mt-1 block">
+              {brainLoading ? '—' : `v${brandBrainVersion}`}
+            </span>
           </div>
           <div className="bg-[#FAF8F5] rounded-lg p-3 text-center col-span-2 sm:col-span-1 border border-[#F0EBE1]">
             <span className="text-xs text-neutral-500 block">Status</span>
