@@ -23,6 +23,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import AdvertisementUpload from '@/components/upload/AdvertisementUpload';
 import {
   getDashboardStats,
+  getBrandBrain,
   getAnalysisHistory,
   submitAnalysis,
 } from '@/lib/api';
@@ -128,22 +129,35 @@ export default function DashboardContent({ session }: DashboardContentProps) {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [isAnalysing, setIsAnalysing] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  // The greeting depends on the visitor's clock, so render it after mount to
+  // avoid a server/client hydration mismatch on this prerendered page.
+  const [greeting, setGreeting] = useState('Welcome');
 
-  /* Fetch stats */
+  useEffect(() => {
+    setGreeting(getGreeting());
+  }, []);
+
+  /* Fetch stats + real Brand Brain metadata (never invent rule counts) */
   useEffect(() => {
     setStatsLoading(true);
-    getDashboardStats()
-      .then((data) => {
+    Promise.all([
+      getDashboardStats().catch(() => null),
+      getBrandBrain().catch(() => null),
+    ])
+      .then(([data, brain]) => {
+        if (!data) {
+          setStats(null);
+          return;
+        }
         setStats({
           totalAnalysed: data.totalAnalyses,
           averageScore: data.averageComplianceScore,
           requiresAttention: data.needsAttention,
           fullyCompliant: data.fullyCompliant,
-          brandRulesCount: 10,
-          lastUpdated: new Date().toISOString(),
+          brandRulesCount: brain?.totalRules ?? 0,
+          lastUpdated: brain?.lastUpdatedAt ?? '',
         });
       })
-      .catch(() => setStats(null))
       .finally(() => setStatsLoading(false));
   }, []);
 
@@ -198,7 +212,7 @@ export default function DashboardContent({ session }: DashboardContentProps) {
       >
         <div>
           <h1 className="text-2xl font-black text-neutral-900 tracking-tight">
-            {getGreeting()}, {getFirstName(session.fullName)}.
+            {greeting}, {getFirstName(session.fullName)}.
           </h1>
           <p className="mt-1 text-sm text-neutral-500">
             {session.companyName} workspace is active and brand rules are enforced.
