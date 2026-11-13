@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -36,7 +36,13 @@ interface SidebarProps {
 export default function Sidebar({ currentPath }: SidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const session = getUserSession();
+  // localStorage is unavailable during prerender; read it after mount so the
+  // first client render matches the server HTML (no hydration mismatch).
+  const [session, setSession] = useState<ReturnType<typeof getUserSession>>(null);
+
+  useEffect(() => {
+    setSession(getUserSession());
+  }, []);
 
   const activePath = pathname ?? currentPath;
 

@@ -19,6 +19,8 @@ export default function AnalysisPage() {
   const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  // Read after mount so the first client render matches the prerendered HTML.
+  const [hasActiveJob, setHasActiveJob] = useState(false);
 
   useEffect(() => {
     if (!isOnboardingComplete()) {
@@ -28,6 +30,7 @@ export default function AnalysisPage() {
 
     // Check for existing active job to resume across refresh or navigation
     const existingJob = getActiveJobId();
+    setHasActiveJob(!!existingJob);
     if (existingJob) {
       setCurrentJobId(existingJob);
       const savedPreview = typeof window !== 'undefined' ? localStorage.getItem(PREVIEW_STORAGE_KEY) : null;
@@ -60,6 +63,7 @@ export default function AnalysisPage() {
         const jobId = response.analysis_id || response.jobId;
         setCurrentJobId(jobId);
         setActiveJobId(jobId);
+        setHasActiveJob(true);
         setPageState('scanning');
       } catch (err) {
         console.error('Submit analysis error:', err);
@@ -77,6 +81,7 @@ export default function AnalysisPage() {
 
   const handleScanComplete = (resultId: string) => {
     setActiveJobId(null);
+    setHasActiveJob(false);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(PREVIEW_STORAGE_KEY);
       localStorage.setItem('inkloom_latest_result_id', resultId);
@@ -86,14 +91,13 @@ export default function AnalysisPage() {
 
   const handleScanFailed = () => {
     setActiveJobId(null);
+    setHasActiveJob(false);
     setCurrentJobId(null);
     if (typeof window !== 'undefined') {
       localStorage.removeItem(PREVIEW_STORAGE_KEY);
     }
     setPageState('upload');
   };
-
-  const hasActiveJob = !!getActiveJobId();
 
   return (
     <DashboardLayout currentPath={pathname}>

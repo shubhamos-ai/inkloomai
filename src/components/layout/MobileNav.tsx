@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -40,7 +40,13 @@ export default function MobileNav({ currentPath }: MobileNavProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const session = getUserSession();
+  // Read localStorage after mount to keep the first client render identical
+  // to the prerendered HTML.
+  const [session, setSession] = useState<ReturnType<typeof getUserSession>>(null);
+
+  useEffect(() => {
+    setSession(getUserSession());
+  }, []);
 
   const activePath = pathname ?? currentPath;
 
